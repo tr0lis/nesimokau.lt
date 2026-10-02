@@ -1533,6 +1533,89 @@ h1:focus { outline: none !important; }
 .profile-controls-card .profile-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .profile-controls-card .profile-stats > .stat-card,
 .profile-controls-card .profile-stats .stat-card:nth-child(3) { width: 100%; min-width: 0; grid-column: auto; justify-self: stretch; }
+
+/* Mobile layout guardrails */
+@media (max-width: 640px) {
+    html, body { overflow-x: hidden; }
+
+    .site-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 10px 14px;
+    }
+
+    .brand { min-width: 0; gap: 7px; }
+    .brand-logo { height: 34px; max-width: 112px; }
+    .brand-wordmark { font-size: 15px; letter-spacing: -.5px; }
+    .header-actions { min-width: 0; gap: 6px; }
+    .header-actions .resource-pill { display: none; }
+    .theme-toggle { width: 32px; height: 32px; font-size: 15px; }
+    .profile-button { width: 32px; height: 32px; }
+
+    .main-nav {
+        grid-column: 1 / -1;
+        order: initial;
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        height: 38px;
+        gap: 12px;
+        overflow-x: auto;
+        overflow-y: visible;
+        scrollbar-width: none;
+    }
+
+    .main-nav::-webkit-scrollbar { display: none; }
+    .learn-menu, .class-menu { flex: 0 0 auto; height: 38px; }
+    .learn-trigger, .class-trigger { height: 38px; font-size: 12px; }
+    .navbar-tools { flex: 0 0 auto; gap: 12px; margin-left: 0; height: 38px; }
+    .navbar-tools .nav-action { height: 38px; font-size: 0; }
+    .navbar-tools .nav-action span { font-size: 16px; }
+
+    .app-main { width: 100%; padding: 24px 14px 44px; }
+    .page-container { width: 100%; min-width: 0; }
+    .dashboard-head, .section-heading { min-width: 0; }
+    .section-heading { align-items: flex-start; gap: 10px; }
+    .section-heading h2 { font-size: 21px; }
+    .catalog-count { flex-shrink: 0; padding-top: 5px; }
+
+    .daily-banner { flex-wrap: wrap; gap: 14px; padding: 20px; margin-bottom: 34px; }
+    .daily-art { width: 82px; height: 78px; transform: scale(.75); transform-origin: left center; margin-right: -18px; }
+    .daily-copy { min-width: 0; flex: 1 1 calc(100% - 82px); }
+    .daily-copy h2 { font-size: 21px; }
+    .daily-copy p { font-size: 12px; }
+    .daily-banner > .button { width: 100%; }
+
+    .catalog-controls { align-items: stretch; gap: 10px; }
+    .search-box { width: 100%; }
+    .filter-list { gap: 6px; }
+    .filter-chip { padding: 8px 10px; }
+    .game-grid { grid-template-columns: 1fr; gap: 12px; }
+    .game-card { min-height: 0; padding: 15px; }
+
+    .game-header { align-items: flex-start; gap: 10px; }
+    .game-title { min-width: 0; }
+    .game-title h1 { font-size: 20px; overflow-wrap: anywhere; }
+    .lives { font-size: 15px; letter-spacing: 2px; white-space: nowrap; }
+    .game-panel { padding: 28px 16px; border-radius: 18px; }
+    .answer-area { width: 100%; }
+    .result-stats { flex-wrap: wrap; }
+    .result-stats div { min-width: 90px; padding: 0 12px; }
+    .result-actions { flex-direction: column; align-items: stretch; }
+    .result-actions .button { width: 100%; }
+}
+
+@media (max-width: 380px) {
+    .brand-wordmark { display: none; }
+    .main-nav { gap: 9px; }
+    .navbar-tools { gap: 9px; }
+    .daily-banner { padding: 16px; }
+    .daily-art { display: none; }
+    .daily-copy { flex-basis: 100%; }
+}
 .profile-controls-card .profile-settings { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 14px; row-gap: 8px; }
 .profile-controls-card .profile-settings h3 { grid-column: 1 / -1; margin: 0; }
 .profile-controls-card .profile-class-block { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 1.3fr); align-items: center; gap: 10px; }
