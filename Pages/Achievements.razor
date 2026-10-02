@@ -1,0 +1,29 @@
+@page "/achievements"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject ProgressService Progress
+
+<PageTitle>Pasiekimai | nesimokau.lt</PageTitle>
+
+<section class="tool-page">
+    <p class="eyebrow">TAVO RITMAS</p><h1>Pasiekimai ir serija</h1>
+    <div class="streak-summary"><span>🔥</span><div><strong>@progress.Streak dienų serija</strong><small>Žaisk bent vieną pratimą kasdien.</small></div></div>
+    <div class="achievement-grid full-page-achievements">
+        @foreach (var achievement in AchievementDefinitions)
+        {
+            <div class="achievement-card @(progress.UnlockedAchievementIds.Contains(achievement.Id) ? "is-earned" : "")"><span>@achievement.Icon</span><div><strong>@achievement.Title</strong><small>@achievement.Description</small></div></div>
+        }
+    </div>
+</section>
+
+@code {
+    private StudentProgress progress = new();
+    private static readonly (string Id, string Icon, string Title, string Description)[] AchievementDefinitions =
+    [
+        ("first-step", "🌱", "Pirmas žingsnis", "Užbaik pirmą žaidimą"), ("first-mistake", "🧩", "Pirma klaida", "Mokykis iš klaidų"),
+        ("perfect-5", "✨", "Švarus penketas", "5 pamokos be klaidų"), ("perfect-10", "🌟", "Dešimtukas", "10 pamokų be klaidų"),
+        ("perfect-20", "💫", "Spindintis kelias", "20 pamokų be klaidų"), ("perfect-50", "👑", "Nepralenkiamas", "50 pamokų be klaidų"),
+        ("streak-7", "🔥", "Savaitės ugnelė", "7 dienų serija"), ("score-500", "⭐", "Taškų žvaigždė", "500 taškų viename žaidime"), ("games-25", "🏅", "Atkaklus mokinys", "25 užbaigti žaidimai")
+    ];
+    protected override async Task OnInitializedAsync() => progress = await Progress.GetAsync();
+}

@@ -1,0 +1,120 @@
+﻿@page "/"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@using System.Text.RegularExpressions
+@inject GameCatalogService Catalog
+@inject ProgressService Progress
+@implements IDisposable
+
+<PageTitle>Žaisk ir mokykis | nesimokau.lt</PageTitle>
+
+<div class="dashboard-head">
+    <div>
+        <p class="eyebrow">Tavo mokymosi erdvė <span class="spark">✦</span></p>
+        <h1>Labas<span class="gradient-text">!</span></h1>
+        <p class="subtitle">Pasirink iššūkį ir paversk šiandieną savo geriausia mokymosi diena.</p>
+    </div>
+    <button class="level-card level-card-@CurrentLevel.Color" @onclick="() => showLevels = true" title="Peržiūrėti lygius">
+        <div class="level-top"><span class="level-label">LYGIS @CurrentLevel.Number</span><strong>⚡ @progress.Xp Energija</strong></div>
+        <div class="level-identity"><span class="level-badge badge-@CurrentLevel.Color">@CurrentLevel.Badge</span><strong>@CurrentLevel.Title</strong></div>
+        <div class="level-bar"><span style="width:@LevelProgress%"></span></div>
+        <small>@(NextLevel is null ? "Pasiektas aukščiausias lygis" : $"{NextLevel.RequiredXp - progress.Xp} Energijos iki kito lygio")</small>
+    </button>
+</div>
+
+@if (showLevels)
+{
+    <div class="level-modal-backdrop" @onclick="() => showLevels = false">
+        <section class="levels-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="levels-title">
+            <button class="modal-close" @onclick="() => showLevels = false" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">TAVO KELIAS</p><h2 id="levels-title">Lygių ženkliukai</h2><p class="modal-subtitle">Rink energiją ir kopk vis aukščiau.</p>
+            <div class="levels-list">
+                @foreach (var level in LevelCatalog.All)
+                {
+                    <div class="level-row @(level.Number == CurrentLevel.Number ? "current" : "")"><span class="level-badge badge-@level.Color">@level.Badge</span><div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp Energija</small></div>@if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }</div>
+                }
+            </div>
+        </section>
+    </div>
+}
+
+<section class="stats-grid" aria-label="Tavo statistika">
+    <div class="stat-card stat-purple"><span class="stat-icon">⚡</span><div><strong>@progress.Xp</strong><small>Surinkta energija</small></div></div>
+    <div class="stat-card stat-gold"><span class="stat-icon">🪙</span><div><strong>@progress.Coins</strong><small>Sukauptos monetos</small></div></div>
+    <div class="stat-card stat-blue"><span class="stat-icon">◷</span><div><strong>@progress.GamesCompleted</strong><small>Užbaigti žaidimai</small></div></div>
+</section>
+
+<section class="daily-banner">
+    <div class="daily-art"><span>✦</span><span>Aa</span><span>✓</span></div>
+    <div class="daily-copy"><span class="badge badge-light">DIENOS IŠŠŪKIS</span><h2>Žodžių diktantas</h2><p>5 žodžiai. 1 minutė. Ar surinksi nepriekaištingą rezultatą?</p></div>
+    <NavLink href="games/dictation?mode=daily" class="button button-light">Pradėti <span>→</span></NavLink>
+</section>
+
+<div class="section-heading"><div><p class="eyebrow">Mokykis žaisdamas</p><h2>Pasirink savo iššūkį</h2><span class="class-context">Rodoma pagal @ClassLabel</span></div><span class="catalog-count">@FilteredGameCount žaidimų</span></div>
+
+<div class="catalog-controls">
+    <label class="search-box"><span>⌕</span><input @bind="search" placeholder="Ieškoti žaidimo..." aria-label="Ieškoti žaidimo" /></label>
+    <div class="filter-list" role="group" aria-label="Dalyko filtrai">
+        @foreach (var subject in Subjects)
+        {
+            <button class="filter-chip @(selectedSubject == subject ? "active" : "")" @onclick="() => selectedSubject = subject">@subject</button>
+        }
+    </div>
+</div>
+
+<div class="game-grid">
+    @foreach (var game in FilteredGames)
+    {
+        <article class="game-card @(game.Status == GameStatus.ComingSoon ? "locked" : "")">
+            <div class="game-card-top"><span class="game-icon icon-@game.Accent">@game.Icon</span><button class="bookmark-button @(progress.BookmarkedGameIds.Contains(game.Id) ? "is-bookmarked" : "")" @onclick="() => ToggleBookmark(game.Id)" @onclick:stopPropagation="true" aria-label="Išsaugoti žiūrėjimui vėliau">★</button></div>
+            <h3>@game.Title</h3><p>@game.Description</p>
+            <div class="game-meta"><span>@game.Subject</span><span>◷ @game.EstimatedMinutes min</span></div>
+            @if (game.Status == GameStatus.Ready)
+            { <NavLink href="@($"games/{game.Id}")" class="card-action">Žaisti <span>→</span></NavLink> }
+            else
+            { <div class="coming-soon">Netrukus <span>✦</span></div> }
+        </article>
+    }
+
+</div>
+
+@code {
+    private StudentProgress progress = new();
+    private bool showLevels;
+    private string selectedSubject = "Visi";
+    private string search = string.Empty;
+    private readonly string[] Subjects = ["Visi", "Lietuvių kalba", "Matematika", "Anglų kalba", "Istorija", "Gamtos mokslai"];
+    private LevelDefinition CurrentLevel => LevelCatalog.All.Last(level => level.RequiredXp <= progress.Xp);
+    private LevelDefinition? NextLevel => LevelCatalog.All.FirstOrDefault(level => level.RequiredXp > progress.Xp);
+    private int LevelProgress => NextLevel is null ? 100 : Math.Clamp((progress.Xp - CurrentLevel.RequiredXp) * 100 / (NextLevel.RequiredXp - CurrentLevel.RequiredXp), 5, 100);
+    private int FilteredGameCount => FilteredGames.Count();
+    private string ClassLabel => progress.ClassGroup switch { "1-2" => "1–2 klasę", "3-4" => "3–4 klasę", "5-6" => "5–6 klasę", "7-8" => "7–8 klasę", "9-10" => "9–10 klasę", "11-12" => "11–12 klasę", _ => "5–6 klasę" };
+    private IEnumerable<GameDefinition> FilteredGames => Catalog.Games.Where(g => IsForSelectedClass(g) && (selectedSubject == "Visi" || g.Subject == selectedSubject) && (string.IsNullOrWhiteSpace(search) || g.Title.Contains(search, StringComparison.OrdinalIgnoreCase) || g.Description.Contains(search, StringComparison.OrdinalIgnoreCase)));
+
+    private bool IsForSelectedClass(GameDefinition game)
+    {
+        var selected = progress.ClassGroup.Split('-').Select(int.Parse).ToArray();
+        var grades = Regex.Matches(game.Grades, @"\d+").Select(match => int.Parse(match.Value)).ToArray();
+        return grades.Length >= 2 && grades[0] <= selected[1] && grades[1] >= selected[0];
+    }
+
+    private async Task ToggleBookmark(string gameId)
+    {
+        await Progress.ToggleBookmarkAsync(gameId);
+        progress = await Progress.GetAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        progress = await Progress.GetAsync();
+        Progress.Changed += HandleProgressChanged;
+    }
+
+    private void HandleProgressChanged() => _ = InvokeAsync(async () =>
+    {
+        progress = await Progress.GetAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => Progress.Changed -= HandleProgressChanged;
+}

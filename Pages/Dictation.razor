@@ -1,0 +1,186 @@
+@page "/games/dictation"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject ProgressService Progress
+@inject NavigationManager Navigation
+
+
+<PageTitle>Žodžių diktantas | nesimokau.lt</PageTitle>
+
+@if (loading)
+{
+    <div class="loading-state"><span class="loader"></span><p>Ruošiame iššūkį...</p></div>
+}
+else if (!started)
+{
+    <section class="difficulty-screen">
+        <p class="eyebrow">PASIRINK SUNKUMĄ</p>
+        <h1>Žodžių diktantas</h1>
+        <p class="subtitle">Pasirink lygį prieš pradedant.</p>
+        <div class="difficulty-options">
+            @foreach (var option in difficultyOptions)
+            {
+                <button class="difficulty-option @(selectedDifficulty == option.Key ? "selected" : "")" @onclick="() => selectedDifficulty = option.Key"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
+            }
+        </div>
+        <button class="button button-primary" @onclick="StartGame" disabled="@(selectedDifficulty is null)">Toliau <span>→</span></button>
+    </section>
+}
+else if (finished)
+{
+    <section class="result-screen">
+        <div class="result-burst">✦</div><p class="eyebrow">Iššūkis baigtas!</p><h1>Puikus darbas<span class="gradient-text">!</span></h1>
+        <p class="subtitle">Kiekvienas bandymas padeda rašyti dar užtikrinčiau.</p>
+        <div class="result-score"><strong>@score</strong><span>taškai</span></div>
+        <div class="result-stats"><div><strong>@Accuracy%</strong><span>Tikslumas</span></div><div><strong>⚡ +@earnedXp</strong><span>Uždirbta energija</span></div><div><strong>🪙 +@earnedCoins</strong><span>Uždirbtos monetos</span></div></div>
+        <div class="result-actions"><button class="button button-primary" @onclick="Restart">Žaisti dar kartą <span>↗</span></button><button class="button button-ghost" @onclick="GoHome">Grįžti į pradžią</button></div>
+    </section>
+
+    @if (levelUp is not null)
+    {
+        <div class="levelup-overlay">
+            <section class="levelup-popup">
+                <p class="eyebrow">SVEIKINAME!</p>
+                <h2>Pakilai į @levelUp.Number lygį</h2>
+                <div class="levelup-badge badge-@levelUp.Color">@levelUp.Badge</div>
+                <p>@levelUp.Title</p>
+                <button class="button button-primary" @onclick="DismissLevelUp">Puiku!</button>
+            </section>
+        </div>
+    }
+}
+else if (current is not null)
+{
+    <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="true" />
+    <div class="game-header"><button class="back-button" @onclick="GoHome" aria-label="Grįžti">←</button><div class="game-title"><span class="game-icon icon-violet">Aa</span><div><p class="eyebrow">LIETUVIŲ KALBA</p><h1>Žodžių diktantas</h1></div></div><div class="lives" aria-label="Liko gyvybių">@for (var i = 0; i < lives; i++) { <span>♥</span> }</div></div>
+    <div class="game-progress"><div><span>0@(@index + 1) / @questions.Count</span><span>@score taškai</span></div><div class="progress-track"><span style="width:@ProgressPercent%"></span></div></div>
+    <section class="game-panel">
+        <div class="tip-card tip-card-inline"><span>✦</span><div><strong>Mažas patarimas</strong><p>Atkreipk dėmesį į nosines balses ą, ę, į, ų, ū ir minkštąsias raides.</p></div></div>
+        <div class="prompt-label"><span class="prompt-pulse"></span> IŠKLAUSYK IR PARAŠYK</div>
+        <div class="listen-card"><span class="listen-icon">◖</span><div><strong>Žodis paruoštas</strong><small>Paspausk mygtuką ir išklausyk lietuviškai.</small></div></div>
+        <p class="prompt-hint">Neskubėk — gali perklausyti žodį arba frazę tiek kartų, kiek reikia.</p>
+        <div class="answer-area"><input @ref="answerInput" @bind="answer" @bind:event="oninput" @onkeydown="HandleKeyDown" placeholder="Įrašyk išgirstą žodį..." autocomplete="off" aria-label="Įrašyk išgirstą žodį" /><button class="speak-button" @onclick="Speak" title="Išklausyti žodį">◖</button></div>
+        @if (feedback is not null)
+        {
+            <div class="feedback @(isCorrect ? "feedback-good" : "feedback-bad")"><strong>@(isCorrect ? "Teisingai!" : "Dar kartą pagalvok")</strong><span>@feedback</span></div>
+            <button class="button button-primary next-button" @onclick="Next">@(isLast ? "Pamatyti rezultatą" : "Kitas žodis") <span>→</span></button>
+        }
+        else
+        { <button class="button button-primary submit-button" @onclick="Submit" disabled="@string.IsNullOrWhiteSpace(answer)">Patikrinti <span>↗</span></button> }
+        <p class="keyboard-hint">Patikrinti atsakymą: paspausk <kbd>ENTER</kbd></p>
+    </section>
+}
+
+@code {
+    private readonly (string Key, string Title, string Hint, string Icon)[] difficultyOptions =
+    [
+        ("Lengvas", "1 lygis", "Daugiau aiškių žodžių", "✎"),
+        ("Vidutinis", "2 lygis", "Subalansuotas iššūkis", "✎✎"),
+        ("Sudėtingas", "3 lygis", "Sudėtingesni žodžiai/frazės", "✎✎✎")
+    ];
+
+    private List<DictationQuestion> allQuestions = [];
+    private List<DictationQuestion> questions = [];
+    private DictationQuestion? current;
+    private ElementReference answerInput;
+    private string answer = string.Empty;
+    private string? feedback;
+    private bool isCorrect;
+    private bool loading = true;
+    private bool started;
+    private bool finished;
+    private int index;
+    private int score;
+    private int wrongAnswers;
+    private int lives = 3;
+    private int earnedXp;
+    private int earnedCoins;
+    private LevelDefinition? levelUp;
+    private bool dailyMode;
+    private string? selectedDifficulty;
+    [Parameter, SupplyParameterFromQuery(Name = "difficulty")] public string? Difficulty { get; set; }
+    private bool isLast => index == questions.Count - 1;
+    private int ProgressPercent => questions.Count == 0 ? 0 : (index + 1) * 100 / questions.Count;
+    private int Accuracy => questions.Count == 0 ? 0 : Math.Max(0, (questions.Count - wrongAnswers) * 100 / questions.Count);
+
+    protected override async Task OnInitializedAsync()
+    {
+        dailyMode = Navigation.Uri.Contains("mode=daily", StringComparison.OrdinalIgnoreCase);
+        var source = await Http.GetFromJsonAsync<List<DictationQuestion>>("data/dictation.json") ?? [];
+        allQuestions = source.Where(question => !dailyMode || question.Category == "Žodžiai").ToList();
+        loading = false;
+        if (difficultyOptions.Any(option => option.Key == Difficulty))
+        {
+            selectedDifficulty = Difficulty;
+            await StartGame();
+        }
+    }
+
+    private async Task StartGame()
+    {
+        if (selectedDifficulty is null) return;
+        var preferred = allQuestions.Where(q => q.Difficulty == selectedDifficulty).OrderBy(_ => Random.Shared.Next()).Take(5).ToList();
+        if (preferred.Count < 5)
+        {
+            var filler = allQuestions.Where(q => q.Difficulty != selectedDifficulty).OrderBy(_ => Random.Shared.Next()).Take(5 - preferred.Count);
+            preferred.AddRange(filler);
+        }
+
+        questions = preferred.OrderBy(_ => Random.Shared.Next()).Take(5).ToList();
+        current = questions.FirstOrDefault();
+        started = current is not null;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(60);
+        await Speak();
+    }
+
+    private async Task Submit()
+    {
+        if (current is null || feedback is not null || string.IsNullOrWhiteSpace(answer)) return;
+        isCorrect = string.Equals(answer.Trim(), current.Answer, StringComparison.OrdinalIgnoreCase);
+        if (isCorrect) { score += 100; feedback = "Puikiai! Tavo atsakymas parašytas taisyklingai."; }
+        else { wrongAnswers++; lives--; feedback = $"Teisingas atsakymas: {current.Answer}. {current.Explanation}"; }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") await Submit(); }
+
+    private async Task Next()
+    {
+        if (isLast)
+        {
+            finished = true;
+            var savedProgress = await Progress.GetAsync();
+            var isRepeat = savedProgress.PracticeDifficulties.ContainsKey("dictation");
+            var previousMistakes = savedProgress.PracticeMistakeCounts.GetValueOrDefault("dictation");
+            earnedXp = isRepeat && Accuracy == 100 ? previousMistakes * EnergyPerCorrect : score / 100 * EnergyPerCorrect;
+            earnedCoins = isRepeat ? (Accuracy == 100 ? previousMistakes * CoinsPerCorrect : 0) : score / 100 * CoinsPerCorrect + (Accuracy == 100 ? 2 : 0);
+            levelUp = await Progress.SaveResultAsync(new GameResult("dictation", "Žodžių diktantas", score, Accuracy, earnedXp, earnedCoins, DateTime.Now)
+            {
+                ClassGroup = savedProgress.ClassGroup,
+                CorrectAnswers = questions.Count - wrongAnswers,
+                IncorrectAnswers = wrongAnswers
+            });
+            if (Accuracy == 100) await Progress.ClearPracticeTargetAsync("dictation");
+            else await Progress.SavePracticeDifficultyAsync("dictation", selectedDifficulty!, wrongAnswers);
+            if (levelUp is not null) await JS.InvokeVoidAsync("nesimokau.celebrateLevelUp");
+            return;
+        }
+        index++; current = questions[index]; answer = string.Empty; feedback = null; isCorrect = false; await InvokeAsync(StateHasChanged); await Task.Delay(50); await answerInput.FocusAsync();
+    }
+
+    private void Restart() => Navigation.NavigateTo("games/dictation", true);
+    private void GoHome() => Navigation.NavigateTo("/");
+    private int EnergyPerCorrect => selectedDifficulty switch { "Lengvas" => 7, "Vidutinis" => 10, "Sudėtingas" => 14, _ => 7 };
+    private int CoinsPerCorrect => selectedDifficulty switch { "Lengvas" => 1, "Vidutinis" => 2, "Sudėtingas" => 3, _ => 1 };
+    private async Task Speak()
+    {
+        if (current is not null)
+            await JS.InvokeVoidAsync("nesimokau.speak", current.Prompt);
+    }
+
+    private void DismissLevelUp() => levelUp = null;
+    private async Task ConfirmLeave(LocationChangingContext context) { if (!finished && !await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti.")) context.PreventNavigation(); }
+}

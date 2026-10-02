@@ -1,0 +1,275 @@
+﻿@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject ProgressService Progress
+@inject IJSRuntime JS
+@inject GameCatalogService Catalog
+@implements IDisposable
+
+<header class="site-header">
+    <a class="brand" href="" aria-label="nesimokau.lt pradžia">
+        <img class="brand-logo" src="images/nemoku_lt-logo.png?v=4" alt="nesimokau.lt" />
+        <span class="brand-wordmark">nesimokau<span>.lt</span></span>
+    </a>
+    <nav class="main-nav" aria-label="Pagrindinė navigacija">
+        <div class="learn-menu subjects-menu @(subjectsMenuOpen ? "is-open" : "")" @onmouseenter="OpenSubjectsMenu" @onmouseleave="CloseSubjectsMenu">
+            <button class="learn-trigger" type="button" aria-haspopup="menu" aria-expanded="@subjectsMenuOpen" @onclick="ToggleSubjectsMenu">Dalykai <span class="menu-chevron">⌄</span></button>
+            <div class="learn-dropdown" role="menu" aria-label="Dalykų meniu">
+                <div class="dropdown-heading"><span>✦</span><div><strong>Dalykų meniu</strong><small>Visi dalykai ir jų žaidimai</small></div></div>
+                <NavLink href="/" role="menuitem" @onclick="CloseSubjectsMenu"><span class="dropdown-icon icon-mint">◎</span><span><strong>Visi dalykai</strong><small>Rodyti visus pratimus</small></span><b>→</b></NavLink>
+                <div class="subject-group @(lithuanianMenuOpen ? "is-open" : "")" @onmouseenter="OpenLithuanianMenu" @onmouseleave="CloseLithuanianMenu">
+                    <button class="subject-trigger" type="button" aria-haspopup="menu" aria-expanded="@lithuanianMenuOpen" @onclick="ToggleLithuanianMenu"><span class="dropdown-icon icon-violet">Aa</span><span><strong>Lietuvių kalba</strong><small>Kalbos žaidimai</small></span><b aria-hidden="true">→</b></button>
+                    <div class="subject-submenu">
+                        <NavLink class="diagnostic-link" href="diagnostic/Lietuvių kalba" @onclick="CloseSubjectsMenu">🧭 Diagnostinis testas</NavLink>
+                        <NavLink href="games/dictation" @onclick="CloseSubjectsMenu">Žodžių diktantas</NavLink>
+                        <NavLink href="games/missing-letters" @onclick="CloseSubjectsMenu">Praleistos raidės</NavLink>
+                        <NavLink href="daily" @onclick="CloseSubjectsMenu">Dienos iššūkis</NavLink>
+                    </div>
+                </div>
+                <div class="subject-group">
+                    <button class="subject-trigger" type="button" aria-expanded="false" disabled><span class="dropdown-icon icon-blue">∑</span><span><strong>Matematika</strong><small>Netrukus</small></span><b aria-hidden="true">→</b></button>
+                    <div class="subject-submenu">
+                        <span>Ruošiama</span>
+                    </div>
+                </div>
+                <div class="subject-group">
+                    <button class="subject-trigger" type="button" aria-expanded="false" disabled><span class="dropdown-icon icon-mint">🌍</span><span><strong>Istorija ir gamta</strong><small>Netrukus</small></span><b aria-hidden="true">→</b></button>
+                    <div class="subject-submenu">
+                        <span>Ruošiama</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="navbar-tools">
+            <NavLink class="nav-action" href="achievements"><span>🏆</span> Pasiekimai</NavLink>
+            <NavLink class="nav-action" href="diagnostics"><span>📊</span> Rezultatai</NavLink>
+            <NavLink class="nav-action" href="media-library"><span>🎬</span> Mediateka</NavLink>
+            <NavLink class="nav-action nav-practice" href="practice"><span>✦</span> Treniruotis</NavLink>
+        </div>
+    </nav>
+    <div class="header-actions">
+        <div class="resource-pill energy-pill" title="Energija"><span>⚡</span><strong>@progress.Xp</strong></div>
+        <div class="resource-pill coins-pill" title="Monetos"><span>🪙</span><strong>@progress.Coins</strong></div>
+        <button class="theme-toggle" @onclick="ToggleTheme" aria-label="Pakeisti temą" title="Pakeisti šviesią arba tamsią temą">@(progress.Theme == "light" ? "☀" : "☾")</button>
+        <NavLink class="@($"profile-button avatar-{AvatarBackgroundClass}")" href="profile" aria-label="Mokinio profilis">@if (!string.IsNullOrWhiteSpace(progress.CustomAvatarDataUrl)) { <img class="custom-avatar-image" src="@progress.CustomAvatarDataUrl" alt="" /> } else { @AvatarSymbol }</NavLink>
+    </div>
+</header>
+
+@if (achievementToast is not null)
+{
+    <aside class="achievement-toast" role="status" aria-live="polite">
+        <span>@achievementToast.Icon</span>
+        <div><small>NAUJAS PASIEKIMAS</small><strong>@achievementToast.Title</strong><p>@achievementToast.Description</p></div>
+        <button @onclick="DismissAchievementToast" aria-label="Uždaryti pranešimą">×</button>
+    </aside>
+}
+
+@if (achievementsOpen)
+{
+    <div class="level-modal-backdrop" @onclick="CloseAchievements">
+        <section class="levels-modal achievements-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="achievements-title">
+            <button class="modal-close" @onclick="CloseAchievements" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">TAVO RITMAS</p>
+            <h2 id="achievements-title">Pasiekimai ir serija</h2>
+            <div class="streak-summary"><span>🔥</span><div><strong>@progress.Streak dienų serija</strong><small>Žaisk bent vieną pratimą kasdien.</small></div></div>
+            <div class="streak-calendar" aria-label="Einamo mėnesio aktyvumas">
+                @foreach (var day in CurrentMonthDays)
+                {
+                    <div class="calendar-day @(GamesOn(day) > 0 ? "is-active" : IsMissedDay(day) ? "is-missed" : "")" title="@day.ToString("yyyy-MM-dd"): @GamesOn(day) žaidimų"><small>@day.Day</small><span>🔥</span></div>
+                }
+
+            </div>
+            <div class="section-heading streak-chart-heading"><div><p class="eyebrow">Paskutinės 10 dienų</p><h3>Atliktų pratimų kreivė</h3></div></div>
+            <div class="streak-chart" aria-label="Paskutinių dešimties dienų žaidimų grafikas">
+                @foreach (var day in LastTenDays)
+                {
+                    var count = GamesOn(day);
+                    <div class="streak-chart-day"><span style="height:@(Math.Max(8, count * 24))px"></span><small>@day.ToString("dd")</small><b>@count</b></div>
+                }
+            </div>
+            <div class="achievement-grid">
+                <div class="achievement-card @(progress.GamesCompleted >= 1 ? "is-earned" : "")"><span>🌱</span><div><strong>Pirmas žingsnis</strong><small>Užbaik pirmą žaidimą</small></div></div>
+                <div class="achievement-card @(HasMistake ? "is-earned" : "")"><span>🧩</span><div><strong>Pirma klaida</strong><small>Padaryk pirmą klaidą ir mokykis toliau</small></div></div>
+                <div class="achievement-card @(HasPerfectRun(5) ? "is-earned" : "")"><span>✨</span><div><strong>Švarus penketas</strong><small>5 pamokos iš eilės be klaidų</small></div></div>
+                <div class="achievement-card @(HasPerfectRun(10) ? "is-earned" : "")"><span>🌟</span><div><strong>Dešimtukas</strong><small>10 pamokų iš eilės be klaidų</small></div></div>
+                <div class="achievement-card @(HasPerfectRun(20) ? "is-earned" : "")"><span>💫</span><div><strong>Spindintis kelias</strong><small>20 pamokų iš eilės be klaidų</small></div></div>
+                <div class="achievement-card @(HasPerfectRun(50) ? "is-earned" : "")"><span>👑</span><div><strong>Nepralenkiamas</strong><small>50 pamokų iš eilės be klaidų</small></div></div>
+                <div class="achievement-card @(progress.Streak >= 7 ? "is-earned" : "")"><span>🔥</span><div><strong>Savaitės ugnelė</strong><small>Išlaikyk 7 dienų seriją</small></div></div>
+                <div class="achievement-card @(progress.BestScore >= 500 ? "is-earned" : "")"><span>⭐</span><div><strong>Taškų žvaigždė</strong><small>Surink 500 taškų viename žaidime</small></div></div>
+                <div class="achievement-card @(progress.GamesCompleted >= 25 ? "is-earned" : "")"><span>🏅</span><div><strong>Atkaklus mokinys</strong><small>Užbaik 25 žaidimus</small></div></div>
+            </div>
+        </section>
+    </div>
+}
+
+@if (practiceOpen)
+{
+    <div class="level-modal-backdrop" @onclick="ClosePractice">
+        <section class="levels-modal practice-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="practice-title">
+            <button class="modal-close" @onclick="ClosePractice" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">TIKSLINĖ TRENIRUOTĖ</p>
+            <h2 id="practice-title">Pakartok tai, kas buvo sunkiau</h2>
+            <p class="modal-subtitle">Pasirink dalyką, o tada pratimą, kuriame anksčiau pasitaikė klaidų.</p>
+            <div class="practice-subjects" role="group" aria-label="Pasirink dalyką">
+                @foreach (var subject in PracticeSubjects)
+                {
+                    <button class="filter-chip @(practiceSubject == subject ? "active" : "")" @onclick="() => practiceSubject = subject">@subject</button>
+                }
+            </div>
+            @if (!PracticeTargets.Any())
+            {
+                <div class="practice-empty"><span>🌟</span><strong>Kol kas nėra ką kartoti</strong><small>Užbaik pratimą, o mažesnio nei 100% tikslumo bandymai atsiras čia.</small></div>
+            }
+            else
+            {
+                <div class="practice-targets">
+                    @foreach (var target in PracticeTargets)
+                    {
+                        <NavLink class="practice-target" href="@($"games/{target.Game.Id}")" @onclick="ClosePractice">
+                            <span class="game-icon icon-@target.Game.Accent">@target.Game.Icon</span>
+                            <span><strong>@target.Game.Title</strong><small>@target.Game.Subject · ankstesnis tikslumas @target.Accuracy%</small></span>
+                            <b>Pakartoti →</b>
+                        </NavLink>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+}
+
+@if (mediaLibraryOpen)
+{
+    <div class="level-modal-backdrop" @onclick="CloseMediaLibrary">
+        <section class="levels-modal media-library-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="media-library-title">
+            <button class="modal-close" @onclick="CloseMediaLibrary" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">MOKYMOSI MEDIATEKA</p>
+            <h2 id="media-library-title">Vaizdo pamokos</h2>
+            <p class="modal-subtitle">Rinkis dalyką arba ieškok temos — nauji įrašai bus pridėti čia.</p>
+            <label class="media-search"><span>⌕</span><input @bind="mediaSearch" @bind:event="oninput" placeholder="Ieškoti vaizdo pamokos..." aria-label="Ieškoti vaizdo pamokos" /></label>
+            <div class="practice-subjects" role="group" aria-label="Pasirink mediatekos dalyką">
+                @foreach (var subject in MediaSubjects)
+                {
+                    <button class="filter-chip @(mediaSubject == subject ? "active" : "")" @onclick="() => mediaSubject = subject">@subject</button>
+                }
+            </div>
+            <div class="media-library-empty"><span>🎥</span><strong>@(string.IsNullOrWhiteSpace(mediaSearch) ? "Vaizdo pamokos jau pakeliui" : $"„{mediaSearch}“ dar nerasta")</strong><small>@(mediaSubject == "Visi" ? "Pasirink dalyką, kad vėliau matytum jo vaizdo pamokas." : $"{mediaSubject} vaizdo pamokos bus rodomos čia.")</small></div>
+        </section>
+    </div>
+}
+
+@code {
+    private StudentProgress progress = new();
+    private bool subjectsMenuOpen;
+    private bool lithuanianMenuOpen;
+    private bool achievementsOpen;
+    private bool practiceOpen;
+    private bool mediaLibraryOpen;
+    private string practiceSubject = "Visi";
+    private string mediaSubject = "Visi";
+    private string mediaSearch = string.Empty;
+    private AchievementDefinition? achievementToast;
+
+    private string AvatarSymbol => AvatarCatalog.All.FirstOrDefault(x => x.Id == progress.AvatarId)?.Symbol ?? "🙂";
+    private string AvatarBackgroundClass => string.IsNullOrWhiteSpace(progress.AvatarBackground) ? "bg-violet" : progress.AvatarBackground;
+
+    protected override async Task OnInitializedAsync()
+    {
+        progress = await Progress.GetAsync();
+        Progress.Changed += HandleProgressChanged;
+        await JS.InvokeVoidAsync("nesimokau.setTheme", progress.Theme);
+    }
+
+    private void OpenSubjectsMenu() => subjectsMenuOpen = true;
+    private void CloseSubjectsMenu()
+    {
+        subjectsMenuOpen = false;
+        lithuanianMenuOpen = false;
+    }
+
+    private void ToggleSubjectsMenu() => subjectsMenuOpen = !subjectsMenuOpen;
+    private void OpenLithuanianMenu() => lithuanianMenuOpen = true;
+    private void CloseLithuanianMenu() => lithuanianMenuOpen = false;
+    private void ToggleLithuanianMenu() => lithuanianMenuOpen = !lithuanianMenuOpen;
+    private IEnumerable<DateTime> CurrentMonthDays => Enumerable.Range(1, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month)).Select(day => new DateTime(DateTime.Today.Year, DateTime.Today.Month, day));
+    private IEnumerable<DateTime> LastTenDays => Enumerable.Range(0, 10).Select(day => DateTime.Today.AddDays(-9 + day));
+    private IEnumerable<string> PracticeSubjects => ["Visi", .. Catalog.Games.Where(game => game.Status == GameStatus.Ready).Select(game => game.Subject).Distinct()];
+    private IEnumerable<string> MediaSubjects => ["Visi", .. Catalog.Games.Select(game => game.Subject).Distinct()];
+    private IEnumerable<PracticeTarget> PracticeTargets => Catalog.Games
+        .Where(game => game.Status == GameStatus.Ready && (practiceSubject == "Visi" || game.Subject == practiceSubject))
+        .Select(game => new { Game = game, Result = progress.RecentResults.Where(result => result.GameId == game.Id).OrderBy(result => result.Accuracy).FirstOrDefault() })
+        .Where(item => item.Result is not null && item.Result.Accuracy < 100)
+        .Select(item => new PracticeTarget(item.Game, item.Result!.Accuracy));
+    private int GamesOn(DateTime day) => progress.RecentResults.Count(result => result.PlayedAt.ToLocalTime().Date == day.Date);
+    private bool IsMissedDay(DateTime day) => day.Date < DateTime.Today && GamesOn(day) == 0 && progress.RecentResults.Any(result => result.PlayedAt.ToLocalTime().Date < day.Date);
+    private bool HasMistake => progress.RecentResults.Any(result => result.Accuracy < 100);
+    private bool HasPerfectRun(int required)
+    {
+        var run = 0;
+        foreach (var result in progress.RecentResults.OrderBy(result => result.PlayedAt))
+        {
+            run = result.Accuracy == 100 ? run + 1 : 0;
+            if (run >= required) return true;
+        }
+
+        return false;
+    }
+    private IEnumerable<AchievementDefinition> EarnedAchievements
+    {
+        get
+        {
+            if (progress.GamesCompleted >= 1) yield return new("first-step", "🌱", "Pirmas žingsnis", "Užbaigei pirmą žaidimą.");
+            if (HasMistake) yield return new("first-mistake", "🧩", "Pirma klaida", "Klaidos padeda išmokti dar daugiau.");
+            if (HasPerfectRun(5)) yield return new("perfect-5", "✨", "Švarus penketas", "5 pamokos iš eilės be klaidų.");
+            if (HasPerfectRun(10)) yield return new("perfect-10", "🌟", "Dešimtukas", "10 pamokų iš eilės be klaidų.");
+            if (HasPerfectRun(20)) yield return new("perfect-20", "💫", "Spindintis kelias", "20 pamokų iš eilės be klaidų.");
+            if (HasPerfectRun(50)) yield return new("perfect-50", "👑", "Nepralenkiamas", "50 pamokų iš eilės be klaidų.");
+            if (progress.Streak >= 7) yield return new("streak-7", "🔥", "Savaitės ugnelė", "Išlaikei 7 dienų seriją.");
+            if (progress.BestScore >= 500) yield return new("score-500", "⭐", "Taškų žvaigždė", "Viename žaidime surinkai 500 taškų.");
+            if (progress.GamesCompleted >= 25) yield return new("games-25", "🏅", "Atkaklus mokinys", "Užbaigei 25 žaidimus.");
+        }
+    }
+    private void OpenAchievements() => achievementsOpen = true;
+    private void CloseAchievements() => achievementsOpen = false;
+    private void OpenPractice()
+    {
+        practiceSubject = "Visi";
+        practiceOpen = true;
+    }
+    private void ClosePractice() => practiceOpen = false;
+    private void OpenMediaLibrary()
+    {
+        mediaSubject = "Visi";
+        mediaSearch = string.Empty;
+        mediaLibraryOpen = true;
+    }
+    private void CloseMediaLibrary() => mediaLibraryOpen = false;
+    private void DismissAchievementToast() => achievementToast = null;
+
+    private async Task ToggleTheme()
+    {
+        var theme = progress.Theme == "dark" ? "light" : "dark";
+        progress.Theme = theme;
+        await JS.InvokeVoidAsync("nesimokau.setTheme", theme);
+        await Progress.SaveThemeAsync(theme);
+    }
+
+    private void HandleProgressChanged() => _ = InvokeAsync(async () =>
+    {
+        progress = await Progress.GetAsync();
+        var earned = EarnedAchievements.ToList();
+        var newIds = await Progress.UnlockAchievementsAsync(earned.Select(achievement => achievement.Id));
+        var newest = earned.FirstOrDefault(achievement => newIds.Contains(achievement.Id));
+        if (newest is not null)
+        {
+            achievementToast = newest;
+            StateHasChanged();
+            await Task.Delay(5500);
+            if (achievementToast?.Id == newest.Id) achievementToast = null;
+        }
+        StateHasChanged();
+    });
+
+    public void Dispose() => Progress.Changed -= HandleProgressChanged;
+
+    private sealed record PracticeTarget(GameDefinition Game, int Accuracy);
+    private sealed record AchievementDefinition(string Id, string Icon, string Title, string Description);
+}

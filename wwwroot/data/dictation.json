@@ -1,0 +1,13 @@
+[
+  { "id": 1, "prompt": "miškas", "answer": "miškas", "explanation": "Žodyje rašome minkštąją š raidę: miškas.", "difficulty": "Lengvas", "category": "Žodžiai" },
+  { "id": 2, "prompt": "žvaigždė", "answer": "žvaigždė", "explanation": "Prisimink: žvaigždė turi dvi minkštąsias raides – ž ir dž.", "difficulty": "Vidutinis", "category": "Žodžiai" },
+  { "id": 3, "prompt": "ąžuolas", "answer": "ąžuolas", "explanation": "Žodžio pradžioje rašome nosinę ą: ąžuolas.", "difficulty": "Vidutinis", "category": "Žodžiai" },
+  { "id": 4, "prompt": "saulėgrąža", "answer": "saulėgrąža", "explanation": "Tai sudurtinis žodis: saulė + grąža.", "difficulty": "Sudėtingas", "category": "Žodžiai" },
+  { "id": 5, "prompt": "pavasaris", "answer": "pavasaris", "explanation": "Pavasaris rašomas su viena s žodžio viduryje.", "difficulty": "Lengvas", "category": "Žodžiai" },
+  { "id": 6, "prompt": "nepriklausomybė", "answer": "nepriklausomybė", "explanation": "Žodyje nepriklausomybė rašome y raidę prieš bę.", "difficulty": "Sudėtingas", "category": "Žodžiai" },
+  { "id": 7, "prompt": "šviesoforas", "answer": "šviesoforas", "explanation": "Tai sudurtinis žodis: šviesa ir foras.", "difficulty": "Lengvas", "category": "Žodžiai" },
+  { "id": 8, "prompt": "sąžiningumas", "answer": "sąžiningumas", "explanation": "Žodžio pradžioje rašome nosinę ą.", "difficulty": "Vidutinis", "category": "Žodžiai" },
+  { "id": 9, "prompt": "Ryto saulė apšvietė klasę.", "answer": "Ryto saulė apšvietė klasę.", "explanation": "Sakinį pradėk didžiąja raide ir nepamiršk taško gale.", "difficulty": "Sudėtingas", "category": "Frazės" },
+  { "id": 10, "prompt": "Mokytis įdomu kiekvieną dieną.", "answer": "Mokytis įdomu kiekvieną dieną.", "explanation": "Atkreipk dėmesį į nosinę ą žodyje kiekvieną.", "difficulty": "Sudėtingas", "category": "Frazės" },
+  { "id": 11, "prompt": "Draugas visada padeda.", "answer": "Draugas visada padeda.", "explanation": "Sakinio gale rašome tašką.", "difficulty": "Vidutinis", "category": "Frazės" }
+]

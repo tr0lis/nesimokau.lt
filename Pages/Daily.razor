@@ -1,0 +1,30 @@
+@page "/daily"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@using System.Text.RegularExpressions
+@inject GameCatalogService Catalog
+@inject ProgressService Progress
+
+<PageTitle>Dienos iššūkis | nesimokau.lt</PageTitle>
+
+<section class="result-screen daily-page">
+    <div class="result-burst">✦</div>
+    <p class="eyebrow">Šiandienos misija</p>
+    <h1>Pasiruošęs <span class="gradient-text">iššūkiui?</span></h1>
+    <h2>@DailyGame.Title</h2><p class="subtitle">@DailyGame.Description</p>
+    <div class="result-actions"><a class="button button-primary" href="@DailyHref">Pradėti dienos iššūkį <span>→</span></a><a class="button button-ghost" href="/">Grįžti į pratimus</a></div>
+</section>
+
+@code {
+    private StudentProgress progress = new();
+    private GameDefinition DailyGame => AvailableGames.ElementAt((DateTime.Today.DayOfYear + progress.ClassGroup.GetHashCode(StringComparison.Ordinal)) % AvailableGames.Count);
+    private List<GameDefinition> AvailableGames => Catalog.Games.Where(game => game.Status == GameStatus.Ready && IsForClass(game)).ToList();
+    private string DailyHref => DailyGame.Id == "dictation" ? "games/dictation?mode=daily" : $"games/{DailyGame.Id}";
+    protected override async Task OnInitializedAsync() => progress = await Progress.GetAsync();
+    private bool IsForClass(GameDefinition game)
+    {
+        var selected = progress.ClassGroup.Split('-').Select(int.Parse).ToArray();
+        var grades = Regex.Matches(game.Grades, @"\d+").Select(match => int.Parse(match.Value)).ToArray();
+        return grades.Length >= 2 && grades[0] <= selected[1] && grades[1] >= selected[0];
+    }
+}

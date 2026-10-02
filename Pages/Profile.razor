@@ -1,0 +1,461 @@
+@page "/profile"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject ProgressService Progress
+@inject GameCatalogService Catalog
+
+<PageTitle>Mano profilis | nesimokau.lt</PageTitle>
+
+@if (progress is null)
+{
+    <div class="loading-state"><span class="loader"></span></div>
+}
+else
+{
+    <div class="profile-layout">
+        <div class="profile-top-grid">
+            <section class="profile-hero">
+                <button class="profile-avatar avatar-button avatar-@AvatarBackgroundClass" @onclick="OpenAvatarPicker" aria-label="Keisti avatarą">@if (HasCustomAvatar) { <img class="custom-avatar-image" src="@progress.CustomAvatarDataUrl" alt="Tavo avataras" /> } else { <span class="avatar-emoji">@CurrentAvatar.Symbol</span> }<span class="avatar-edit-indicator">✎</span></button>
+                <p class="eyebrow">MOKYMOSI PROFILIS</p>
+                <div class="profile-name-row">
+                    <h1>@DisplayName</h1>
+                    <button class="name-edit-btn" @onclick="StartNameEdit" aria-label="Redaguoti vardą">✎</button>
+                </div>
+
+                @if (editingName)
+                {
+                    <div class="name-inline-edit">
+                        <input @bind="nameDraft" @bind:event="oninput" maxlength="30" aria-label="Vardo redagavimas" />
+                        <button class="button button-secondary compact-btn" @onclick="SaveName">Išsaugoti</button>
+                        <button class="button button-ghost compact-btn" @onclick="CancelNameEdit">Atšaukti</button>
+                    </div>
+                }
+
+                <button class="profile-level level-clickable" @onclick="() => showLevels = true" title="Peržiūrėti lygius">
+                    <span class="level-badge badge-@CurrentLevel.Color">@CurrentLevel.Badge</span>
+                    <div>
+                        <strong>Lygis @CurrentLevel.Number · @CurrentLevel.Title</strong>
+                        <small>@(NextLevel is null ? "Maksimalus lygis" : $"Trūksta {NextLevel.RequiredXp - progress.Xp} energijos iki kito")</small>
+                    </div>
+                </button>
+            </section>
+
+            <aside class="profile-controls-card">
+                <div class="profile-controls-heading">
+                    <p class="eyebrow">Pažangos suvestinė</p>
+                    <h2>Tavo rezultatai</h2>
+                </div>
+                <div class="stats-grid profile-stats">
+                    <div class="stat-card stat-purple"><span class="stat-icon">⚡</span><div><strong>@progress.Xp</strong><small>Surinkta energija</small></div></div>
+                    <div class="stat-card stat-gold"><span class="stat-icon">🪙</span><div><strong>@progress.Coins</strong><small>Monetos</small></div></div>
+                    <div class="stat-card stat-blue"><span class="stat-icon">◷</span><div><strong>@progress.GamesCompleted</strong><small>Žaidimų</small></div></div>
+                </div>
+
+                <section class="profile-settings" aria-labelledby="profile-settings-title">
+                    <h3 id="profile-settings-title">Mokymosi nustatymai</h3>
+                    <div class="profile-class-block">
+                        <label for="profile-class">Rodomi pratimai pagal klasę</label>
+                        <div class="profile-class-controls">
+                            <div class="profile-class-menu">
+                                <button id="profile-class" class="profile-class-trigger" @onclick="ToggleProfileClassMenu" aria-label="Pasirinkti klasę">@SelectedClassLabel <span>⌄</span></button>
+                                @if (profileClassMenuOpen)
+                                {
+                                    <div class="profile-class-dropdown" @onclick:stopPropagation="true">
+                                        @foreach (var option in ClassGroups)
+                                        {
+                                            <button class="profile-class-option @(classGroup == option.Key ? "selected" : "")" @onclick="() => SelectProfileClass(option.Key)">@option.Value</button>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <button class="button button-secondary profile-class-save" @onclick="SaveClass">Išsaugoti</button>
+                        </div>
+                        @if (classSaved) { <div class="name-saved">Klasė atnaujinta.</div> }
+                    </div>
+                    <button class="button button-ghost reset-progress-btn profile-reset-main" @onclick="() => confirmResetOpen = true">Atkurti pažangą</button>
+                </section>
+            </aside>
+        </div>
+
+        <section class="skill-map-panel" aria-labelledby="skill-map-title">
+        <div class="section-heading">
+            <div><p class="eyebrow">Tavo kelias</p><h2 id="skill-map-title">Dalykų pažangos žemėlapis</h2></div>
+            @if (expandedSubject is not null)
+            {
+                <button class="button button-ghost skill-map-back" @onclick="CloseSubjectMap">← Visi dalykai</button>
+            }
+        </div>
+        <p class="subtitle">@(expandedSubject is null ? "Pasirink dalyką ir pamatyk, ką jau įveikei." : $"{expandedSubject} · pamokų pažanga")</p>
+        <div class="skill-map @(expandedSubject is not null ? "is-expanded" : "")">
+            @if (expandedSubject is null)
+            {
+                <div class="skill-web-lines" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+            }
+            <div class="skill-hex skill-hex-avatar avatar-@AvatarBackgroundClass"><span>@CurrentAvatar.Symbol</span><strong>@DisplayName</strong></div>
+            @if (expandedSubject is null)
+            {
+                @foreach (var subject in SubjectMaps)
+                {
+                    <button class="skill-hex skill-hex-subject accent-@subject.Accent" style="--progress: @subject.Percent%;" @onclick="() => OpenSubjectMap(subject.Subject)" aria-label="@subject.Subject: @subject.Percent% įveikta">
+                        <span class="skill-hex-icon">@subject.Icon</span><strong>@subject.Subject</strong><small>@subject.Percent% įveikta</small>
+                        <span class="skill-tooltip"><b>@subject.Subject</b><span>@subject.Completed iš @subject.Total pamokų įveikta</span><span>Vid. tikslumas: @subject.Accuracy%</span></span>
+                    </button>
+                }
+            }
+            else
+            {
+                @foreach (var lesson in ExpandedLessons)
+                {
+                    <div class="skill-hex skill-hex-lesson @(lesson.Completed ? "is-complete" : "is-locked") accent-@lesson.Game.Accent">
+                        <span class="skill-hex-icon">@lesson.Game.Icon</span><strong>@lesson.Game.Title</strong><small>@(lesson.Completed ? $"{lesson.Accuracy}% tikslumas" : "Dar neįveikta")</small>
+                        <span class="skill-tooltip"><b>@lesson.Game.Title</b><span>@lesson.Game.Description</span><span>@(lesson.Completed ? "Puikiai! Gali pakartoti." : "Ši pamoka dar laukia tavęs.")</span></span>
+                    </div>
+                }
+            }
+        </div>
+        </section>
+
+        <section class="recent-panel">
+            <div class="section-heading"><div><p class="eyebrow">Tavo istorija</p><h2>Paskutiniai rezultatai</h2></div></div>
+        @if (progress.RecentResults.Count == 0)
+        {
+            <p class="subtitle">Tavo pirmasis rezultatas pasirodys čia. Pasirink žaidimą ir pradėk!</p>
+        }
+        else
+        {
+            <div class="profile-results-table-wrap">
+                <table class="profile-results-table">
+                    <thead>
+                        <tr>
+                            <th>Pratimas · data · klasė</th>
+                            <th>Teisingi</th>
+                            <th>Neteisingi</th>
+                            <th>Tikslumas · taškai</th>
+                            <th>Atlygis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var result in progress.RecentResults)
+                        {
+                            var totalAnswers = result.CorrectAnswers >= 0 && result.IncorrectAnswers >= 0
+                                ? result.CorrectAnswers + result.IncorrectAnswers
+                                : 5;
+                            var incorrectAnswers = result.IncorrectAnswers >= 0
+                                ? result.IncorrectAnswers
+                                : Math.Clamp((int)Math.Round(totalAnswers * (100 - result.Accuracy) / 100d), 0, totalAnswers);
+                            var correctAnswers = result.CorrectAnswers >= 0
+                                ? result.CorrectAnswers
+                                : Math.Max(0, totalAnswers - incorrectAnswers);
+                            <tr>
+                                <td class="profile-table-exercise">
+                                    <strong>@result.GameTitle</strong>
+                                    <small>@result.PlayedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm") · @ClassLabelFor(result.ClassGroup)</small>
+                                </td>
+                                <td><span class="profile-table-count is-correct">@correctAnswers</span></td>
+                                <td><span class="profile-table-count is-incorrect">@incorrectAnswers</span></td>
+                                <td><strong>@result.Accuracy%</strong><small class="profile-table-subvalue">@result.Score tašk.</small></td>
+                                <td><span class="profile-table-reward">⚡ +@result.Energy</span><span class="profile-table-reward">🪙 +@result.Coins</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        </section>
+    </div>
+}
+
+@if (confirmResetOpen)
+{
+    <div class="level-modal-backdrop" @onclick="() => confirmResetOpen = false">
+        <section class="levels-modal reset-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="reset-title">
+            <button class="modal-close" @onclick="() => confirmResetOpen = false" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">PATVIRTINIMAS</p>
+            <h2 id="reset-title">Ištrinti visą pažangą?</h2>
+            <p class="modal-subtitle">Bus ištrinta energija, monetos, žaidimų statistika ir rezultatų istorija. Pradėsi nuo 1 lygio.</p>
+            <div class="reset-actions">
+                <button class="button button-ghost" @onclick="() => confirmResetOpen = false">Atšaukti</button>
+                <button class="button button-primary" @onclick="ResetProgress">Taip, atkurti</button>
+            </div>
+        </section>
+    </div>
+}
+
+@if (resetAnimating)
+{
+    <div class="reset-wipe @(resetCompleting ? "is-completing" : "")" role="status" aria-live="polite">
+        <span class="reset-spark reset-spark-one">✦</span>
+        <span class="reset-spark reset-spark-two">●</span>
+        <span class="reset-spark reset-spark-three">✦</span>
+        <div class="reset-wipe-inner">
+            <span class="reset-orb">↻</span>
+            <strong>@(resetCompleting ? "Viskas paruošta!" : "Atkuriama...")</strong>
+            <span>@(resetCompleting ? "Naujas nuotykis gali prasidėti" : "Tvarkingai sudedame tavo naują pradžią")</span>
+        </div>
+    </div>
+}
+
+@if (showLevels)
+{
+    <div class="level-modal-backdrop" @onclick="() => showLevels = false">
+        <section class="levels-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true">
+            <button class="modal-close" @onclick="() => showLevels = false" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">TAVO KELIAS</p>
+            <h2>Lygių ženkliukai</h2>
+            <p class="modal-subtitle">Rink energiją ir kopk vis aukščiau.</p>
+            <div class="levels-list">
+                @foreach (var level in LevelCatalog.All)
+                {
+                    <div class="level-row @(level.Number == CurrentLevel.Number ? "current" : "")">
+                        <span class="level-badge badge-@level.Color">@level.Badge</span>
+                        <div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp energija</small></div>
+                        @if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+}
+
+@if (avatarOpen)
+{
+    <div class="level-modal-backdrop" @onclick="() => avatarOpen = false">
+        <section class="levels-modal avatar-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true">
+            <button class="modal-close" @onclick="() => avatarOpen = false" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">PASIRINK AVATARĄ</p>
+            <h2>Tavo stilius</h2>
+            <p class="modal-subtitle">Pirmiausia pasirink veikėją, tada foną.</p>
+            <div class="avatar-grid">
+                @foreach (var avatar in AvatarCatalog.All)
+                {
+                    var unlocked = IsAvatarUnlocked(avatar.Id);
+                    <button class="avatar-choice badge-@avatar.Accent @(avatarDraftId == avatar.Id ? "selected" : "") @(!unlocked ? "locked" : "")" @onclick="() => SelectAvatar(avatar.Id)">
+                        <span>@avatar.Symbol</span>
+                        @if (!unlocked)
+                        {
+                            <small>🪙 @avatar.Cost</small>
+                        }
+                    </button>
+                }
+                <label class="avatar-choice custom-avatar-tile @(!HasCustomAvatar && progress!.Coins < 500 ? "locked" : "")">
+                    <span>+</span><small>🪙 @(HasCustomAvatar ? "Keisti" : "500")</small>
+                    <InputFile OnChange="UploadCustomAvatar" accept="image/png,image/jpeg" disabled="@(!HasCustomAvatar && progress!.Coins < 500)" />
+                </label>
+            </div>
+            <div class="avatar-bg-row">
+                @foreach (var bg in AvatarBackgrounds)
+                {
+                    <button class="avatar-bg-choice avatar-accent-@bg @(avatarBackgroundDraft == $"bg-{bg}" ? "selected" : "")" @onclick="() => SelectAvatarBackground(bg)"></button>
+                }
+            </div>
+            <button class="button button-primary avatar-save-btn" @onclick="SaveAvatarAppearance">Išsaugoti avatarą</button>
+        </section>
+    </div>
+}
+
+<style>
+    .profile-class-block {
+        gap: .45rem;
+    }
+
+    .profile-class-controls {
+        gap: .5rem;
+        align-items: center;
+    }
+
+    .profile-class-trigger,
+    .profile-class-save,
+    .profile-reset-main {
+        min-height: 2.25rem;
+        padding: .45rem .7rem;
+        font-size: .92rem;
+    }
+
+    .profile-result-row {
+        padding: .5rem .65rem;
+        gap: .55rem;
+        align-items: center;
+    }
+
+    .profile-result-details small {
+        line-height: 1.2;
+    }
+
+    .profile-result-rewards {
+        gap: .45rem;
+        font-size: .9rem;
+        white-space: nowrap;
+    }
+</style>
+
+@code {
+    private StudentProgress? progress;
+    private string classGroup = "5-6";
+    private bool classSaved;
+    private bool profileClassMenuOpen;
+    private bool showLevels;
+    private bool editingName;
+    private string nameDraft = string.Empty;
+    private bool avatarOpen;
+    private bool confirmResetOpen;
+    private bool resetAnimating;
+    private bool resetCompleting;
+    private string? expandedSubject;
+    private string avatarDraftId = "a1";
+    private string avatarBackgroundDraft = "bg-violet";
+    private static readonly string[] AvatarBackgrounds = ["orange", "violet", "yellow", "mint", "blue", "plum", "gold", "cyan", "pink", "slate"];
+
+    private LevelDefinition CurrentLevel => LevelCatalog.All.Last(level => level.RequiredXp <= (progress?.Xp ?? 0));
+    private LevelDefinition? NextLevel => LevelCatalog.All.FirstOrDefault(level => level.RequiredXp > (progress?.Xp ?? 0));
+    private string DisplayName => string.IsNullOrWhiteSpace(progress?.Name) ? "Tavo profilis" : progress!.Name;
+    private AvatarDefinition CurrentAvatar => AvatarCatalog.All.FirstOrDefault(a => a.Id == progress?.AvatarId) ?? AvatarCatalog.All[0];
+    private string AvatarBackgroundClass => string.IsNullOrWhiteSpace(progress?.AvatarBackground) ? "bg-violet" : progress!.AvatarBackground;
+    private bool HasCustomAvatar => !string.IsNullOrWhiteSpace(progress?.CustomAvatarDataUrl);
+    private static readonly IReadOnlyDictionary<string, string> ClassGroups = new Dictionary<string, string>
+    {
+        ["1-2"] = "1–2 klasė", ["3-4"] = "3–4 klasė", ["5-6"] = "5–6 klasė",
+        ["7-8"] = "7–8 klasė", ["9-10"] = "9–10 klasė", ["11-12"] = "11–12 klasė"
+    };
+    private string SelectedClassLabel => ClassGroups.TryGetValue(classGroup, out var label) ? label : "5–6 klasė";
+    private string ClassLabelFor(string? value) => ClassGroups.TryGetValue(value ?? string.Empty, out var label) ? label : SelectedClassLabel;
+    private IEnumerable<SubjectMapItem> SubjectMaps => Catalog.Games
+        .GroupBy(game => game.Subject)
+        .Select(group =>
+        {
+            var completedGameIds = progress?.RecentResults.Select(result => result.GameId).ToHashSet() ?? [];
+            var subjectResults = progress?.RecentResults.Where(result => group.Any(game => game.Id == result.GameId)).ToList() ?? [];
+            var completed = group.Count(game => completedGameIds.Contains(game.Id));
+            return new SubjectMapItem(group.Key, group.First().Icon, group.First().Accent, completed, group.Count(), completed * 100 / group.Count(), subjectResults.Count == 0 ? 0 : subjectResults.Average(result => result.Accuracy));
+        });
+    private IEnumerable<LessonMapItem> ExpandedLessons => expandedSubject is null
+        ? []
+        : Catalog.Games.Where(game => game.Subject == expandedSubject).Select(game =>
+        {
+            var results = progress?.RecentResults.Where(result => result.GameId == game.Id).ToList() ?? [];
+            return new LessonMapItem(game, results.Count > 0, results.Count == 0 ? 0 : results.Max(result => result.Accuracy));
+        });
+
+    protected override async Task OnInitializedAsync()
+    {
+        progress = await Progress.GetAsync();
+        classGroup = progress.ClassGroup;
+    }
+
+    private async Task UploadCustomAvatar(InputFileChangeEventArgs args)
+    {
+        if (progress is null || (!HasCustomAvatar && progress.Coins < 500)) return;
+        var file = args.File;
+        if (file.Size > 1_000_000) return;
+        await using var stream = file.OpenReadStream(1_000_000);
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer);
+        var dataUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(buffer.ToArray())}";
+        await Progress.SaveCustomAvatarAsync(dataUrl);
+        progress = await Progress.GetAsync();
+    }
+
+    private void StartNameEdit()
+    {
+        if (progress is null) return;
+        nameDraft = progress.Name;
+        editingName = true;
+    }
+
+    private void CancelNameEdit() => editingName = false;
+
+    private async Task SaveName()
+    {
+        if (progress is null || string.IsNullOrWhiteSpace(nameDraft)) return;
+        await Progress.SaveProfileAsync(nameDraft);
+        progress.Name = nameDraft.Trim();
+        editingName = false;
+    }
+
+    private async Task SaveClass()
+    {
+        if (progress is null) return;
+        await Progress.SaveClassGroupAsync(classGroup);
+        progress.ClassGroup = classGroup;
+        classSaved = true;
+    }
+
+    private void ToggleProfileClassMenu() => profileClassMenuOpen = !profileClassMenuOpen;
+    private void OpenSubjectMap(string subject) => expandedSubject = subject;
+    private void CloseSubjectMap() => expandedSubject = null;
+
+    private void SelectProfileClass(string option)
+    {
+        classGroup = option;
+        profileClassMenuOpen = false;
+    }
+
+    private async Task SelectAvatar(string avatarId)
+    {
+        if (progress is null) return;
+        if (!IsAvatarUnlocked(avatarId))
+        {
+            var unlocked = await Progress.UnlockAvatarAsync(avatarId);
+            if (!unlocked) return;
+            progress = await Progress.GetAsync();
+        }
+
+        avatarDraftId = avatarId;
+    }
+
+    private async Task SelectAvatarBackground(string background)
+    {
+        avatarBackgroundDraft = $"bg-{background}";
+    }
+
+    private void OpenAvatarPicker()
+    {
+        if (progress is null) return;
+        avatarDraftId = progress.AvatarId;
+        avatarBackgroundDraft = AvatarBackgroundClass;
+        avatarOpen = true;
+    }
+
+    private async Task SaveAvatarAppearance()
+    {
+        if (progress is null) return;
+        await Progress.SaveAvatarAsync(avatarDraftId);
+        await Progress.SaveAvatarBackgroundAsync(avatarBackgroundDraft);
+        progress.AvatarId = avatarDraftId;
+        progress.AvatarBackground = avatarBackgroundDraft;
+        avatarOpen = false;
+    }
+
+    private async Task ResetProgress()
+    {
+        var preservedName = progress?.Name ?? string.Empty;
+        confirmResetOpen = false;
+        resetAnimating = true;
+        resetCompleting = false;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(850);
+        await Progress.ResetAsync();
+        if (!string.IsNullOrWhiteSpace(preservedName))
+        {
+            await Progress.SaveProfileAsync(preservedName);
+        }
+        progress = await Progress.GetAsync();
+        progress.Name = string.IsNullOrWhiteSpace(preservedName) ? progress.Name : preservedName;
+        classGroup = progress.ClassGroup;
+        classSaved = false;
+        editingName = false;
+        profileClassMenuOpen = false;
+        avatarOpen = false;
+        showLevels = false;
+        confirmResetOpen = false;
+        resetCompleting = true;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(550);
+        resetAnimating = false;
+        resetCompleting = false;
+    }
+
+    private bool IsAvatarUnlocked(string avatarId) => progress?.UnlockedAvatarIds?.Contains(avatarId) == true;
+
+    private sealed record SubjectMapItem(string Subject, string Icon, string Accent, int Completed, int Total, int Percent, double Accuracy);
+    private sealed record LessonMapItem(GameDefinition Game, bool Completed, int Accuracy);
+}

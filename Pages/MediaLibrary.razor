@@ -1,0 +1,35 @@
+@page "/media-library"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject ProgressService Progress
+@inject GameCatalogService Catalog
+
+<PageTitle>Mediateka | nesimokau.lt</PageTitle>
+
+<section class="tool-page">
+    <p class="eyebrow">MOKYMOSI MEDIATEKA</p><h1>Vaizdo pamokos</h1><p class="subtitle">Ieškok temos, pasirink dalyką ir išsisaugok įrašus žiūrėjimui vėliau.</p>
+    <label class="media-search"><span>⌕</span><input @bind="search" @bind:event="oninput" placeholder="Ieškoti vaizdo pamokos..." /></label>
+    <div class="media-controls-row">
+        <div class="practice-subjects">@foreach (var subject in Subjects) { <button class="filter-chip @(selectedSubject == subject ? "active" : "")" @onclick="() => selectedSubject = subject">@subject</button> }</div>
+        <div class="media-actions-right"><label class="media-sort"><span>Rikiuoti:</span><select @bind="sortBy"><option value="title-asc">Pavadinimas A–Ž</option><option value="title-desc">Pavadinimas Ž–A</option><option value="subject">Pagal dalyką</option></select></label><button class="saved-media-toggle" @onclick="() => savedOpen = !savedOpen">★ Žiūrėti vėliau <span>@Bookmarks.Count()</span></button></div>
+    </div>
+    <div class="media-library-empty"><span>🎥</span><strong>Vaizdo pamokos jau pakeliui</strong><small>Čia bus galima pažymėti pamokas žvaigždute ir rasti jas skiltyje „Žiūrėti vėliau“.</small></div>
+    @if (savedOpen)
+    {
+        <aside class="saved-media-panel"><div><strong>Žiūrėti vėliau</strong><button @onclick="() => savedOpen = false" aria-label="Uždaryti">×</button></div>@if (!SortedBookmarks.Any()) { <p class="subtitle">Dar nieko neišsaugojai.</p> } else { @foreach (var game in SortedBookmarks) { <div class="recent-row"><span class="game-icon icon-@game.Accent">@game.Icon</span><div><strong>@game.Title</strong><small>@game.Subject</small></div><button class="button button-ghost" @onclick="() => ToggleBookmark(game.Id)">★</button></div> } }</aside>
+    }
+</section>
+
+@code {
+    private StudentProgress progress = new(); private string search = string.Empty; private string selectedSubject = "Visi"; private bool savedOpen; private string sortBy = "title-asc";
+    private IEnumerable<string> Subjects => ["Visi", .. Catalog.Games.Select(game => game.Subject).Distinct()];
+    private IEnumerable<GameDefinition> Bookmarks => Catalog.Games.Where(game => progress.BookmarkedGameIds.Contains(game.Id));
+    private IEnumerable<GameDefinition> SortedBookmarks => sortBy switch
+    {
+        "title-desc" => Bookmarks.OrderByDescending(game => game.Title),
+        "subject" => Bookmarks.OrderBy(game => game.Subject).ThenBy(game => game.Title),
+        _ => Bookmarks.OrderBy(game => game.Title)
+    };
+    protected override async Task OnInitializedAsync() => progress = await Progress.GetAsync();
+    private async Task ToggleBookmark(string gameId) { await Progress.ToggleBookmarkAsync(gameId); progress = await Progress.GetAsync(); }
+}

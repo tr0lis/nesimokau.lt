@@ -1,0 +1,179 @@
+@page "/diagnostics"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject ProgressService Progress
+@inject IJSRuntime JS
+
+<PageTitle>Diagnostikos istorija | nesimokau.lt</PageTitle>
+<section class="tool-page"><p class="eyebrow">TAVO DIAGNOSTIKOS</p><h1>Testų istorija</h1>
+@if (progress.DiagnosticAttempts.Count == 0) { <div class="practice-empty"><span>🧭</span><strong>Dar nėra diagnostinių testų</strong><small>Baik testą ir jo rezultatai atsiras čia.</small></div> }
+else
+{
+    <div class="diagnostic-toolbar">
+        <div class="diagnostic-subject-filters">
+            @foreach (var subject in AvailableSubjects)
+            {
+                <label class="diagnostic-subject-option">
+                    <input type="checkbox" checked="@selectedSubjects.Contains(subject)" @onchange="args => ToggleSubject(subject, args)" />
+                    <span>@subject</span>
+                </label>
+            }
+        </div>
+        <label class="diagnostic-sort">
+            <span>Rikiuoti:</span>
+            <select @bind="sortBy">
+                <option value="newest">Naujausi pirmiau</option>
+                <option value="oldest">Seniausi pirmiau</option>
+                <option value="best">Geriausi pirmiau</option>
+                <option value="worst">Blogiausi pirmiau</option>
+            </select>
+        </label>
+    </div>
+    <div class="diagnostic-history-grid">
+        @foreach (var item in FilteredAttempts)
+        {
+            var wrongCount = item.Answers.Count(answer => !answer.IsCorrect);
+            var weakestTopic = WeakestTopic(item);
+            <article class="diagnostic-history-card">
+                <button class="diagnostic-history-button" @onclick="() => OpenAttempt(item)">
+                    <div class="diagnostic-history-meta">
+                        <p>@item.Subject</p>
+                        <small>@item.CompletedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm") · @FormatDuration(item.DurationSeconds) min.</small>
+                    </div>
+                    <div class="diagnostic-history-stats">
+                        <span><b>@item.Accuracy%</b><small>Tikslumas</small></span>
+                        <span><b>@wrongCount</b><small>Klaidos</small></span>
+                    </div>
+                    <div class="diagnostic-weakest-topic">Silpniausia tema: <b>@weakestTopic</b></div>
+                    <div class="diagnostic-history-open">Peržiūrėti →</div>
+                </button>
+                <button class="button button-primary diagnostic-download-btn" @onclick="() => Download(item)">Atsisiųsti reportą</button>
+            </article>
+        }
+    </div>
+}
+</section>
+
+@if (selectedAttempt is not null)
+{
+    <div class="diagnostic-modal-backdrop" @onclick="CloseAttempt">
+        <section class="diagnostic-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="diagnostic-modal-title">
+            <button class="modal-close" @onclick="CloseAttempt" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">DIAGNOSTIKOS PERŽIŪRA</p>
+            <h2 id="diagnostic-modal-title">@selectedAttempt.Subject</h2>
+            <p class="diagnostic-modal-subtitle">@selectedAttempt.CompletedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm") · @selectedAttempt.Accuracy% tikslumas · @FormatDuration(selectedAttempt.DurationSeconds) min.</p>
+            <div class="diagnostic-modal-actions">
+                <button class="button button-primary diagnostic-download-btn" @onclick="() => Download(selectedAttempt)">Atsisiųsti reportą</button>
+                <button class="button button-ghost diagnostic-filter-toggle" @onclick="ToggleIncorrectOnly">@(showIncorrectOnly ? "Rodyti visus" : "Rodyti tik neteisingus")</button>
+            </div>
+            <div class="diagnostic-modal-answers">
+                @foreach (var answer in FilteredAnswers)
+                {
+                    <article class="diagnostic-answer-card @(answer.IsCorrect ? "is-correct" : "is-wrong")">
+                        <header>
+                            <strong>@answer.Topic</strong>
+                            <span>@(answer.IsCorrect ? "Teisingai" : "Neteisingai")</span>
+                        </header>
+                        <p>@answer.Prompt</p>
+                        <small>Tavo atsakymas: @answer.StudentAnswer</small>
+                        <small>Teisingas atsakymas: @answer.CorrectAnswer</small>
+                    </article>
+                }
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    private StudentProgress progress = new();
+    private DiagnosticAttempt? selectedAttempt;
+    private bool showIncorrectOnly;
+    private HashSet<string> selectedSubjects = [];
+    private string sortBy = "newest";
+
+    protected override async Task OnInitializedAsync()
+    {
+        progress = await Progress.GetAsync();
+        selectedSubjects = AvailableSubjects.ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private IEnumerable<string> AvailableSubjects => progress.DiagnosticAttempts
+        .Select(attempt => attempt.Subject)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(subject => subject);
+
+    private IEnumerable<DiagnosticAttempt> FilteredAttempts
+    {
+        get
+        {
+            var query = progress.DiagnosticAttempts.Where(attempt => selectedSubjects.Contains(attempt.Subject));
+            return sortBy switch
+            {
+                "oldest" => query.OrderBy(attempt => attempt.CompletedAt),
+                "best" => query.OrderByDescending(attempt => attempt.Accuracy).ThenBy(attempt => attempt.CompletedAt),
+                "worst" => query.OrderBy(attempt => attempt.Accuracy).ThenByDescending(attempt => attempt.CompletedAt),
+                _ => query.OrderByDescending(attempt => attempt.CompletedAt)
+            };
+        }
+    }
+
+    private void ToggleSubject(string subject, ChangeEventArgs args)
+    {
+        var isChecked = args.Value as bool? ?? false;
+        if (isChecked)
+        {
+            selectedSubjects.Add(subject);
+            return;
+        }
+
+        if (selectedSubjects.Count == 1 && selectedSubjects.Contains(subject)) return;
+        selectedSubjects.Remove(subject);
+    }
+
+    private IEnumerable<DiagnosticAnswer> FilteredAnswers => selectedAttempt is null
+        ? Enumerable.Empty<DiagnosticAnswer>()
+        : showIncorrectOnly
+            ? selectedAttempt.Answers.Where(answer => !answer.IsCorrect)
+            : selectedAttempt.Answers;
+
+    private void OpenAttempt(DiagnosticAttempt item)
+    {
+        selectedAttempt = item;
+        showIncorrectOnly = false;
+    }
+
+    private void CloseAttempt()
+    {
+        selectedAttempt = null;
+        showIncorrectOnly = false;
+    }
+
+    private void ToggleIncorrectOnly() => showIncorrectOnly = !showIncorrectOnly;
+
+    private Task Download(DiagnosticAttempt item)
+        => JS.InvokeVoidAsync(
+            "nesimokau.downloadDiagnosticReport",
+            ReportTitle(item.Subject),
+            item.Accuracy,
+            item.Answers.Count,
+            item.DurationSeconds,
+            item.Answers.Count(answer => !answer.IsCorrect)).AsTask();
+
+    private static string FormatDuration(int durationSeconds) => $"{durationSeconds / 60}:{durationSeconds % 60:00}";
+
+    private static string WeakestTopic(DiagnosticAttempt item)
+        => item.Answers
+            .GroupBy(answer => answer.Topic)
+            .Select(group => new
+            {
+                Topic = group.Key,
+                WrongCount = group.Count(answer => !answer.IsCorrect),
+                Total = group.Count()
+            })
+            .OrderByDescending(group => group.WrongCount)
+            .ThenByDescending(group => group.Total)
+            .Select(group => group.WrongCount == 0 ? "Nėra silpnos temos" : group.Topic)
+            .FirstOrDefault() ?? "Nėra duomenų";
+
+    private static string ReportTitle(string subject) => $"{subject} diagnostinio testo rezultatai";
+}

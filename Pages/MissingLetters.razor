@@ -1,0 +1,153 @@
+@page "/games/missing-letters"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject ProgressService Progress
+@inject NavigationManager Navigation
+
+
+<PageTitle>Įrašyk praleistas raides | nesimokau.lt</PageTitle>
+
+@if (loading)
+{
+    <div class="loading-state"><span class="loader"></span><p>Ruošiame žodžius...</p></div>
+}
+else if (!started)
+{
+    <section class="difficulty-screen">
+        <p class="eyebrow">PASIRINK SUNKUMĄ</p>
+        <h1>Praleistos raidės</h1>
+        <p class="subtitle">Pasirink lygį prieš pradėdamas.</p>
+        <div class="difficulty-options">
+            @foreach (var option in difficultyOptions)
+            {
+                <button class="difficulty-option @(selectedDifficulty == option.Key ? "selected" : "")" @onclick="() => selectedDifficulty = option.Key"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
+            }
+        </div>
+        <button class="button button-primary" @onclick="StartGame" disabled="@(selectedDifficulty is null)">Toliau <span>→</span></button>
+    </section>
+}
+else if (finished)
+{
+    <section class="result-screen"><div class="result-burst">✓</div><p class="eyebrow">Žaidimas baigtas!</p><h1>Raidės sugrįžo<span class="gradient-text">!</span></h1><p class="subtitle">Puikiai pastebi žodžių rašybos ypatumus.</p><div class="result-score"><strong>@score</strong><span>taškai</span></div><div class="result-stats"><div><strong>@Accuracy%</strong><span>Tikslumas</span></div><div><strong>⚡ +@earnedXp</strong><span>Uždirbta energija</span></div><div><strong>🪙 +@earnedCoins</strong><span>Uždirbtos monetos</span></div></div><div class="result-actions"><button class="button button-primary" @onclick="Restart">Žaisti dar kartą <span>↗</span></button><button class="button button-ghost" @onclick="GoHome">Grįžti į pradžią</button></div></section>
+    @if (levelUp is not null)
+    {
+        <div class="levelup-overlay">
+            <section class="levelup-popup">
+                <p class="eyebrow">SVEIKINAME!</p>
+                <h2>Pakilai į @levelUp.Number lygį</h2>
+                <div class="levelup-badge badge-@levelUp.Color">@levelUp.Badge</div>
+                <p>@levelUp.Title</p>
+                <button class="button button-primary" @onclick="DismissLevelUp">Puiku!</button>
+            </section>
+        </div>
+    }
+}
+else if (current is not null)
+{
+    <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="true" />
+    <div class="game-header"><button class="back-button" @onclick="GoHome" aria-label="Grįžti">←</button><div class="game-title"><span class="game-icon icon-orange">_</span><div><p class="eyebrow">LIETUVIŲ KALBA</p><h1>Įrašyk praleistas raides</h1></div></div></div>
+    <div class="game-progress"><div><span>@(@index + 1) / @questions.Count</span><span>@score taškai</span></div><div class="progress-track"><span style="width:@ProgressPercent%"></span></div></div>
+    <section class="game-panel"><div class="tip-card tip-card-inline"><span>✦</span><div><strong>Mažas patarimas</strong><p>Perskaityk visą žodį ir įrašyk trūkstamą raidę.</p></div></div><div class="prompt-label"><span class="prompt-pulse"></span> ĮRAŠYK PRALEISTĄ RAIDĘ</div><div class="missing-pattern">@current.Pattern</div><p class="prompt-hint">Įrašyk trūkstamą raidę arba iki 3 simbolių.</p><div class="answer-area single-letter-answer"><input @ref="answerInput" @bind="answer" @bind:event="oninput" @onkeydown="HandleKeyDown" maxlength="3" placeholder="?" autocomplete="off" aria-label="Trūkstama raidė" /></div>@if (feedback is not null) { <div class="feedback @(isCorrect ? "feedback-good" : "feedback-bad")"><strong>@(isCorrect ? "Teisingai!" : "Pabandyk dar")</strong><span>@feedback</span></div><button class="button button-primary next-button" @onclick="Next">@(isLast ? "Pamatyti rezultatą" : "Kitas žodis") <span>→</span></button> } else { <button class="button button-primary submit-button" @onclick="Submit" disabled="@string.IsNullOrWhiteSpace(answer)">Patikrinti <span>↗</span></button> }<p class="keyboard-hint">Patikrinti atsakymą: paspausk <kbd>ENTER</kbd></p></section>
+}
+
+@code {
+    private readonly (string Key, string Title, string Hint, string Icon)[] difficultyOptions =
+    [
+        ("Lengvas", "1 lygis", "Paprastesni žodžiai", "★"),
+        ("Vidutinis", "2 lygis", "Subalansuotas iššūkis", "★★"),
+        ("Sudėtingas", "3 lygis", "Sudėtingesnės formos", "★★★")
+    ];
+
+    private List<MissingLettersQuestion> allQuestions = [];
+    private List<MissingLettersQuestion> questions = [];
+    private MissingLettersQuestion? current;
+    private ElementReference answerInput;
+    private string answer = string.Empty;
+    private string? feedback;
+    private bool isCorrect;
+    private bool loading = true;
+    private bool started;
+    private bool finished;
+    private int index;
+    private int score;
+    private int wrongAnswers;
+    private int earnedXp;
+    private int earnedCoins;
+    private LevelDefinition? levelUp;
+    private string? selectedDifficulty;
+    [Parameter, SupplyParameterFromQuery(Name = "difficulty")] public string? Difficulty { get; set; }
+    private bool isLast => index == questions.Count - 1;
+    private int ProgressPercent => questions.Count == 0 ? 0 : (index + 1) * 100 / questions.Count;
+    private int Accuracy => questions.Count == 0 ? 0 : Math.Max(0, (questions.Count - wrongAnswers) * 100 / questions.Count);
+
+    protected override async Task OnInitializedAsync()
+    {
+        allQuestions = await Http.GetFromJsonAsync<List<MissingLettersQuestion>>("data/missing-letters.json") ?? [];
+        loading = false;
+        if (difficultyOptions.Any(option => option.Key == Difficulty))
+        {
+            selectedDifficulty = Difficulty;
+            await StartGame();
+        }
+    }
+
+    private async Task StartGame()
+    {
+        if (selectedDifficulty is null) return;
+        var preferred = allQuestions.Where(q => q.Difficulty == selectedDifficulty).OrderBy(_ => Random.Shared.Next()).Take(5).ToList();
+        if (preferred.Count < 5)
+        {
+            var filler = allQuestions.Where(q => q.Difficulty != selectedDifficulty).OrderBy(_ => Random.Shared.Next()).Take(5 - preferred.Count);
+            preferred.AddRange(filler);
+        }
+
+        questions = preferred.OrderBy(_ => Random.Shared.Next()).Take(5).ToList();
+        current = questions.FirstOrDefault();
+        started = current is not null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task Submit()
+    {
+        if (current is null || feedback is not null || string.IsNullOrWhiteSpace(answer)) return;
+        isCorrect = string.Equals(answer.Trim(), current.MissingLetters, StringComparison.OrdinalIgnoreCase);
+        if (isCorrect) { score += 100; feedback = $"Teisinga. {current.Answer}"; }
+        else { wrongAnswers++; feedback = $"Neteisinga. Teisinga frazė: {current.Answer}"; }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") { if (feedback is null) await Submit(); else await Next(); } }
+
+    private async Task Next()
+    {
+        if (isLast)
+        {
+            finished = true;
+            var savedProgress = await Progress.GetAsync();
+            var isRepeat = savedProgress.PracticeDifficulties.ContainsKey("missing-letters");
+            var previousMistakes = savedProgress.PracticeMistakeCounts.GetValueOrDefault("missing-letters");
+            earnedXp = isRepeat && Accuracy == 100 ? previousMistakes * EnergyPerCorrect : score / 100 * EnergyPerCorrect;
+            earnedCoins = isRepeat ? (Accuracy == 100 ? previousMistakes * CoinsPerCorrect : 0) : score / 100 * CoinsPerCorrect + (Accuracy == 100 ? 2 : 0);
+            levelUp = await Progress.SaveResultAsync(new GameResult("missing-letters", "Įrašyk praleistas raides", score, Accuracy, earnedXp, earnedCoins, DateTime.Now)
+            {
+                ClassGroup = savedProgress.ClassGroup,
+                CorrectAnswers = questions.Count - wrongAnswers,
+                IncorrectAnswers = wrongAnswers
+            });
+            if (Accuracy == 100) await Progress.ClearPracticeTargetAsync("missing-letters");
+            else await Progress.SavePracticeDifficultyAsync("missing-letters", selectedDifficulty!, wrongAnswers);
+            if (levelUp is not null) await JS.InvokeVoidAsync("nesimokau.celebrateLevelUp");
+            return;
+        }
+        index++; current = questions[index]; answer = string.Empty; feedback = null; isCorrect = false; await InvokeAsync(StateHasChanged); await Task.Delay(50); await answerInput.FocusAsync();
+    }
+
+    private void Restart() => Navigation.NavigateTo("games/missing-letters", true);
+    private void GoHome() => Navigation.NavigateTo("/");
+    private int EnergyPerCorrect => selectedDifficulty switch { "Lengvas" => 7, "Vidutinis" => 10, "Sudėtingas" => 14, _ => 7 };
+    private int CoinsPerCorrect => selectedDifficulty switch { "Lengvas" => 1, "Vidutinis" => 2, "Sudėtingas" => 3, _ => 1 };
+    private void DismissLevelUp() => levelUp = null;
+    private async Task ConfirmLeave(LocationChangingContext context) { if (!finished && !await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti.")) context.PreventNavigation(); }
+}

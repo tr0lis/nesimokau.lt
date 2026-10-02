@@ -1,0 +1,22 @@
+[
+  { "id": 1, "pattern": "Laužo deg_siai", "answer": "Laužo degėsiai", "missingLetters": "ė", "explanation": "Taisyklinga frazė: Laužo degėsiai.", "difficulty": "Sudėtingas" },
+  { "id": 2, "pattern": "Šeš_ri metai", "answer": "Šešeri metai", "missingLetters": "e", "explanation": "Taisyklinga frazė: Šešeri metai.", "difficulty": "Sudėtingas" },
+  { "id": 3, "pattern": "Keleivių s_mbrūzdis", "answer": "Keleivių sambrūzdis", "missingLetters": "a", "explanation": "Taisyklinga frazė: Keleivių sambrūzdis.", "difficulty": "Sudėtingas" },
+  { "id": 4, "pattern": "Užduoti klaus_mą", "answer": "Užduoti klausimą", "missingLetters": "i", "explanation": "Taisyklinga frazė: Užduoti klausimą.", "difficulty": "Sudėtingas" },
+  { "id": 5, "pattern": "Miško s_manos", "answer": "Miško samanos", "missingLetters": "a", "explanation": "Taisyklinga frazė: Miško samanos.", "difficulty": "Sudėtingas" },
+  { "id": 6, "pattern": "S_ngrąžos dalelytė", "answer": "Sangrąžos dalelytė", "missingLetters": "a", "explanation": "Taisyklinga frazė: Sangrąžos dalelytė.", "difficulty": "Sudėtingas" },
+  { "id": 7, "pattern": "Tams_lesnės akys", "answer": "Tamsėlesnės akys", "missingLetters": "ė", "explanation": "Taisyklinga frazė: Tamsėlesnės akys.", "difficulty": "Sudėtingas" },
+  { "id": 8, "pattern": "Neryžtingumas yra _da", "answer": "Neryžtingumas yra yda", "missingLetters": "y", "explanation": "Taisyklinga frazė: Neryžtingumas yra yda.", "difficulty": "Sudėtingas" },
+  { "id": 9, "pattern": "Nepriklausomybės s_jūdis", "answer": "Nepriklausomybės sąjūdis", "missingLetters": "ą", "explanation": "Taisyklinga frazė: Nepriklausomybės sąjūdis.", "difficulty": "Sudėtingas" },
+  { "id": 10, "pattern": "Žalioji gir_lė", "answer": "Žalioji girelė", "missingLetters": "e", "explanation": "Taisyklinga frazė: Žalioji girelė.", "difficulty": "Sudėtingas" },
+  { "id": 11, "pattern": "Paslaptingas šlam_sys", "answer": "Paslaptingas šlamesys", "missingLetters": "e", "explanation": "Taisyklinga frazė: Paslaptingas šlamesys.", "difficulty": "Sudėtingas" },
+  { "id": 12, "pattern": "Kokia nes_monė", "answer": "Kokia nesąmonė", "missingLetters": "ą", "explanation": "Taisyklinga frazė: Kokia nesąmonė.", "difficulty": "Sudėtingas" },
+  { "id": 13, "pattern": "Pavaišino dži_vėsėliais", "answer": "Pavaišino džiūvėsėliais", "missingLetters": "ū", "explanation": "Taisyklinga frazė: Pavaišino džiūvėsėliais.", "difficulty": "Sudėtingas" },
+  { "id": 14, "pattern": "_kyrus bendrakeleivis", "answer": "Įkyrus bendrakeleivis", "missingLetters": "į", "explanation": "Taisyklinga frazė: Įkyrus bendrakeleivis.", "difficulty": "Sudėtingas" },
+  { "id": 15, "pattern": "Pavojinga s_nkryža", "answer": "Pavojinga sankryža", "missingLetters": "a", "explanation": "Taisyklinga frazė: Pavojinga sankryža.", "difficulty": "Sudėtingas" },
+  { "id": 16, "pattern": "Gyvena u_sienyje", "answer": "Gyvena užsienyje", "missingLetters": "ž", "explanation": "Taisyklinga frazė: Gyvena užsienyje.", "difficulty": "Sudėtingas" },
+  { "id": 17, "pattern": "Ne_spūdinga kalba", "answer": "Neįspūdinga kalba", "missingLetters": "į", "explanation": "Taisyklinga frazė: Neįspūdinga kalba.", "difficulty": "Sudėtingas" },
+  { "id": 18, "pattern": "Asmens liudij_mas", "answer": "Asmens liudijimas", "missingLetters": "i", "explanation": "Taisyklinga frazė: Asmens liudijimas.", "difficulty": "Sudėtingas" },
+  { "id": 19, "pattern": "_dealūs santykiai", "answer": "Idealūs santykiai", "missingLetters": "i", "explanation": "Taisyklinga frazė: Idealūs santykiai.", "difficulty": "Sudėtingas" },
+  { "id": 20, "pattern": "Žiedų sumain_mas", "answer": "Žiedų sumainymas", "missingLetters": "y", "explanation": "Taisyklinga frazė: Žiedų sumainymas.", "difficulty": "Sudėtingas" }
+]

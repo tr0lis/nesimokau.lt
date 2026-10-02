@@ -1,0 +1,59 @@
+@page "/diagnostic/{Subject?}"
+@using nesimokau.lt.Models
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject nesimokau.lt.Services.ProgressService Progress
+@implements IDisposable
+
+<PageTitle>Diagnostinis testas | nesimokau.lt</PageTitle>
+
+@if (Subject is not "Lietuvių kalba")
+{
+    <section class="tool-page"><p class="eyebrow">DIAGNOSTINIS TESTAS</p><h1>@(Subject ?? "Pasirink dalyką")</h1><div class="practice-empty"><span>🧭</span><strong>Testas ruošiama</strong><small>Šio dalyko klausimų bankas bus pridėtas vėliau.</small></div></section>
+}
+else if (questions.Count == 0)
+{
+    <div class="loading-state"><span class="loader"></span></div>
+}
+else if (finished)
+{
+    <section class="tool-page"><p class="eyebrow">DIAGNOSTIKOS REZULTATAS</p><h1>@accuracy% tikslumas</h1><p class="subtitle">Ataskaita išsaugota tavo diagnostikų istorijoje.</p><div class="result-actions"><button class="button button-primary" @onclick="DownloadReport">Atsisiųsti ataskaitą</button><NavLink class="button button-ghost" href="diagnostics">Peržiūrėti atsakymus</NavLink></div></section>
+}
+else
+{
+    <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="true" />
+    <section class="difficulty-screen"><p class="eyebrow">LIETUVIŲ KALBA · DIAGNOSTIKA</p><h1>@(Current.Kind == "missing" ? "Įrašyk praleistą raidę" : "Išklausyk ir įrašyk žodį")</h1><p class="subtitle">@(@index + 1) iš @questions.Count · Laikas: @Elapsed</p>@if (Current.Kind == "missing") { <div class="missing-pattern">@Current.Prompt</div> } else { <button class="speak-button diagnostic-speak" @onclick="Speak">◖ Išklausyti žodį</button> }<div class="answer-area"><input @bind="answer" @bind:event="oninput" @onkeydown="HandleKeyDown" placeholder="Atsakymas..." /><button class="button button-primary" @onclick="Next" disabled="@string.IsNullOrWhiteSpace(answer)">Toliau</button></div></section>
+}
+
+@code {
+    [Parameter] public string? Subject { get; set; }
+    private List<DiagnosticQuestion> questions = []; private readonly List<DiagnosticAnswer> answers = []; private int index; private int correct; private string answer = string.Empty; private bool finished; private DateTime startedAt; private DiagnosticAttempt? attempt; private StudentProgress progress = new(); private System.Threading.Timer? clock;
+    private int accuracy => questions.Count == 0 ? 0 : correct * 100 / questions.Count;
+    private DiagnosticQuestion Current => questions[index];
+    protected override async Task OnInitializedAsync()
+    {
+        if (Subject == "Lietuvių kalba")
+        {
+            progress = await Progress.GetAsync();
+            var dictation = (await Http.GetFromJsonAsync<List<DictationQuestion>>("data/dictation.json") ?? []).Select(question => new DiagnosticQuestion("dictation", question.Prompt, question.Answer));
+            var missing = (await Http.GetFromJsonAsync<List<MissingLettersQuestion>>("data/missing-letters.json") ?? []).Select(question => new DiagnosticQuestion("missing", question.Pattern, question.MissingLetters));
+            questions = [.. dictation.Concat(missing).OrderBy(_ => Random.Shared.Next()).Take(10)];
+            startedAt = DateTime.Now;
+            clock = new System.Threading.Timer(_ => _ = InvokeAsync(StateHasChanged), null, 1000, 1000);
+        }
+    }
+    private async Task Next()
+    {
+        var isCorrect = string.Equals(answer.Trim(), Current.Answer, StringComparison.OrdinalIgnoreCase);
+        if (isCorrect) correct++;
+        answers.Add(new(Current.Kind == "missing" ? "Praleistos raidės" : "Diktantas", Current.Prompt, Current.Answer, answer.Trim(), isCorrect));
+        if (++index == questions.Count) { finished = true; clock?.Dispose(); attempt = new(Guid.NewGuid().ToString("N"), "Lietuvių kalba", DateTime.Now, accuracy, (int)(DateTime.Now - startedAt).TotalSeconds, answers); await Progress.SaveDiagnosticAttemptAsync(attempt); await DownloadReport(); } else answer = string.Empty;
+    }
+    private Task DownloadReport() => JS.InvokeVoidAsync("nesimokau.downloadDiagnosticReport", $"Lietuvių k. {progress.ClassGroup} kl. diagnostinio testo rezultatai", accuracy, questions.Count, attempt?.DurationSeconds ?? 0, answers.Count(answer => !answer.IsCorrect)).AsTask();
+    private Task Speak() => JS.InvokeVoidAsync("nesimokau.speak", Current.Prompt).AsTask();
+    private string Elapsed => (DateTime.Now - startedAt).ToString(@"mm\:ss");
+    private async Task HandleKeyDown(KeyboardEventArgs eventArgs) { if (eventArgs.Key == "Enter" && !string.IsNullOrWhiteSpace(answer)) await Next(); }
+    private async Task ConfirmLeave(LocationChangingContext context) { if (!await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti.")) context.PreventNavigation(); }
+    public void Dispose() => clock?.Dispose();
+    private sealed record DiagnosticQuestion(string Kind, string Prompt, string Answer);
+}

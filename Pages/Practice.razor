@@ -1,0 +1,19 @@
+@page "/practice"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject ProgressService Progress
+@inject GameCatalogService Catalog
+
+<PageTitle>Treniruotis | nesimokau.lt</PageTitle>
+
+<section class="tool-page">
+    <p class="eyebrow">TIKSLINĖ TRENIRUOTĖ</p><h1>Pakartok tai, kas buvo sunkiau</h1><p class="subtitle">Tobulas pakartojimas pašalins pamoką iš šio sąrašo.</p>
+    @if (!Targets.Any()) { <div class="practice-empty"><span>🌟</span><strong>Kol kas nėra ką kartoti</strong><small>Pratimai su klaidomis atsiras čia.</small></div> }
+    else { <div class="practice-targets">@foreach (var target in Targets) { <NavLink class="practice-target" href="@($"games/{target.Game.Id}?difficulty={target.Difficulty}")"><span class="game-icon icon-@target.Game.Accent">@target.Game.Icon</span><span><strong>@target.Game.Title</strong><small>@target.Game.Subject · @target.Difficulty</small></span><b>Pakartoti →</b></NavLink> }</div> }
+</section>
+
+@code {
+    private StudentProgress progress = new();
+    private IEnumerable<(GameDefinition Game, string Difficulty)> Targets => Catalog.Games.Where(game => progress.PracticeDifficulties.TryGetValue(game.Id, out _)).Select(game => (game, progress.PracticeDifficulties[game.Id]));
+    protected override async Task OnInitializedAsync() => progress = await Progress.GetAsync();
+}
