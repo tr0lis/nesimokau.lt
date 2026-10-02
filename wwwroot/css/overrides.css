@@ -2104,3 +2104,56 @@ h1:focus { outline: none !important; }
         align-items: stretch;
     }
 }
+
+/* Force phone navbar labels + show compact resource pills */
+@media (max-width: 900px) {
+    .nav-action,
+    .navbar-tools .nav-action {
+        font-size: 12px !important;
+    }
+
+    .navbar-tools .nav-action span {
+        font-size: 14px !important;
+    }
+}
+
+@media (max-width: 700px) {
+    .site-header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        row-gap: 8px;
+    }
+
+    .main-nav {
+        grid-column: 1 / -1;
+    }
+
+    .header-actions {
+        min-width: 0;
+        gap: 5px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+    }
+
+    .header-actions::-webkit-scrollbar { display: none; }
+
+    .header-actions .resource-pill {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 5px;
+        flex: 0 0 auto;
+        padding: 6px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+    }
+
+    .header-actions .resource-pill span { font-size: 12px; }
+    .header-actions .resource-pill strong { font-size: 11px; }
+
+    .header-actions .theme-toggle,
+    .header-actions .profile-button {
+        flex: 0 0 32px;
+        width: 32px;
+        height: 32px;
+    }
+}
