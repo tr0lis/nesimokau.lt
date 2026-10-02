@@ -2017,3 +2017,90 @@ h1:focus { outline: none !important; }
         grid-row: auto;
     }
 }
+
+/* Final mobile header/nav + profile edge alignment hotfix */
+@media (max-width: 640px) {
+    .site-header {
+        overflow: visible;
+    }
+
+    .main-nav {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) !important;
+        align-items: center;
+        gap: 8px !important;
+        height: 42px !important;
+        overflow: visible !important;
+    }
+
+    .learn-menu {
+        position: relative;
+        z-index: 200;
+        height: 42px !important;
+    }
+
+    .learn-trigger {
+        height: 42px !important;
+        font-size: 13px !important;
+        white-space: nowrap;
+    }
+
+    .learn-dropdown {
+        z-index: 220;
+        top: calc(100% + 6px);
+        left: 0;
+        width: min(290px, calc(100vw - 28px));
+        max-height: min(70vh, 430px);
+        overflow-y: auto;
+    }
+
+    .navbar-tools {
+        min-width: 0;
+        width: 100%;
+        margin-left: 0 !important;
+        display: flex;
+        align-items: center;
+        gap: 10px !important;
+        height: 42px !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        scrollbar-width: none;
+    }
+
+    .navbar-tools::-webkit-scrollbar { display: none; }
+
+    .navbar-tools .nav-action {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 42px !important;
+        font-size: 11px !important;
+        white-space: nowrap;
+    }
+
+    .navbar-tools .nav-action span {
+        font-size: 14px !important;
+    }
+}
+
+@media (max-width: 960px) and (orientation: landscape) {
+    .app-main {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .page-container,
+    .profile-layout,
+    .profile-layout > *,
+    .profile-top-grid > * {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .profile-top-grid {
+        align-items: stretch;
+    }
+}
