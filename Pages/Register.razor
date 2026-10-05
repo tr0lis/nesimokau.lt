@@ -16,7 +16,7 @@
         <EditForm Model="registerForm" OnSubmit="RegisterAsync" class="auth-form">
             <div class="auth-field">
                 <label for="username">Slapyvardis</label>
-                <input id="username" value="@registerForm.Username" @oninput="HandleUsernameInput" maxlength="24" autocomplete="username" required />
+                <input id="username" value="@registerForm.Username" @oninput="HandleUsernameInput" maxlength="24" autocomplete="username" pattern="[A-Za-z0-9]+" title="Tik raidės ir skaičiai" required />
                 @if (!string.IsNullOrWhiteSpace(usernameStatus) || isCheckingUsername)
                 {
                     <small class="auth-username-status @(usernameTaken ? "bad" : "ok")">@(isCheckingUsername ? "Tikrinama..." : usernameStatus)</small>
@@ -89,6 +89,17 @@
 
         <p class="auth-alt">Jau turi paskyrą? <a href="/prisijungimas">Prisijunk</a></p>
     </article>
+
+    @if (isRedirecting)
+    {
+        <div class="auth-success-transition" role="status" aria-live="polite">
+            <div class="auth-success-transition-inner">
+                <span class="auth-success-spinner"></span>
+                <strong>Sveikas atvykęs!</strong>
+                <small>Krauname tavo pagrindinį puslapį…</small>
+            </div>
+        </div>
+    }
 </section>
 
 @code {
@@ -96,6 +107,7 @@
     private string selectedAvatarId = "a1";
     private bool isSubmitting;
     private bool isCheckingUsername;
+    private bool isRedirecting;
     private string errorMessage = string.Empty;
     private string usernameStatus = string.Empty;
     private bool usernameTaken;
@@ -163,13 +175,15 @@
         }
 
         await Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup);
-
+        isRedirecting = true;
+        await Task.Delay(280);
         Navigation.NavigateTo("/", replace: true);
     }
 
     private async Task HandleUsernameInput(ChangeEventArgs args)
     {
-        registerForm.Username = args.Value?.ToString() ?? string.Empty;
+        var raw = args.Value?.ToString() ?? string.Empty;
+        registerForm.Username = new string(raw.Where(char.IsLetterOrDigit).Take(24).ToArray());
         usernameStatus = string.Empty;
         usernameTaken = false;
 

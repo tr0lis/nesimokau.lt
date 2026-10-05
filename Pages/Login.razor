@@ -34,11 +34,23 @@
 
         <p class="auth-alt">Neturi paskyros? <a href="/registracija">Registruokis</a></p>
     </article>
+
+    @if (isRedirecting)
+    {
+        <div class="auth-success-transition" role="status" aria-live="polite">
+            <div class="auth-success-transition-inner">
+                <span class="auth-success-spinner"></span>
+                <strong>Sėkmingai prisijungei</strong>
+                <small>Atidarome tavo pagrindinį puslapį…</small>
+            </div>
+        </div>
+    }
 </section>
 
 @code {
     private readonly LoginForm loginForm = new();
     private bool isSubmitting;
+    private bool isRedirecting;
     private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -70,7 +82,8 @@
         }
 
         await Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup);
-
+        isRedirecting = true;
+        await Task.Delay(280);
         Navigation.NavigateTo("/", replace: true);
     }
 

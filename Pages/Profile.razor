@@ -4,6 +4,7 @@
 @inject HttpClient Http
 @inject ProgressService Progress
 @inject GameCatalogService Catalog
+@inject LeaderboardService Leaderboard
 
 <PageTitle>Mano profilis | nesimokau.lt</PageTitle>
 
@@ -496,6 +497,7 @@ else
         {
             await Progress.SaveProfileAsync(preservedName);
         }
+        await Leaderboard.ResetCurrentUserScoreAsync();
         progress = await Progress.GetAsync();
         progress.Name = string.IsNullOrWhiteSpace(preservedName) ? progress.Name : preservedName;
         classGroup = progress.ClassGroup;

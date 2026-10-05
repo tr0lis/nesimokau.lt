@@ -8,7 +8,7 @@ using nesimokau.lt.Models;
 
 namespace nesimokau.lt.Services;
 
-public sealed class LeaderboardService(IJSRuntime js, ProgressService progress, HttpClient http, IConfiguration config)
+public sealed class LeaderboardService(IJSRuntime js, ProgressService progress, AuthService auth, HttpClient http, IConfiguration config)
 {
     private const string PlayerIdKey = "nesimokau-player-id";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -29,6 +29,36 @@ public sealed class LeaderboardService(IJSRuntime js, ProgressService progress, 
         return await LoadAsync();
     }
 
+    public async Task ResetCurrentUserScoreAsync()
+    {
+        if (string.IsNullOrWhiteSpace(supabaseUrl) || string.IsNullOrWhiteSpace(supabaseKey)) return;
+
+        var playerId = await GetOrCreatePlayerIdAsync();
+        var playerProgress = await progress.GetAsync();
+        var playerName = string.IsNullOrWhiteSpace(playerProgress.Name) ? "Svečias" : playerProgress.Name.Trim();
+        var avatar = AvatarCatalog.All.FirstOrDefault(x => x.Id == playerProgress.AvatarId)?.Symbol ?? "🙂";
+
+        await RemoveDuplicateRowsByNicknameAsync(playerName, playerId);
+
+        var payload = new[]
+        {
+            new SupabaseLeaderboardRow
+            {
+                PlayerId = playerId,
+                Nickname = playerName,
+                Score = 0,
+                Avatar = avatar,
+                CountryFlag = "🇱🇹",
+                UpdatedAt = DateTime.UtcNow
+            }
+        };
+
+        using var request = CreateRequest(HttpMethod.Post, "rest/v1/leaderboard?on_conflict=player_id");
+        request.Headers.TryAddWithoutValidation("Prefer", "resolution=merge-duplicates,return=minimal");
+        request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
+        _ = await http.SendAsync(request);
+    }
+
     private async Task UpsertCurrentUserAsync()
     {
         if (string.IsNullOrWhiteSpace(supabaseUrl) || string.IsNullOrWhiteSpace(supabaseKey)) return;
@@ -39,6 +69,8 @@ public sealed class LeaderboardService(IJSRuntime js, ProgressService progress, 
         var score = Math.Max(playerProgress.RecentResults.Sum(result => result.Score), playerProgress.BestScore);
         var avatar = AvatarCatalog.All.FirstOrDefault(x => x.Id == playerProgress.AvatarId)?.Symbol ?? "🙂";
         var countryFlag = "🇱🇹";
+
+        await RemoveDuplicateRowsByNicknameAsync(playerName, playerId);
 
         var payload = new[]
         {
@@ -92,12 +124,35 @@ public sealed class LeaderboardService(IJSRuntime js, ProgressService progress, 
 
     private async Task<string> GetOrCreatePlayerIdAsync()
     {
+        var authSession = await auth.GetSessionAsync();
+        if (authSession is not null && !string.IsNullOrWhiteSpace(authSession.UserId))
+        {
+            var stablePlayerId = $"user-{authSession.UserId}";
+            var stored = await js.InvokeAsync<string?>("localStorage.getItem", PlayerIdKey);
+            if (!string.Equals(stored, stablePlayerId, StringComparison.Ordinal))
+            {
+                await js.InvokeVoidAsync("localStorage.setItem", PlayerIdKey, stablePlayerId);
+            }
+
+            return stablePlayerId;
+        }
+
         var playerId = await js.InvokeAsync<string?>("localStorage.getItem", PlayerIdKey);
         if (!string.IsNullOrWhiteSpace(playerId)) return playerId;
 
         playerId = $"player-{Guid.NewGuid():N}";
         await js.InvokeVoidAsync("localStorage.setItem", PlayerIdKey, playerId);
         return playerId;
+    }
+
+    private async Task RemoveDuplicateRowsByNicknameAsync(string nickname, string keepPlayerId)
+    {
+        if (string.IsNullOrWhiteSpace(nickname) || string.IsNullOrWhiteSpace(keepPlayerId)) return;
+
+        var encodedName = Uri.EscapeDataString(nickname);
+        var encodedPlayer = Uri.EscapeDataString(keepPlayerId);
+        using var request = CreateRequest(HttpMethod.Delete, $"rest/v1/leaderboard?nickname=eq.{encodedName}&player_id=neq.{encodedPlayer}");
+        _ = await http.SendAsync(request);
     }
 
     private sealed class SupabaseLeaderboardRow

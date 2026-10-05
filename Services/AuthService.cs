@@ -53,6 +53,7 @@ public sealed class AuthService(HttpClient http, IConfiguration config, IJSRunti
             var cleanName = username.Trim();
             if (string.IsNullOrWhiteSpace(cleanName)) return AuthResult.Fail("Įvesk slapyvardį.");
             if (cleanName.Length < 3) return AuthResult.Fail("Slapyvardis per trumpas.");
+            if (!IsUsernameAllowed(cleanName)) return AuthResult.Fail("Slapyvardyje leidžiamos tik raidės ir skaičiai (be tarpų ir simbolių).");
 
             var existing = await GetAccountByUsernameAsync(cleanName);
             if (existing is not null) return AuthResult.Fail("Toks slapyvardis jau užimtas.");
@@ -120,6 +121,7 @@ public sealed class AuthService(HttpClient http, IConfiguration config, IJSRunti
             if (!IsReady()) return AuthResult.Fail("Auth konfigūracija nerasta.");
 
             var cleanName = username.Trim();
+            if (!IsUsernameAllowed(cleanName)) return AuthResult.Fail("Neteisingas slapyvardžio formatas.");
             var account = await GetAccountByUsernameAsync(cleanName);
             if (account is null)
             {
@@ -240,6 +242,10 @@ public sealed class AuthService(HttpClient http, IConfiguration config, IJSRunti
         var actual = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA256, expected.Length);
         return CryptographicOperations.FixedTimeEquals(actual, expected);
     }
+
+    private static bool IsUsernameAllowed(string value)
+        => !string.IsNullOrWhiteSpace(value)
+           && value.All(char.IsLetterOrDigit);
 
     private static string ParseError(string body, string fallback)
     {
