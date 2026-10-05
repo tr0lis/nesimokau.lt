@@ -88,8 +88,10 @@ public sealed class StudentProgress
     public List<string> UnlockedAvatarIds { get; set; } = ["a1", "a2"];
     public List<string> UnlockedAchievementIds { get; set; } = [];
     public List<string> BookmarkedGameIds { get; set; } = [];
-    public Dictionary<string, string> PracticeDifficulties { get; set; } = [];
     public Dictionary<string, int> PracticeMistakeCounts { get; set; } = [];
+    public Dictionary<string, List<int>> SolvedQuestionIdsByGame { get; set; } = [];
+    public string? HintPurchaseDateUtc { get; set; }
+    public int HintPurchasesToday { get; set; }
     public string? CustomAvatarDataUrl { get; set; }
     public List<DiagnosticAttempt> DiagnosticAttempts { get; set; } = [];
     public List<GameResult> RecentResults { get; set; } = [];

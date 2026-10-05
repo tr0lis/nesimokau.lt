@@ -1,6 +1,7 @@
-@page "/profile"
+@page "/profilis"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
+@inject HttpClient Http
 @inject ProgressService Progress
 @inject GameCatalogService Catalog
 
@@ -113,6 +114,38 @@ else
                 }
             }
         </div>
+        </section>
+
+        <section class="recent-panel">
+            <div class="section-heading"><div><p class="eyebrow">Mokymosi progresas</p><h2>Dalykų užbaigtumas</h2></div></div>
+            <div class="profile-subject-progress">
+                @foreach (var subject in SubjectCompletionRows)
+                {
+                    <button class="subject-progress-row" @onclick="() => ToggleCompletionSubject(subject.Subject)">
+                        <span class="subject-progress-main"><strong>@subject.Subject</strong><small>@subject.Percent% užbaigta</small></span>
+                        <span class="subject-progress-meta">
+                            @if (subject.IsHundred)
+                            {
+                                <span class="subject-complete-badge">100%</span>
+                            }
+                            <b>@subject.Percent%</b>
+                        </span>
+                    </button>
+
+                    @if (expandedCompletionSubject == subject.Subject)
+                    {
+                        <div class="subject-progress-lessons">
+                            @foreach (var exercise in subject.Exercises)
+                            {
+                                <div class="subject-progress-lesson state-@exercise.StateCss">
+                                    <span class="subject-progress-lesson-title">@exercise.Title</span>
+                                    <small>@exercise.StateLabel</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
         </section>
 
         <section class="recent-panel">
@@ -301,8 +334,10 @@ else
     private bool resetAnimating;
     private bool resetCompleting;
     private string? expandedSubject;
+    private string? expandedCompletionSubject;
     private string avatarDraftId = "a1";
     private string avatarBackgroundDraft = "bg-violet";
+    private Dictionary<string, int> totalQuestionsByGame = [];
     private static readonly string[] AvatarBackgrounds = ["orange", "violet", "yellow", "mint", "blue", "plum", "gold", "cyan", "pink", "slate"];
 
     private LevelDefinition CurrentLevel => LevelCatalog.All.Last(level => level.RequiredXp <= (progress?.Xp ?? 0));
@@ -334,11 +369,66 @@ else
             var results = progress?.RecentResults.Where(result => result.GameId == game.Id).ToList() ?? [];
             return new LessonMapItem(game, results.Count > 0, results.Count == 0 ? 0 : results.Max(result => result.Accuracy));
         });
+    private IEnumerable<SubjectCompletionRow> SubjectCompletionRows => Catalog.Games
+        .GroupBy(game => game.Subject)
+        .Select(group =>
+        {
+            var exercises = group.Select(BuildExerciseCompletion).ToList();
+            var trackable = exercises.Where(x => x.Total > 0).ToList();
+            var total = trackable.Sum(x => x.Total);
+            var solved = trackable.Sum(x => x.Solved);
+            var percent = total == 0 ? 0 : (int)Math.Round(solved * 100d / total, MidpointRounding.AwayFromZero);
+            var isHundred = total > 0 && percent >= 100;
+            return new SubjectCompletionRow(group.Key, percent, isHundred, exercises);
+        });
 
     protected override async Task OnInitializedAsync()
     {
         progress = await Progress.GetAsync();
+        await LoadQuestionTotalsAsync();
         classGroup = progress.ClassGroup;
+    }
+
+    private async Task LoadQuestionTotalsAsync()
+    {
+        var dictation = await Http.GetFromJsonAsync<List<DictationQuestion>>("data/dictation.json") ?? [];
+        var missingLetters = await Http.GetFromJsonAsync<List<MissingLettersQuestion>>("data/missing-letters.json") ?? [];
+
+        totalQuestionsByGame = new Dictionary<string, int>
+        {
+            ["dictation"] = dictation.Count,
+            ["missing-letters"] = missingLetters.Count
+        };
+    }
+
+    private ExerciseCompletion BuildExerciseCompletion(GameDefinition game)
+    {
+        var total = totalQuestionsByGame.GetValueOrDefault(game.Id);
+        var solved = progress?.SolvedQuestionIdsByGame.GetValueOrDefault(game.Id)?.Distinct().Count() ?? 0;
+        solved = Math.Clamp(solved, 0, Math.Max(total, 0));
+
+        if (total <= 0)
+        {
+            return new ExerciseCompletion(game.Id, game.Title, 0, 0, "Netrukus", "soon");
+        }
+
+        if (solved == 0)
+        {
+            return new ExerciseCompletion(game.Id, game.Title, solved, total, "Neatlikta", "pending");
+        }
+
+        if (solved >= total)
+        {
+            return new ExerciseCompletion(game.Id, game.Title, solved, total, "Atlikta", "done");
+        }
+
+        var percent = (int)Math.Round(solved * 100d / total, MidpointRounding.AwayFromZero);
+        return new ExerciseCompletion(game.Id, game.Title, solved, total, $"Pusiau ({percent}%)", "partial");
+    }
+
+    private void ToggleCompletionSubject(string subject)
+    {
+        expandedCompletionSubject = expandedCompletionSubject == subject ? null : subject;
     }
 
     private async Task UploadCustomAvatar(InputFileChangeEventArgs args)
@@ -458,4 +548,6 @@ else
 
     private sealed record SubjectMapItem(string Subject, string Icon, string Accent, int Completed, int Total, int Percent, double Accuracy);
     private sealed record LessonMapItem(GameDefinition Game, bool Completed, int Accuracy);
+    private sealed record ExerciseCompletion(string GameId, string Title, int Solved, int Total, string StateLabel, string StateCss);
+    private sealed record SubjectCompletionRow(string Subject, int Percent, bool IsHundred, List<ExerciseCompletion> Exercises);
 }

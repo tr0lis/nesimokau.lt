@@ -1,4 +1,4 @@
-@page "/diagnostic/{Subject?}"
+@page "/diagnostika/{Subject?}"
 @using nesimokau.lt.Models
 @inject HttpClient Http
 @inject IJSRuntime JS
@@ -17,7 +17,7 @@ else if (questions.Count == 0)
 }
 else if (finished)
 {
-    <section class="tool-page"><p class="eyebrow">DIAGNOSTIKOS REZULTATAS</p><h1>@accuracy% tikslumas</h1><p class="subtitle">Ataskaita išsaugota tavo diagnostikų istorijoje.</p><div class="result-actions"><button class="button button-primary" @onclick="DownloadReport">Atsisiųsti ataskaitą</button><NavLink class="button button-ghost" href="diagnostics">Peržiūrėti atsakymus</NavLink></div></section>
+    <section class="tool-page"><p class="eyebrow">DIAGNOSTIKOS REZULTATAS</p><h1>@accuracy% tikslumas</h1><p class="subtitle">Ataskaita išsaugota tavo diagnostikų istorijoje.</p><div class="result-actions"><button class="button button-primary" @onclick="DownloadReport">Atsisiųsti ataskaitą</button><NavLink class="button button-ghost" href="rezultatai">Peržiūrėti atsakymus</NavLink></div></section>
 }
 else
 {

@@ -54,3 +54,22 @@ window.nesimokau.celebrateLevelUp = function () {
 
     setTimeout(() => root.remove(), 2800);
 };
+
+window.nesimokau.celebrateMicroComplete = function (key) {
+    const root = document.createElement('div');
+    root.className = 'micro-confetti-root';
+    root.dataset.key = key || '';
+    document.body.appendChild(root);
+
+    for (let i = 0; i < 26; i++) {
+        const piece = document.createElement('span');
+        piece.className = 'micro-confetti-piece';
+        piece.style.left = `${42 + Math.random() * 16}vw`;
+        piece.style.animationDelay = `${Math.random() * 120}ms`;
+        piece.style.background = ['#47c47e', '#54d0bf', '#ffd77d', '#7454ed'][i % 4];
+        piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+        root.appendChild(piece);
+    }
+
+    setTimeout(() => root.remove(), 1200);
+};

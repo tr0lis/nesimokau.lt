@@ -6,6 +6,13 @@ namespace nesimokau.lt.Services;
 
 public sealed class ProgressService(IJSRuntime js)
 {
+    public enum HintPurchaseResult
+    {
+        Success,
+        NotEnoughCoins,
+        DailyLimitReached
+    }
+
     private const string StorageKey = "nesimokau-progress";
     private StudentProgress? cached;
     public event Action? Changed;
@@ -28,9 +35,10 @@ public sealed class ProgressService(IJSRuntime js)
 
         cached.UnlockedAchievementIds ??= [];
         cached.BookmarkedGameIds ??= [];
-        cached.PracticeDifficulties ??= [];
         cached.PracticeMistakeCounts ??= [];
+        cached.SolvedQuestionIdsByGame ??= [];
         cached.DiagnosticAttempts ??= [];
+        EnsureHintCounterForToday(cached);
 
         return cached;
     }
@@ -101,18 +109,79 @@ public sealed class ProgressService(IJSRuntime js)
         await SaveAsync(progress);
     }
 
-    public async Task SavePracticeDifficultyAsync(string gameId, string difficulty, int mistakes)
+    public async Task<bool> SpendCoinsAsync(int amount)
+    {
+        if (amount <= 0) return true;
+
+        var progress = await GetAsync();
+        if (progress.Coins < amount) return false;
+
+        progress.Coins -= amount;
+        await SaveAsync(progress);
+        return true;
+    }
+
+    public async Task<int> GetRemainingHintsTodayAsync(int dailyLimit)
     {
         var progress = await GetAsync();
-        progress.PracticeDifficulties[gameId] = difficulty;
+        EnsureHintCounterForToday(progress);
+        return Math.Max(0, dailyLimit - progress.HintPurchasesToday);
+    }
+
+    public async Task<HintPurchaseResult> TryPurchaseHintAsync(int cost, int dailyLimit)
+    {
+        var progress = await GetAsync();
+        EnsureHintCounterForToday(progress);
+
+        if (progress.HintPurchasesToday >= dailyLimit) return HintPurchaseResult.DailyLimitReached;
+        if (progress.Coins < cost) return HintPurchaseResult.NotEnoughCoins;
+
+        progress.Coins -= cost;
+        progress.HintPurchasesToday++;
+        await SaveAsync(progress);
+        return HintPurchaseResult.Success;
+    }
+
+    public async Task SavePracticeTargetAsync(string gameId, int mistakes)
+    {
+        var progress = await GetAsync();
         progress.PracticeMistakeCounts[gameId] = mistakes;
         await SaveAsync(progress);
+    }
+
+    public async Task<IReadOnlyCollection<int>> GetSolvedQuestionIdsAsync(string gameId)
+    {
+        var progress = await GetAsync();
+        return progress.SolvedQuestionIdsByGame.TryGetValue(gameId, out var solved)
+            ? solved.Distinct().ToArray()
+            : [];
+    }
+
+    public async Task SaveSolvedQuestionIdsAsync(string gameId, IEnumerable<int> solvedQuestionIds)
+    {
+        var progress = await GetAsync();
+        if (!progress.SolvedQuestionIdsByGame.TryGetValue(gameId, out var existing))
+        {
+            existing = [];
+            progress.SolvedQuestionIdsByGame[gameId] = existing;
+        }
+
+        var before = existing.Count;
+        foreach (var id in solvedQuestionIds)
+        {
+            if (!existing.Contains(id)) existing.Add(id);
+        }
+
+        if (existing.Count != before)
+        {
+            await SaveAsync(progress);
+        }
     }
 
     public async Task ClearPracticeTargetAsync(string gameId)
     {
         var progress = await GetAsync();
-        if (progress.PracticeDifficulties.Remove(gameId) | progress.PracticeMistakeCounts.Remove(gameId)) await SaveAsync(progress);
+        if (progress.PracticeMistakeCounts.Remove(gameId)) await SaveAsync(progress);
     }
 
     private async Task SaveAsync(StudentProgress progress)
@@ -197,5 +266,15 @@ public sealed class ProgressService(IJSRuntime js)
         }
 
         return streak;
+    }
+
+    private static void EnsureHintCounterForToday(StudentProgress progress)
+    {
+        var today = DateTime.UtcNow.Date.ToString("yyyy-MM-dd");
+        if (!string.Equals(progress.HintPurchaseDateUtc, today, StringComparison.Ordinal))
+        {
+            progress.HintPurchaseDateUtc = today;
+            progress.HintPurchasesToday = 0;
+        }
     }
 }

@@ -1,4 +1,5 @@
-@page "/games/missing-letters"
+@page "/zaidimai/praleistos-raides"
+@page "/lietuviu-kalba/{ClassSlug}/praleistos-raides"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject HttpClient Http
@@ -16,16 +17,17 @@
 else if (!started)
 {
     <section class="difficulty-screen">
-        <p class="eyebrow">PASIRINK SUNKUMĄ</p>
+        <button class="button button-ghost prestart-back" @onclick="GoBackToSubject">← Atgal</button>
+        <p class="eyebrow">PASIRINK UŽDUOČIŲ KIEKĮ</p>
         <h1>Praleistos raidės</h1>
-        <p class="subtitle">Pasirink lygį prieš pradėdamas.</p>
+        <p class="subtitle">Prieš pradėdamas pasirink, kiek užduočių nori atlikti.</p>
         <div class="difficulty-options">
-            @foreach (var option in difficultyOptions)
+            @foreach (var option in taskCountOptions)
             {
-                <button class="difficulty-option @(selectedDifficulty == option.Key ? "selected" : "")" @onclick="() => selectedDifficulty = option.Key"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
+                <button class="difficulty-option @(selectedTaskCount == option.Count ? "selected" : "")" @onclick="() => selectedTaskCount = option.Count"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
             }
         </div>
-        <button class="button button-primary" @onclick="StartGame" disabled="@(selectedDifficulty is null)">Toliau <span>→</span></button>
+        <button class="button button-primary" @onclick="StartGame" disabled="@(selectedTaskCount is null)">Pradėti <span>→</span></button>
     </section>
 }
 else if (finished)
@@ -49,15 +51,31 @@ else if (current is not null)
     <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="true" />
     <div class="game-header"><button class="back-button" @onclick="GoHome" aria-label="Grįžti">←</button><div class="game-title"><span class="game-icon icon-orange">_</span><div><p class="eyebrow">LIETUVIŲ KALBA</p><h1>Įrašyk praleistas raides</h1></div></div></div>
     <div class="game-progress"><div><span>@(@index + 1) / @questions.Count</span><span>@score taškai</span></div><div class="progress-track"><span style="width:@ProgressPercent%"></span></div></div>
-    <section class="game-panel"><div class="tip-card tip-card-inline"><span>✦</span><div><strong>Mažas patarimas</strong><p>Perskaityk visą žodį ir įrašyk trūkstamą raidę.</p></div></div><div class="prompt-label"><span class="prompt-pulse"></span> ĮRAŠYK PRALEISTĄ RAIDĘ</div><div class="missing-pattern">@current.Pattern</div><p class="prompt-hint">Įrašyk trūkstamą raidę arba iki 3 simbolių.</p><div class="answer-area single-letter-answer"><input @ref="answerInput" @bind="answer" @bind:event="oninput" @onkeydown="HandleKeyDown" maxlength="3" placeholder="?" autocomplete="off" aria-label="Trūkstama raidė" /></div>@if (feedback is not null) { <div class="feedback @(isCorrect ? "feedback-good" : "feedback-bad")"><strong>@(isCorrect ? "Teisingai!" : "Pabandyk dar")</strong><span>@feedback</span></div><button class="button button-primary next-button" @onclick="Next">@(isLast ? "Pamatyti rezultatą" : "Kitas žodis") <span>→</span></button> } else { <button class="button button-primary submit-button" @onclick="Submit" disabled="@string.IsNullOrWhiteSpace(answer)">Patikrinti <span>↗</span></button> }<p class="keyboard-hint">Patikrinti atsakymą: paspausk <kbd>ENTER</kbd></p></section>
+    <section class="game-panel"><div class="tip-card tip-card-inline"><span>✦</span><div><strong>Mažas patarimas</strong><p>Perskaityk visą žodį ir įrašyk trūkstamą raidę.</p></div></div><div class="prompt-label"><span class="prompt-pulse"></span> ĮRAŠYK PRALEISTĄ RAIDĘ</div><div class="missing-pattern">@current.Pattern</div><p class="prompt-hint">Įrašyk trūkstamą raidę arba iki 3 simbolių.</p><div class="answer-area single-letter-answer"><input @ref="answerInput" @bind="answer" @bind:event="oninput" @onkeydown="HandleKeyDown" maxlength="3" placeholder="?" autocomplete="off" aria-label="Trūkstama raidė" /><button class="hint-inline-button" @onclick="OpenHintConfirm" disabled="@(feedback is not null || hintUsed || !CanPurchaseHint)" aria-label="Išspręsti">💡</button><span class="hint-inline-tooltip">IŠSPRĘSTI (-100)</span></div>@if (feedback is not null) { <div class="feedback @(isCorrect ? "feedback-good" : "feedback-bad")"><strong>@(isCorrect ? "Teisingai!" : "Pabandyk dar")</strong><span>@feedback</span></div><button class="button button-primary next-button" @onclick="Next">@(isLast ? "Pamatyti rezultatą" : "Kitas žodis") <span>→</span></button> } else { <button class="button button-primary submit-button" @onclick="Submit" disabled="@string.IsNullOrWhiteSpace(answer)">Patikrinti <span>↗</span></button> }<p class="keyboard-hint">Patikrinti atsakymą: paspausk <kbd>ENTER</kbd></p></section>
+}
+
+@if (showHintConfirm)
+{
+    <div class="level-modal-backdrop" @onclick="CloseHintConfirm">
+        <section class="levels-modal hint-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="hint-title">
+            <button class="modal-close" @onclick="CloseHintConfirm" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">PATVIRTINIMAS</p>
+            <h2 id="hint-title">Pirkti užuominą?</h2>
+            <p class="modal-subtitle">Tai kainuos 100 monetų ir parodys teisingą atsakymą šiai užduočiai. Liko @remainingHints iš 5 šiandien.</p>
+            <div class="reset-actions">
+                <button class="button button-ghost" @onclick="CloseHintConfirm">Atšaukti</button>
+                <button class="button button-primary" @onclick="UseHint" disabled="@(!CanPurchaseHint)">Taip, pirkti</button>
+            </div>
+        </section>
+    </div>
 }
 
 @code {
-    private readonly (string Key, string Title, string Hint, string Icon)[] difficultyOptions =
+    private readonly (int Count, string Title, string Hint, string Icon)[] taskCountOptions =
     [
-        ("Lengvas", "1 lygis", "Paprastesni žodžiai", "★"),
-        ("Vidutinis", "2 lygis", "Subalansuotas iššūkis", "★★"),
-        ("Sudėtingas", "3 lygis", "Sudėtingesnės formos", "★★★")
+        (5, "5 užduotys", "Trumpa treniruotė", "★"),
+        (10, "10 užduočių", "Subalansuotas tempas", "★★"),
+        (15, "15 užduočių", "Ilgesnis iššūkis", "★★★")
     ];
 
     private List<MissingLettersQuestion> allQuestions = [];
@@ -76,8 +94,15 @@ else if (current is not null)
     private int earnedXp;
     private int earnedCoins;
     private LevelDefinition? levelUp;
-    private string? selectedDifficulty;
-    [Parameter, SupplyParameterFromQuery(Name = "difficulty")] public string? Difficulty { get; set; }
+    private int? selectedTaskCount;
+    private HashSet<int> sessionSolvedQuestionIds = [];
+    private bool showHintConfirm;
+    private bool hintUsed;
+    private StudentProgress playerProgress = new();
+    private int remainingHints;
+    private const int HintCost = 100;
+    private const int DailyHintLimit = 5;
+    [Parameter] public string? ClassSlug { get; set; }
     private bool isLast => index == questions.Count - 1;
     private int ProgressPercent => questions.Count == 0 ? 0 : (index + 1) * 100 / questions.Count;
     private int Accuracy => questions.Count == 0 ? 0 : Math.Max(0, (questions.Count - wrongAnswers) * 100 / questions.Count);
@@ -85,25 +110,41 @@ else if (current is not null)
     protected override async Task OnInitializedAsync()
     {
         allQuestions = await Http.GetFromJsonAsync<List<MissingLettersQuestion>>("data/missing-letters.json") ?? [];
+        playerProgress = await Progress.GetAsync();
+        remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
         loading = false;
-        if (difficultyOptions.Any(option => option.Key == Difficulty))
-        {
-            selectedDifficulty = Difficulty;
-            await StartGame();
-        }
     }
+
+    private bool CanPurchaseHint => playerProgress.Coins >= HintCost && remainingHints > 0;
 
     private async Task StartGame()
     {
-        if (selectedDifficulty is null) return;
-        var preferred = allQuestions.Where(q => q.Difficulty == selectedDifficulty).OrderBy(_ => Random.Shared.Next()).Take(5).ToList();
-        if (preferred.Count < 5)
+        if (selectedTaskCount is null) return;
+        sessionSolvedQuestionIds = [];
+        showHintConfirm = false;
+        hintUsed = false;
+        playerProgress = await Progress.GetAsync();
+        remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
+        var solvedQuestionIds = (await Progress.GetSolvedQuestionIdsAsync("missing-letters")).ToHashSet();
+        var selectedCount = selectedTaskCount.Value;
+
+        var unsolved = allQuestions
+            .Where(question => !solvedQuestionIds.Contains(question.Id))
+            .OrderBy(_ => Random.Shared.Next())
+            .ToList();
+
+        var selected = unsolved.Take(selectedCount).ToList();
+        if (selected.Count < selectedCount)
         {
-            var filler = allQuestions.Where(q => q.Difficulty != selectedDifficulty).OrderBy(_ => Random.Shared.Next()).Take(5 - preferred.Count);
-            preferred.AddRange(filler);
+            var repeats = allQuestions
+                .Where(question => selected.All(item => item.Id != question.Id))
+                .OrderBy(_ => Random.Shared.Next())
+                .Take(selectedCount - selected.Count)
+                .ToList();
+            selected.AddRange(repeats);
         }
 
-        questions = preferred.OrderBy(_ => Random.Shared.Next()).Take(5).ToList();
+        questions = selected.OrderBy(_ => Random.Shared.Next()).ToList();
         current = questions.FirstOrDefault();
         started = current is not null;
         await InvokeAsync(StateHasChanged);
@@ -113,9 +154,50 @@ else if (current is not null)
     {
         if (current is null || feedback is not null || string.IsNullOrWhiteSpace(answer)) return;
         isCorrect = string.Equals(answer.Trim(), current.MissingLetters, StringComparison.OrdinalIgnoreCase);
-        if (isCorrect) { score += 100; feedback = $"Teisinga. {current.Answer}"; }
+        if (isCorrect)
+        {
+            if (hintUsed)
+            {
+                feedback = "Atsakymas atskleistas už 100 monetų.";
+            }
+            else
+            {
+                score += 100;
+                sessionSolvedQuestionIds.Add(current.Id);
+                feedback = $"Teisinga. {current.Answer}";
+            }
+        }
         else { wrongAnswers++; feedback = $"Neteisinga. Teisinga frazė: {current.Answer}"; }
         await InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenHintConfirm()
+    {
+        if (feedback is not null || hintUsed || current is null || !CanPurchaseHint) return;
+        showHintConfirm = true;
+    }
+
+    private void CloseHintConfirm() => showHintConfirm = false;
+
+    private async Task UseHint()
+    {
+        if (current is null || hintUsed) return;
+
+        var purchase = await Progress.TryPurchaseHintAsync(HintCost, DailyHintLimit);
+        if (purchase != ProgressService.HintPurchaseResult.Success)
+        {
+            showHintConfirm = false;
+            playerProgress = await Progress.GetAsync();
+            remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
+            return;
+        }
+
+        showHintConfirm = false;
+        hintUsed = true;
+        playerProgress = await Progress.GetAsync();
+        remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
+        answer = current.MissingLetters;
+        await Submit();
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") { if (feedback is null) await Submit(); else await Next(); } }
@@ -126,28 +208,39 @@ else if (current is not null)
         {
             finished = true;
             var savedProgress = await Progress.GetAsync();
-            var isRepeat = savedProgress.PracticeDifficulties.ContainsKey("missing-letters");
+            var isRepeat = savedProgress.PracticeMistakeCounts.ContainsKey("missing-letters");
             var previousMistakes = savedProgress.PracticeMistakeCounts.GetValueOrDefault("missing-letters");
-            earnedXp = isRepeat && Accuracy == 100 ? previousMistakes * EnergyPerCorrect : score / 100 * EnergyPerCorrect;
-            earnedCoins = isRepeat ? (Accuracy == 100 ? previousMistakes * CoinsPerCorrect : 0) : score / 100 * CoinsPerCorrect + (Accuracy == 100 ? 2 : 0);
+            var totalQuestions = allQuestions.Count;
+            var alreadyCompleted = totalQuestions > 0 && savedProgress.SolvedQuestionIdsByGame.GetValueOrDefault("missing-letters")?.Distinct().Count() >= totalQuestions;
+            earnedXp = alreadyCompleted ? 0 : isRepeat && Accuracy == 100 ? previousMistakes * EnergyPerCorrect : score / 100 * EnergyPerCorrect;
+            earnedCoins = alreadyCompleted ? 0 : isRepeat ? (Accuracy == 100 ? previousMistakes * CoinsPerCorrect : 0) : score / 100 * CoinsPerCorrect + (Accuracy == 100 ? 2 : 0);
             levelUp = await Progress.SaveResultAsync(new GameResult("missing-letters", "Įrašyk praleistas raides", score, Accuracy, earnedXp, earnedCoins, DateTime.Now)
             {
-                ClassGroup = savedProgress.ClassGroup,
+                ClassGroup = ParseClassGroup(savedProgress.ClassGroup),
                 CorrectAnswers = questions.Count - wrongAnswers,
                 IncorrectAnswers = wrongAnswers
             });
             if (Accuracy == 100) await Progress.ClearPracticeTargetAsync("missing-letters");
-            else await Progress.SavePracticeDifficultyAsync("missing-letters", selectedDifficulty!, wrongAnswers);
+            else await Progress.SavePracticeTargetAsync("missing-letters", wrongAnswers);
+            await Progress.SaveSolvedQuestionIdsAsync("missing-letters", sessionSolvedQuestionIds);
             if (levelUp is not null) await JS.InvokeVoidAsync("nesimokau.celebrateLevelUp");
             return;
         }
-        index++; current = questions[index]; answer = string.Empty; feedback = null; isCorrect = false; await InvokeAsync(StateHasChanged); await Task.Delay(50); await answerInput.FocusAsync();
+        index++; current = questions[index]; answer = string.Empty; feedback = null; isCorrect = false; hintUsed = false; await InvokeAsync(StateHasChanged); await Task.Delay(50); await answerInput.FocusAsync();
     }
 
-    private void Restart() => Navigation.NavigateTo("games/missing-letters", true);
-    private void GoHome() => Navigation.NavigateTo("/");
-    private int EnergyPerCorrect => selectedDifficulty switch { "Lengvas" => 7, "Vidutinis" => 10, "Sudėtingas" => 14, _ => 7 };
-    private int CoinsPerCorrect => selectedDifficulty switch { "Lengvas" => 1, "Vidutinis" => 2, "Sudėtingas" => 3, _ => 1 };
+    private void Restart() => Navigation.NavigateTo(RouteBase(), true);
+    private void GoHome() => Navigation.NavigateTo(ClassSlug is null ? "/" : "/lietuviu-kalba");
+    private void GoBackToSubject() => Navigation.NavigateTo("/lietuviu-kalba");
+    private int EnergyPerCorrect => 10;
+    private int CoinsPerCorrect => 2;
+    private string RouteBase() => ClassSlug is null ? "zaidimai/praleistos-raides" : $"lietuviu-kalba/{ClassSlug}/praleistos-raides";
+    private string ParseClassGroup(string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(ClassSlug)) return fallback;
+        var match = System.Text.RegularExpressions.Regex.Match(ClassSlug, @"^(\d+)-(\d+)-klases$");
+        return match.Success ? $"{match.Groups[1].Value}-{match.Groups[2].Value}" : fallback;
+    }
     private void DismissLevelUp() => levelUp = null;
     private async Task ConfirmLeave(LocationChangingContext context) { if (!finished && !await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti.")) context.PreventNavigation(); }
 }

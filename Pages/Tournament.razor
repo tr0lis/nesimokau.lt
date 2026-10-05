@@ -1,0 +1,111 @@
+@page "/turnyrine-lentele"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject LeaderboardService Leaderboard
+@implements IDisposable
+
+<PageTitle>Turnyrinė lentelė | nesimokau.lt</PageTitle>
+
+<section class="tournament-page">
+    <header class="tournament-head">
+        <p class="eyebrow">🏅 TURNYRINĖ LENTELĖ</p>
+        <h1>Geriausi žaidėjai pasaulyje</h1>
+        <p class="subtitle">Reitingas atnaujinamas realiu laiku pagal taškų kiekį.</p>
+    </header>
+
+    @if (isLoading)
+    {
+        <div class="loading-state"><span class="loader"></span></div>
+    }
+    else if (!entries.Any())
+    {
+        <section class="tournament-table-card">
+            <div class="section-heading">
+                <div><h2>Top 20</h2><span class="catalog-count">Dar nėra rezultatų</span></div>
+            </div>
+            <div class="tournament-table">
+                <div class="tournament-separator">Kol kas tuščia. Užbaik užduotis ir būk pirmas.</div>
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="podium-grid" aria-label="Top 3 podiumas">
+            @foreach (var item in Podium)
+            {
+                <article class="podium-card podium-@item.Place">
+                    <div class="podium-avatar">@item.Entry.Avatar</div>
+                    <span class="podium-place">#@item.Place</span>
+                    <strong>@item.Entry.Name <span class="player-flag">@item.Entry.CountryFlag</span></strong>
+                    <small>@item.Entry.Score taškų</small>
+                </article>
+            }
+        </div>
+
+        <section class="tournament-table-card">
+            <div class="section-heading">
+                <div><h2>Top 20</h2><span class="catalog-count">Visi pagal taškus</span></div>
+            </div>
+            <div class="tournament-table">
+                @foreach (var row in TopRows)
+                {
+                    <div class="tournament-row @(row.Entry.Id == currentPlayerId ? "is-self" : "")">
+                        <span class="tournament-rank">@row.DisplayRank</span>
+                        <span class="tournament-avatar">@row.Entry.Avatar</span>
+                        <strong class="tournament-name">@row.Entry.Name <span class="player-flag">@row.Entry.CountryFlag</span></strong>
+                        <b class="tournament-score">@row.Entry.Score</b>
+                    </div>
+                }
+
+                @if (CurrentUserOutsideTop20)
+                {
+                    <div class="tournament-separator">…</div>
+                    <div class="tournament-row is-self">
+                        <span class="tournament-rank">21</span>
+                        <span class="tournament-avatar">@CurrentUserEntry?.Avatar</span>
+                        <strong class="tournament-name">@CurrentUserEntry?.Name <span class="player-flag">@CurrentUserEntry?.CountryFlag</span></strong>
+                        <b class="tournament-score">@CurrentUserEntry?.Score</b>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</section>
+
+@code {
+    private List<LeaderboardEntry> entries = [];
+    private string currentPlayerId = string.Empty;
+    private bool isLoading = true;
+    private PeriodicTimer? timer;
+    private CancellationTokenSource? cts;
+
+    private IEnumerable<(int Place, LeaderboardEntry Entry)> Podium => entries.Take(3).Select((entry, index) => (index + 1, entry));
+    private IEnumerable<(string DisplayRank, LeaderboardEntry Entry)> TopRows => entries.Take(20).Select((entry, index) => ($"{index + 1}", entry));
+    private LeaderboardEntry? CurrentUserEntry => entries.FirstOrDefault(entry => entry.Id == currentPlayerId);
+    private bool CurrentUserOutsideTop20 => CurrentUserEntry is not null && entries.FindIndex(entry => entry.Id == currentPlayerId) > 19;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentPlayerId = await Leaderboard.GetCurrentPlayerIdAsync();
+        entries = (await Leaderboard.GetEntriesAsync()).ToList();
+        isLoading = false;
+
+        cts = new CancellationTokenSource();
+        timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        _ = Task.Run(async () =>
+        {
+            while (timer is not null && await timer.WaitForNextTickAsync(cts.Token))
+            {
+                entries = (await Leaderboard.RefreshRealtimeAsync()).ToList();
+                await InvokeAsync(StateHasChanged);
+            }
+        }, cts.Token);
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        timer?.Dispose();
+        cts?.Dispose();
+    }
+}

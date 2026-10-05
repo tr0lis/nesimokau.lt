@@ -16,46 +16,29 @@
         <span></span>
     </button>
     <nav class="main-nav @(mobileNavOpen ? "mobile-open" : string.Empty)" aria-label="Pagrindinė navigacija">
-        <div class="learn-menu subjects-menu @(subjectsMenuOpen ? "is-open" : "")" @onmouseenter="OpenSubjectsMenu" @onmouseleave="CloseSubjectsMenu">
-            <button class="learn-trigger" type="button" aria-haspopup="menu" aria-expanded="@subjectsMenuOpen" @onclick="ToggleSubjectsMenu">Dalykai <span class="menu-chevron">⌄</span></button>
-            <div class="learn-dropdown" role="menu" aria-label="Dalykų meniu">
-                <div class="dropdown-heading"><span>✦</span><div><strong>Dalykų meniu</strong><small>Visi dalykai ir jų žaidimai</small></div></div>
-                <NavLink href="/" role="menuitem" @onclick="CloseAllMenus"><span class="dropdown-icon icon-mint">◎</span><span><strong>Visi dalykai</strong><small>Rodyti visus pratimus</small></span><b>→</b></NavLink>
-                <div class="subject-group @(lithuanianMenuOpen ? "is-open" : "")" @onmouseenter="OpenLithuanianMenu" @onmouseleave="CloseLithuanianMenu">
-                    <button class="subject-trigger" type="button" aria-haspopup="menu" aria-expanded="@lithuanianMenuOpen" @onclick="ToggleLithuanianMenu"><span class="dropdown-icon icon-violet">Aa</span><span><strong>Lietuvių kalba</strong><small>Kalbos žaidimai</small></span><b aria-hidden="true">→</b></button>
-                    <div class="subject-submenu">
-                        <NavLink class="diagnostic-link" href="diagnostic/Lietuvių kalba" @onclick="CloseAllMenus">🧭 Diagnostinis testas</NavLink>
-                        <NavLink href="games/dictation" @onclick="CloseAllMenus">Žodžių diktantas</NavLink>
-                        <NavLink href="games/missing-letters" @onclick="CloseAllMenus">Praleistos raidės</NavLink>
-                        <NavLink href="daily" @onclick="CloseAllMenus">Dienos iššūkis</NavLink>
-                    </div>
-                </div>
-                <div class="subject-group">
-                    <button class="subject-trigger" type="button" aria-expanded="false" disabled><span class="dropdown-icon icon-blue">∑</span><span><strong>Matematika</strong><small>Netrukus</small></span><b aria-hidden="true">→</b></button>
-                    <div class="subject-submenu">
-                        <span>Ruošiama</span>
-                    </div>
-                </div>
-                <div class="subject-group">
-                    <button class="subject-trigger" type="button" aria-expanded="false" disabled><span class="dropdown-icon icon-mint">🌍</span><span><strong>Istorija ir gamta</strong><small>Netrukus</small></span><b aria-hidden="true">→</b></button>
-                    <div class="subject-submenu">
-                        <span>Ruošiama</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="navbar-tools">
-            <NavLink class="nav-action" href="achievements" @onclick="CloseMobileNavigation"><span>🏆</span> Pasiekimai</NavLink>
-            <NavLink class="nav-action" href="diagnostics" @onclick="CloseMobileNavigation"><span>📊</span> Rezultatai</NavLink>
-            <NavLink class="nav-action" href="media-library" @onclick="CloseMobileNavigation"><span>🎬</span> Mediateka</NavLink>
-            <NavLink class="nav-action nav-practice" href="practice" @onclick="CloseMobileNavigation"><span>✦</span> Treniruotis</NavLink>
-        </div>
+        <a class="nav-action nav-subjects" href="/" @onclick="CloseMobileNavigation"><span>📚</span> Dalykai</a>
+        <NavLink class="nav-action nav-practice" href="pasitaisyti" @onclick="CloseMobileNavigation"><span>✦</span> Noriu pasitaisyti</NavLink>
     </nav>
     <div class="header-actions">
-        <div class="resource-pill energy-pill" title="Energija"><span>⚡</span><strong>@progress.Xp</strong></div>
-        <div class="resource-pill coins-pill" title="Monetos"><span>🪙</span><strong>@progress.Coins</strong></div>
         <button class="theme-toggle" @onclick="ToggleTheme" aria-label="Pakeisti temą" title="Pakeisti šviesią arba tamsią temą">@(progress.Theme == "light" ? "☀" : "☾")</button>
-        <NavLink class="@($"profile-button avatar-{AvatarBackgroundClass}")" href="profile" aria-label="Mokinio profilis">@if (!string.IsNullOrWhiteSpace(progress.CustomAvatarDataUrl)) { <img class="custom-avatar-image" src="@progress.CustomAvatarDataUrl" alt="" /> } else { @AvatarSymbol }</NavLink>
+        <button class="@($"profile-button avatar-{AvatarBackgroundClass}")" type="button" aria-label="Atidaryti profilio meniu" aria-expanded="@profileMenuOpen" @onclick="ToggleProfileMenu">@if (!string.IsNullOrWhiteSpace(progress.CustomAvatarDataUrl)) { <img class="custom-avatar-image" src="@progress.CustomAvatarDataUrl" alt="" /> } else { @AvatarSymbol }</button>
+        @if (profileMenuOpen)
+        {
+            <button class="profile-menu-backdrop" type="button" aria-label="Uždaryti profilio meniu" @onclick="CloseProfileMenu"></button>
+            <section class="profile-menu" aria-label="Profilio meniu">
+                <div class="profile-menu-resources">
+                    <div class="resource-pill energy-pill" title="Energija"><span>⚡</span><strong>@progress.Xp</strong><small>Energija</small></div>
+                    <div class="resource-pill coins-pill" title="Monetos"><span>🪙</span><strong>@progress.Coins</strong><small>Monetos</small></div>
+                </div>
+                <NavLink class="profile-menu-link profile-menu-primary" href="profilis" @onclick="CloseProfileMenu"><span>🙂</span> Mano profilis <b>→</b></NavLink>
+                <div class="profile-menu-links">
+                    <NavLink class="profile-menu-link" href="pasiekimai" @onclick="CloseProfileMenu"><span>🏆</span> Pasiekimai</NavLink>
+                    <NavLink class="profile-menu-link" href="rezultatai" @onclick="CloseProfileMenu"><span>📊</span> Rezultatai</NavLink>
+                    <NavLink class="profile-menu-link" href="turnyrine-lentele" @onclick="CloseProfileMenu"><span>🏅</span> Turnyrinė lentelė</NavLink>
+                    <NavLink class="profile-menu-link" href="mediateka" @onclick="CloseProfileMenu"><span>🎬</span> Mediateka</NavLink>
+                </div>
+            </section>
+        }
     </div>
 </header>
 
@@ -129,7 +112,7 @@
                 <div class="practice-targets">
                     @foreach (var target in PracticeTargets)
                     {
-                        <NavLink class="practice-target" href="@($"games/{target.Game.Id}")" @onclick="ClosePractice">
+                        <NavLink class="practice-target" href="@GameHref(target.Game.Id)" @onclick="ClosePractice">
                             <span class="game-icon icon-@target.Game.Accent">@target.Game.Icon</span>
                             <span><strong>@target.Game.Title</strong><small>@target.Game.Subject · ankstesnis tikslumas @target.Accuracy%</small></span>
                             <b>Pakartoti →</b>
@@ -163,12 +146,11 @@
 
 @code {
     private StudentProgress progress = new();
-    private bool subjectsMenuOpen;
-    private bool lithuanianMenuOpen;
     private bool achievementsOpen;
     private bool practiceOpen;
     private bool mediaLibraryOpen;
     private bool mobileNavOpen;
+    private bool profileMenuOpen;
     private string practiceSubject = "Visi";
     private string mediaSubject = "Visi";
     private string mediaSearch = string.Empty;
@@ -184,33 +166,14 @@
         await JS.InvokeVoidAsync("nesimokau.setTheme", progress.Theme);
     }
 
-    private void OpenSubjectsMenu() => subjectsMenuOpen = true;
-    private void CloseSubjectsMenu()
-    {
-        subjectsMenuOpen = false;
-        lithuanianMenuOpen = false;
-    }
-
-    private void CloseAllMenus()
-    {
-        CloseSubjectsMenu();
-        mobileNavOpen = false;
-    }
-
-    private void ToggleSubjectsMenu() => subjectsMenuOpen = !subjectsMenuOpen;
     private void ToggleMobileNavigation()
     {
         mobileNavOpen = !mobileNavOpen;
-        if (!mobileNavOpen)
-        {
-            CloseSubjectsMenu();
-        }
     }
 
     private void CloseMobileNavigation() => mobileNavOpen = false;
-    private void OpenLithuanianMenu() => lithuanianMenuOpen = true;
-    private void CloseLithuanianMenu() => lithuanianMenuOpen = false;
-    private void ToggleLithuanianMenu() => lithuanianMenuOpen = !lithuanianMenuOpen;
+    private void ToggleProfileMenu() => profileMenuOpen = !profileMenuOpen;
+    private void CloseProfileMenu() => profileMenuOpen = false;
     private IEnumerable<DateTime> CurrentMonthDays => Enumerable.Range(1, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month)).Select(day => new DateTime(DateTime.Today.Year, DateTime.Today.Month, day));
     private IEnumerable<DateTime> LastTenDays => Enumerable.Range(0, 10).Select(day => DateTime.Today.AddDays(-9 + day));
     private IEnumerable<string> PracticeSubjects => ["Visi", .. Catalog.Games.Where(game => game.Status == GameStatus.Ready).Select(game => game.Subject).Distinct()];
@@ -249,6 +212,12 @@
             if (progress.GamesCompleted >= 25) yield return new("games-25", "🏅", "Atkaklus mokinys", "Užbaigei 25 žaidimus.");
         }
     }
+    private static string GameHref(string gameId) => gameId switch
+    {
+        "dictation" => "zaidimai/zodziu-diktantas",
+        "missing-letters" => "zaidimai/praleistos-raides",
+        _ => "/"
+    };
     private void OpenAchievements() => achievementsOpen = true;
     private void CloseAchievements() => achievementsOpen = false;
     private void OpenPractice()

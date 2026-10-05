@@ -11,5 +11,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddSingleton<GameCatalogService>();
 builder.Services.AddScoped<ProgressService>();
 builder.Services.AddScoped<DictationService>();
+builder.Services.AddScoped<LeaderboardService>();
 
 await builder.Build().RunAsync();

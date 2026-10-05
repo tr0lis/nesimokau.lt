@@ -1,0 +1,256 @@
+@page "/lietuviu-kalba"
+@using System.Text.RegularExpressions
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject HttpClient Http
+@inject IJSRuntime JS
+@inject GameCatalogService Catalog
+@inject ProgressService Progress
+@implements IDisposable
+
+<PageTitle>Lietuvių kalba | nesimokau.lt</PageTitle>
+
+<section class="subject-page">
+    <header class="subject-page-header">
+        <p class="eyebrow">DALYKAS</p>
+        <h1>Lietuvių kalba</h1>
+        <p class="subtitle">Pasirink pratimą, pritaikyk filtrus ir mokykis pagal savo tempą.</p>
+    </header>
+
+    <div class="subject-page-layout">
+        <aside class="subject-filters" aria-label="Pratimų filtrai">
+            <div class="subject-filter-card">
+                <h3>Klasės</h3>
+                @foreach (var grade in GradeOptions)
+                {
+                    <label class="filter-checkbox">
+                        <input type="checkbox" checked="@SelectedGrades.Contains(grade.Key)" @onchange="(e) => ToggleGrade(grade.Key, (bool)e.Value!)" />
+                        <span>@grade.Label</span>
+                    </label>
+                }
+            </div>
+
+            <div class="subject-filter-card">
+                <h3>Temos</h3>
+                @foreach (var topic in AllTopics)
+                {
+                    <label class="filter-checkbox">
+                        <input type="checkbox" checked="@SelectedTopics.Contains(topic)" @onchange="(e) => ToggleTopic(topic, (bool)e.Value!)" />
+                        <span>@topic</span>
+                    </label>
+                }
+            </div>
+
+            <div class="subject-filter-card">
+                <h3>Būsena</h3>
+                <label class="filter-radio"><input type="radio" name="status" checked="@(statusFilter == "all")" @onchange="SetStatusAll" /><span>Visi</span></label>
+                <label class="filter-radio"><input type="radio" name="status" checked="@(statusFilter == "done")" @onchange="SetStatusDone" /><span>Atlikti</span></label>
+                <label class="filter-radio"><input type="radio" name="status" checked="@(statusFilter == "pending")" @onchange="SetStatusPending" /><span>Neatlikti</span></label>
+            </div>
+
+            <div class="subject-filter-card">
+                <h3>Rodymas</h3>
+                <label class="filter-checkbox filter-toggle">
+                    <input type="checkbox" checked="@OnlyNewQuestions" @onchange="ToggleOnlyNewQuestions" />
+                    <span>Tik nauji klausimai</span>
+                </label>
+            </div>
+        </aside>
+
+        <div class="subject-exercises">
+            <div class="section-heading">
+                <div>
+                    <h2>Pratimai</h2>
+                    <span class="catalog-count">@FilteredExercises.Count() pratimai</span>
+                </div>
+            </div>
+
+            @if (!FilteredExercises.Any())
+            {
+                <div class="practice-empty"><span>🔎</span><strong>Pagal pasirinktus filtrus pratimų nerasta</strong><small>Pakeisk filtrus kairėje ir bandyk dar kartą.</small></div>
+            }
+            else
+            {
+                <div class="subject-exercise-grid">
+                    @foreach (var exercise in FilteredExercises)
+                    {
+                        var completion = GetCompletion(exercise.Id);
+                        <article class="subject-exercise-card">
+                            <span class="exercise-state @(completion.IsDone ? "done" : "pending")" style="--completion:@completion.Percent;" title="@($"{completion.Percent}%")">
+                                <span class="exercise-state-inner">@(completion.IsDone ? "✓" : string.Empty)</span>
+                            </span>
+                            @if (!completion.IsDone)
+                            {
+                                <span class="exercise-progress-tooltip">Dar yra nespręstų užduočių</span>
+                            }
+                            <span class="game-icon icon-@exercise.Accent">@exercise.Icon</span>
+                            <h3>@exercise.Title</h3>
+                            <p>@exercise.Description</p>
+                            <div class="game-meta"><span>@exercise.Grades</span><span>@string.Join(" · ", ExerciseTopics(exercise.Id))</span></div>
+                            <NavLink class="card-action" href="@ExerciseHref(exercise)">Atidaryti <span>→</span></NavLink>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private StudentProgress progress = new();
+    private string statusFilter = "all";
+    private HashSet<string> SelectedGrades { get; set; } = [];
+    private HashSet<string> SelectedTopics { get; set; } = [];
+    private Dictionary<string, int> totalQuestionsByGame = [];
+    private bool OnlyNewQuestions { get; set; }
+    private Dictionary<string, int> previousPercentByGame = [];
+
+    private static IReadOnlyList<(string Key, string Label)> GradeOptions { get; } =
+    [
+        ("1-2", "1–2 klasės"),
+        ("3-4", "3–4 klasės"),
+        ("5-6", "5–6 klasės"),
+        ("7-8", "7–8 klasės"),
+        ("9-10", "9–10 klasės"),
+        ("11-12", "11–12 klasės")
+    ];
+
+    private static IReadOnlyDictionary<string, string[]> TopicByExerciseId { get; } = new Dictionary<string, string[]>
+    {
+        ["dictation"] = ["Diktantas", "Žodynas"],
+        ["missing-letters"] = ["Rašyba", "Raidės"]
+    };
+
+    private IEnumerable<GameDefinition> SubjectExercises => Catalog.Games.Where(game => game.Subject == "Lietuvių kalba" && game.Status == GameStatus.Ready);
+
+    private IEnumerable<string> AllTopics => SubjectExercises.SelectMany(exercise => ExerciseTopics(exercise.Id)).Distinct();
+
+    private IEnumerable<GameDefinition> FilteredExercises => SubjectExercises.Where(PassesFilters);
+
+    protected override async Task OnInitializedAsync()
+    {
+        progress = await Progress.GetAsync();
+        await LoadQuestionTotalsAsync();
+        previousPercentByGame = SubjectExercises.ToDictionary(exercise => exercise.Id, exercise => GetCompletion(exercise.Id).Percent);
+        SelectedGrades = [progress.ClassGroup];
+        Progress.Changed += HandleProgressChanged;
+    }
+
+    private bool PassesFilters(GameDefinition exercise)
+    {
+        if (!PassesGradeFilter(exercise)) return false;
+
+        if (SelectedTopics.Count > 0 && !ExerciseTopics(exercise.Id).Any(topic => SelectedTopics.Contains(topic)))
+        {
+            return false;
+        }
+
+        var completed = IsCompleted(exercise.Id);
+        if (OnlyNewQuestions && completed)
+        {
+            return false;
+        }
+
+        return statusFilter switch
+        {
+            "done" => completed,
+            "pending" => !completed,
+            _ => true
+        };
+    }
+
+    private bool PassesGradeFilter(GameDefinition exercise)
+    {
+        if (SelectedGrades.Count == 0) return true;
+
+        var grades = Regex.Matches(exercise.Grades, @"\d+").Select(match => int.Parse(match.Value)).ToArray();
+        if (grades.Length < 2) return false;
+
+        return SelectedGrades.Any(selected =>
+        {
+            var parts = selected.Split('-').Select(int.Parse).ToArray();
+            return parts[0] <= grades[1] && parts[1] >= grades[0];
+        });
+    }
+
+    private bool IsCompleted(string gameId)
+    {
+        var completion = GetCompletion(gameId);
+        return completion.IsDone;
+    }
+
+    private CompletionInfo GetCompletion(string gameId)
+    {
+        var totalQuestions = totalQuestionsByGame.GetValueOrDefault(gameId);
+        if (totalQuestions <= 0) return new(0, 0, 0, false);
+
+        var solved = progress.SolvedQuestionIdsByGame.GetValueOrDefault(gameId)?.Distinct().Count() ?? 0;
+        solved = Math.Clamp(solved, 0, totalQuestions);
+        var percent = (int)Math.Round(solved * 100d / totalQuestions, MidpointRounding.AwayFromZero);
+        return new(solved, totalQuestions, percent, solved >= totalQuestions);
+    }
+
+    private async Task LoadQuestionTotalsAsync()
+    {
+        var dictation = await Http.GetFromJsonAsync<List<DictationQuestion>>("data/dictation.json") ?? [];
+        var missingLetters = await Http.GetFromJsonAsync<List<MissingLettersQuestion>>("data/missing-letters.json") ?? [];
+
+        totalQuestionsByGame = new Dictionary<string, int>
+        {
+            ["dictation"] = dictation.Count,
+            ["missing-letters"] = missingLetters.Count
+        };
+    }
+
+    private IEnumerable<string> ExerciseTopics(string gameId) => TopicByExerciseId.GetValueOrDefault(gameId, ["Bendra tema"]);
+
+    private string ExerciseHref(GameDefinition exercise)
+    {
+        var selectedGrade = SelectedGrades.FirstOrDefault() ?? progress.ClassGroup;
+        var slug = selectedGrade.Replace('-', '-');
+        return exercise.Id switch
+        {
+            "dictation" => $"/lietuviu-kalba/{slug}-klases/zodziu-diktantas",
+            "missing-letters" => $"/lietuviu-kalba/{slug}-klases/praleistos-raides",
+            _ => "/lietuviu-kalba"
+        };
+    }
+
+    private void ToggleGrade(string grade, bool isChecked)
+    {
+        if (isChecked) SelectedGrades.Add(grade);
+        else SelectedGrades.Remove(grade);
+    }
+
+    private void ToggleTopic(string topic, bool isChecked)
+    {
+        if (isChecked) SelectedTopics.Add(topic);
+        else SelectedTopics.Remove(topic);
+    }
+
+    private void SetStatusAll(ChangeEventArgs _) => statusFilter = "all";
+    private void SetStatusDone(ChangeEventArgs _) => statusFilter = "done";
+    private void SetStatusPending(ChangeEventArgs _) => statusFilter = "pending";
+    private void ToggleOnlyNewQuestions(ChangeEventArgs args) => OnlyNewQuestions = args.Value as bool? == true;
+
+    private void HandleProgressChanged() => _ = InvokeAsync(async () =>
+    {
+        progress = await Progress.GetAsync();
+        foreach (var exercise in SubjectExercises)
+        {
+            var currentPercent = GetCompletion(exercise.Id).Percent;
+            var previousPercent = previousPercentByGame.GetValueOrDefault(exercise.Id);
+            if (previousPercent < 100 && currentPercent >= 100)
+            {
+                await JS.InvokeVoidAsync("nesimokau.celebrateMicroComplete", exercise.Id);
+            }
+
+            previousPercentByGame[exercise.Id] = currentPercent;
+        }
+        StateHasChanged();
+    });
+
+    public void Dispose() => Progress.Changed -= HandleProgressChanged;
+
+    private sealed record CompletionInfo(int Solved, int Total, int Percent, bool IsDone);
+}
