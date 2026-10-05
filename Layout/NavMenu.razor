@@ -6,23 +6,28 @@
 @implements IDisposable
 
 <header class="site-header">
-    <a class="brand" href="" aria-label="nesimokau.lt pradžia">
-        <img class="brand-logo" src="images/nemoku_lt-logo.png?v=4" alt="nesimokau.lt" />
+    <a class="brand" href="" aria-label="nesimokau.lt pradžia" @onclick="CloseMobileNavigation">
+        <img class="brand-logo" src="images/nemoku_lt-logo.png?v=5" alt="nesimokau.lt" />
         <span class="brand-wordmark">nesimokau<span>.lt</span></span>
     </a>
-    <nav class="main-nav" aria-label="Pagrindinė navigacija">
+    <button class="mobile-nav-toggle" type="button" aria-label="Atidaryti meniu" aria-expanded="@mobileNavOpen" @onclick="ToggleMobileNavigation">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <nav class="main-nav @(mobileNavOpen ? "mobile-open" : string.Empty)" aria-label="Pagrindinė navigacija">
         <div class="learn-menu subjects-menu @(subjectsMenuOpen ? "is-open" : "")" @onmouseenter="OpenSubjectsMenu" @onmouseleave="CloseSubjectsMenu">
             <button class="learn-trigger" type="button" aria-haspopup="menu" aria-expanded="@subjectsMenuOpen" @onclick="ToggleSubjectsMenu">Dalykai <span class="menu-chevron">⌄</span></button>
             <div class="learn-dropdown" role="menu" aria-label="Dalykų meniu">
                 <div class="dropdown-heading"><span>✦</span><div><strong>Dalykų meniu</strong><small>Visi dalykai ir jų žaidimai</small></div></div>
-                <NavLink href="/" role="menuitem" @onclick="CloseSubjectsMenu"><span class="dropdown-icon icon-mint">◎</span><span><strong>Visi dalykai</strong><small>Rodyti visus pratimus</small></span><b>→</b></NavLink>
+                <NavLink href="/" role="menuitem" @onclick="CloseAllMenus"><span class="dropdown-icon icon-mint">◎</span><span><strong>Visi dalykai</strong><small>Rodyti visus pratimus</small></span><b>→</b></NavLink>
                 <div class="subject-group @(lithuanianMenuOpen ? "is-open" : "")" @onmouseenter="OpenLithuanianMenu" @onmouseleave="CloseLithuanianMenu">
                     <button class="subject-trigger" type="button" aria-haspopup="menu" aria-expanded="@lithuanianMenuOpen" @onclick="ToggleLithuanianMenu"><span class="dropdown-icon icon-violet">Aa</span><span><strong>Lietuvių kalba</strong><small>Kalbos žaidimai</small></span><b aria-hidden="true">→</b></button>
                     <div class="subject-submenu">
-                        <NavLink class="diagnostic-link" href="diagnostic/Lietuvių kalba" @onclick="CloseSubjectsMenu">🧭 Diagnostinis testas</NavLink>
-                        <NavLink href="games/dictation" @onclick="CloseSubjectsMenu">Žodžių diktantas</NavLink>
-                        <NavLink href="games/missing-letters" @onclick="CloseSubjectsMenu">Praleistos raidės</NavLink>
-                        <NavLink href="daily" @onclick="CloseSubjectsMenu">Dienos iššūkis</NavLink>
+                        <NavLink class="diagnostic-link" href="diagnostic/Lietuvių kalba" @onclick="CloseAllMenus">🧭 Diagnostinis testas</NavLink>
+                        <NavLink href="games/dictation" @onclick="CloseAllMenus">Žodžių diktantas</NavLink>
+                        <NavLink href="games/missing-letters" @onclick="CloseAllMenus">Praleistos raidės</NavLink>
+                        <NavLink href="daily" @onclick="CloseAllMenus">Dienos iššūkis</NavLink>
                     </div>
                 </div>
                 <div class="subject-group">
@@ -40,10 +45,10 @@
             </div>
         </div>
         <div class="navbar-tools">
-            <NavLink class="nav-action" href="achievements"><span>🏆</span> Pasiekimai</NavLink>
-            <NavLink class="nav-action" href="diagnostics"><span>📊</span> Rezultatai</NavLink>
-            <NavLink class="nav-action" href="media-library"><span>🎬</span> Mediateka</NavLink>
-            <NavLink class="nav-action nav-practice" href="practice"><span>✦</span> Treniruotis</NavLink>
+            <NavLink class="nav-action" href="achievements" @onclick="CloseMobileNavigation"><span>🏆</span> Pasiekimai</NavLink>
+            <NavLink class="nav-action" href="diagnostics" @onclick="CloseMobileNavigation"><span>📊</span> Rezultatai</NavLink>
+            <NavLink class="nav-action" href="media-library" @onclick="CloseMobileNavigation"><span>🎬</span> Mediateka</NavLink>
+            <NavLink class="nav-action nav-practice" href="practice" @onclick="CloseMobileNavigation"><span>✦</span> Treniruotis</NavLink>
         </div>
     </nav>
     <div class="header-actions">
@@ -163,6 +168,7 @@
     private bool achievementsOpen;
     private bool practiceOpen;
     private bool mediaLibraryOpen;
+    private bool mobileNavOpen;
     private string practiceSubject = "Visi";
     private string mediaSubject = "Visi";
     private string mediaSearch = string.Empty;
@@ -185,7 +191,23 @@
         lithuanianMenuOpen = false;
     }
 
+    private void CloseAllMenus()
+    {
+        CloseSubjectsMenu();
+        mobileNavOpen = false;
+    }
+
     private void ToggleSubjectsMenu() => subjectsMenuOpen = !subjectsMenuOpen;
+    private void ToggleMobileNavigation()
+    {
+        mobileNavOpen = !mobileNavOpen;
+        if (!mobileNavOpen)
+        {
+            CloseSubjectsMenu();
+        }
+    }
+
+    private void CloseMobileNavigation() => mobileNavOpen = false;
     private void OpenLithuanianMenu() => lithuanianMenuOpen = true;
     private void CloseLithuanianMenu() => lithuanianMenuOpen = false;
     private void ToggleLithuanianMenu() => lithuanianMenuOpen = !lithuanianMenuOpen;
