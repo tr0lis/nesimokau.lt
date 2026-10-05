@@ -1,8 +1,10 @@
 ﻿@using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject ProgressService Progress
+@inject AuthService Auth
 @inject IJSRuntime JS
 @inject GameCatalogService Catalog
+@inject NavigationManager Navigation
 @implements IDisposable
 
 <header class="site-header">
@@ -37,6 +39,7 @@
                     <NavLink class="profile-menu-link" href="turnyrine-lentele" @onclick="CloseProfileMenu"><span>🏅</span> Turnyrinė lentelė</NavLink>
                     <NavLink class="profile-menu-link" href="mediateka" @onclick="CloseProfileMenu"><span>🎬</span> Mediateka</NavLink>
                 </div>
+                <button class="profile-menu-link profile-menu-logout" type="button" @onclick="LogoutAsync"><span>↪</span> Atsijungti</button>
             </section>
         }
     </div>
@@ -168,11 +171,17 @@
 
     private void ToggleMobileNavigation()
     {
+        if (profileMenuOpen) profileMenuOpen = false;
         mobileNavOpen = !mobileNavOpen;
     }
 
     private void CloseMobileNavigation() => mobileNavOpen = false;
-    private void ToggleProfileMenu() => profileMenuOpen = !profileMenuOpen;
+    private void ToggleProfileMenu()
+    {
+        if (mobileNavOpen) mobileNavOpen = false;
+        profileMenuOpen = !profileMenuOpen;
+    }
+
     private void CloseProfileMenu() => profileMenuOpen = false;
     private IEnumerable<DateTime> CurrentMonthDays => Enumerable.Range(1, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month)).Select(day => new DateTime(DateTime.Today.Year, DateTime.Today.Month, day));
     private IEnumerable<DateTime> LastTenDays => Enumerable.Range(0, 10).Select(day => DateTime.Today.AddDays(-9 + day));
@@ -234,6 +243,13 @@
     }
     private void CloseMediaLibrary() => mediaLibraryOpen = false;
     private void DismissAchievementToast() => achievementToast = null;
+
+    private async Task LogoutAsync()
+    {
+        await Auth.LogoutAsync();
+        CloseProfileMenu();
+        Navigation.NavigateTo("/prisijungimas", replace: true);
+    }
 
     private async Task ToggleTheme()
     {

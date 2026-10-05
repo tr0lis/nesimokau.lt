@@ -1,4 +1,7 @@
-﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+﻿@using nesimokau.lt.Services
+@implements IDisposable
+
+<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <ErrorBoundary>
             <ChildContent>
@@ -20,8 +23,42 @@
 </Router>
 
 @code {
+    [Inject]
+    private AuthService Auth { get; set; } = default!;
+
     private void Reload() => NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        await EnforceAuthAsync(NavigationManager.Uri);
+    }
+
+    private async void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        await EnforceAuthAsync(e.Location);
+    }
+
+    private async Task EnforceAuthAsync(string absoluteUri)
+    {
+        var relativePath = NavigationManager.ToBaseRelativePath(absoluteUri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
+        var isAuthRoute = relativePath is "registracija" or "prisijungimas";
+        if (isAuthRoute) return;
+
+        var authenticated = await Auth.IsAuthenticatedAsync();
+        if (!authenticated)
+        {
+            NavigationManager.NavigateTo("/prisijungimas", replace: true);
+        }
+    }
 
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+    }
 }

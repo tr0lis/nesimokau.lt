@@ -1,0 +1,228 @@
+@page "/registracija"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject AuthService Auth
+@inject ProgressService Progress
+@inject NavigationManager Navigation
+
+<PageTitle>Registracija | nesimokau.lt</PageTitle>
+
+<section class="auth-shell">
+    <article class="auth-card">
+        <p class="eyebrow">PRADĖK MOKYTIS</p>
+        <h1>Sukurti paskyrą</h1>
+        <p class="subtitle">Pasirink avatarą, klasę ir pradėk nuo tau pritaikytos medžiagos.</p>
+
+        <EditForm Model="registerForm" OnSubmit="RegisterAsync" class="auth-form">
+            <div class="auth-field">
+                <label for="username">Slapyvardis</label>
+                <input id="username" value="@registerForm.Username" @oninput="HandleUsernameInput" maxlength="24" autocomplete="username" required />
+                @if (!string.IsNullOrWhiteSpace(usernameStatus) || isCheckingUsername)
+                {
+                    <small class="auth-username-status @(usernameTaken ? "bad" : "ok")">@(isCheckingUsername ? "Tikrinama..." : usernameStatus)</small>
+                }
+            </div>
+
+            <div class="auth-field-grid">
+                <div class="auth-field">
+                    <label for="password">Slaptažodis</label>
+                    <input id="password" type="password" @bind="registerForm.Password" minlength="8" autocomplete="new-password" required />
+                    @if (!string.IsNullOrWhiteSpace(registerForm.Password))
+                    {
+                        <div class="auth-password-popup" role="status" aria-live="polite">
+                            <strong>Slaptažodžio saugumas</strong>
+                            <div class="auth-password-rules">
+                                <span class="@(HasMinLength ? "ok" : "bad")">@(HasMinLength ? "✓" : "•") Bent 8 simboliai</span>
+                                <span class="@(HasUppercase ? "ok" : "bad")">@(HasUppercase ? "✓" : "•") Bent 1 didžioji raidė</span>
+                                <span class="@(HasNumber ? "ok" : "bad")">@(HasNumber ? "✓" : "•") Bent 1 skaičius</span>
+                                <span class="@(HasSymbol ? "ok" : "bad")">@(HasSymbol ? "✓" : "•") Bent 1 simbolis</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="auth-field">
+                    <label for="password2">Pakartok slaptažodį</label>
+                    <input id="password2" type="password" @bind="registerForm.ConfirmPassword" minlength="8" autocomplete="new-password" required />
+                    @if (!string.IsNullOrWhiteSpace(registerForm.ConfirmPassword) || !string.IsNullOrWhiteSpace(registerForm.Password))
+                    {
+                        <div class="auth-password-popup" role="status" aria-live="polite">
+                            <strong>Slaptažodžio patvirtinimas</strong>
+                            <div class="auth-password-rules">
+                                <span class="@(PasswordsMatch ? "ok" : "bad")">
+                                    @(PasswordsMatch ? "✓ Sutampa" : "• Nesutampa")
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <label>Avataras</label>
+                <div class="auth-avatar-grid">
+                    @foreach (var avatar in FreeAvatars)
+                    {
+                        <button type="button" class="auth-avatar-choice @(selectedAvatarId == avatar.Id ? "selected" : string.Empty)" @onclick="() => selectedAvatarId = avatar.Id" aria-label="Pasirinkti avatarą @avatar.Symbol">
+                            <span>@avatar.Symbol</span>
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <label for="class">Klasė</label>
+                <select id="class" @bind="registerForm.SelectedClass" required>
+                    @foreach (var cls in Enumerable.Range(1, 12))
+                    {
+                        <option value="@cls">@cls klasė</option>
+                    }
+                </select>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <p class="auth-error">@errorMessage</p>
+            }
+
+            <button type="submit" class="button button-primary auth-submit" disabled="@isSubmitting">@(isSubmitting ? "Registruojama..." : "Registruotis")</button>
+        </EditForm>
+
+        <p class="auth-alt">Jau turi paskyrą? <a href="/prisijungimas">Prisijunk</a></p>
+    </article>
+</section>
+
+@code {
+    private readonly RegisterForm registerForm = new();
+    private string selectedAvatarId = "a1";
+    private bool isSubmitting;
+    private bool isCheckingUsername;
+    private string errorMessage = string.Empty;
+    private string usernameStatus = string.Empty;
+    private bool usernameTaken;
+
+    private static IReadOnlyList<AvatarDefinition> FreeAvatars => AvatarCatalog.All.Where(avatar => avatar.Cost == 0).Take(6).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await Auth.IsAuthenticatedAsync())
+        {
+            Navigation.NavigateTo("/", replace: true);
+        }
+    }
+
+    private async Task RegisterAsync(EditContext _)
+    {
+        errorMessage = string.Empty;
+
+        if (isCheckingUsername)
+        {
+            errorMessage = "Palauk, tikrinamas slapyvardis.";
+            return;
+        }
+
+        if (usernameTaken)
+        {
+            errorMessage = "Toks slapyvardis jau užimtas.";
+            return;
+        }
+
+        if (registerForm.Password != registerForm.ConfirmPassword)
+        {
+            errorMessage = "Slaptažodžiai nesutampa.";
+            return;
+        }
+
+        if (registerForm.Password.Length < 8)
+        {
+            errorMessage = "Slaptažodis turi būti bent 8 simbolių.";
+            return;
+        }
+
+        if (!IsStrongPassword(registerForm.Password))
+        {
+            errorMessage = "Slaptažodis per silpnas. Reikia: 8+, didžiosios, skaičiaus ir simbolio.";
+            return;
+        }
+
+        isSubmitting = true;
+        AuthResult result;
+        try
+        {
+            var classGroup = MapClassToGroup(registerForm.SelectedClass);
+            result = await Auth.RegisterAsync(registerForm.Username, registerForm.Password, selectedAvatarId, classGroup);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+
+        if (!result.Success || result.Session is null)
+        {
+            errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Registracija nepavyko." : result.ErrorMessage;
+            return;
+        }
+
+        await Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup);
+
+        Navigation.NavigateTo("/", replace: true);
+    }
+
+    private async Task HandleUsernameInput(ChangeEventArgs args)
+    {
+        registerForm.Username = args.Value?.ToString() ?? string.Empty;
+        usernameStatus = string.Empty;
+        usernameTaken = false;
+
+        if (registerForm.Username.Trim().Length < 3)
+        {
+            if (!string.IsNullOrWhiteSpace(registerForm.Username))
+            {
+                usernameStatus = "Slapyvardis per trumpas.";
+            }
+
+            return;
+        }
+
+        isCheckingUsername = true;
+        try
+        {
+            usernameTaken = await Auth.IsUsernameTakenAsync(registerForm.Username);
+            usernameStatus = usernameTaken ? "Šis slapyvardis užimtas." : "Slapyvardis laisvas.";
+        }
+        finally
+        {
+            isCheckingUsername = false;
+        }
+    }
+
+    private static string MapClassToGroup(int cls) => cls switch
+    {
+        <= 2 => "1-2",
+        <= 4 => "3-4",
+        <= 6 => "5-6",
+        <= 8 => "7-8",
+        <= 10 => "9-10",
+        _ => "11-12"
+    };
+
+    private bool HasMinLength => registerForm.Password.Length >= 8;
+    private bool HasUppercase => registerForm.Password.Any(char.IsUpper);
+    private bool HasNumber => registerForm.Password.Any(char.IsDigit);
+    private bool HasSymbol => registerForm.Password.Any(ch => !char.IsLetterOrDigit(ch));
+    private bool PasswordsMatch => !string.IsNullOrWhiteSpace(registerForm.Password)
+        && string.Equals(registerForm.Password, registerForm.ConfirmPassword, StringComparison.Ordinal);
+
+    private static bool IsStrongPassword(string value)
+        => value.Length >= 8
+           && value.Any(char.IsUpper)
+           && value.Any(char.IsDigit)
+           && value.Any(ch => !char.IsLetterOrDigit(ch));
+
+    private sealed class RegisterForm
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+        public int SelectedClass { get; set; } = 5;
+    }
+}

@@ -1,0 +1,82 @@
+@page "/prisijungimas"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject AuthService Auth
+@inject ProgressService Progress
+@inject NavigationManager Navigation
+
+<PageTitle>Prisijungimas | nesimokau.lt</PageTitle>
+
+<section class="auth-shell">
+    <article class="auth-card auth-card-login">
+        <p class="eyebrow">SUGRĮŽĘS MOKINYS</p>
+        <h1>Prisijungti</h1>
+        <p class="subtitle">Tęsk pažangą nuo ten, kur sustojai.</p>
+
+        <EditForm Model="loginForm" OnSubmit="LoginAsync" class="auth-form">
+            <div class="auth-field">
+                <label for="username">Slapyvardis</label>
+                <input id="username" @bind="loginForm.Username" maxlength="24" autocomplete="username" required />
+            </div>
+
+            <div class="auth-field">
+                <label for="password">Slaptažodis</label>
+                <input id="password" type="password" @bind="loginForm.Password" autocomplete="current-password" required />
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <p class="auth-error">@errorMessage</p>
+            }
+
+            <button type="submit" class="button button-primary auth-submit" disabled="@isSubmitting">@(isSubmitting ? "Jungiamasi..." : "Prisijungti")</button>
+        </EditForm>
+
+        <p class="auth-alt">Neturi paskyros? <a href="/registracija">Registruokis</a></p>
+    </article>
+</section>
+
+@code {
+    private readonly LoginForm loginForm = new();
+    private bool isSubmitting;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await Auth.IsAuthenticatedAsync())
+        {
+            Navigation.NavigateTo("/", replace: true);
+        }
+    }
+
+    private async Task LoginAsync(EditContext _)
+    {
+        errorMessage = string.Empty;
+        isSubmitting = true;
+        AuthResult result;
+        try
+        {
+            result = await Auth.LoginAsync(loginForm.Username, loginForm.Password);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+
+        if (!result.Success || result.Session is null)
+        {
+            errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Prisijungti nepavyko." : result.ErrorMessage;
+            return;
+        }
+
+        await Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup);
+
+        Navigation.NavigateTo("/", replace: true);
+    }
+
+    private sealed class LoginForm
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

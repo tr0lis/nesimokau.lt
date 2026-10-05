@@ -46,7 +46,14 @@
                     <strong>@subject.Title</strong>
                     <small>@subject.Description</small>
                 </span>
-                <b>@(subject.IsReady ? "Atidaryti →" : "Netrukus")</b>
+                @if (subject.IsReady)
+                {
+                    <span class="subject-card-corner" aria-hidden="true">↗</span>
+                }
+                else
+                {
+                    <span class="subject-card-corner subject-card-corner-disabled">Netrukus</span>
+                }
             </NavLink>
         }
     </div>

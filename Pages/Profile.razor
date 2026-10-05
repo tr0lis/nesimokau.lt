@@ -55,23 +55,8 @@ else
                 <section class="profile-settings" aria-labelledby="profile-settings-title">
                     <h3 id="profile-settings-title">Mokymosi nustatymai</h3>
                     <div class="profile-class-block">
-                        <label for="profile-class">Rodomi pratimai pagal klasę</label>
-                        <div class="profile-class-controls">
-                            <div class="profile-class-menu">
-                                <button id="profile-class" class="profile-class-trigger" @onclick="ToggleProfileClassMenu" aria-label="Pasirinkti klasę">@SelectedClassLabel <span>⌄</span></button>
-                                @if (profileClassMenuOpen)
-                                {
-                                    <div class="profile-class-dropdown" @onclick:stopPropagation="true">
-                                        @foreach (var option in ClassGroups)
-                                        {
-                                            <button class="profile-class-option @(classGroup == option.Key ? "selected" : "")" @onclick="() => SelectProfileClass(option.Key)">@option.Value</button>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                            <button class="button button-secondary profile-class-save" @onclick="SaveClass">Išsaugoti</button>
-                        </div>
-                        @if (classSaved) { <div class="name-saved">Klasė atnaujinta.</div> }
+                        <label>Rodomi pratimai pagal klasę</label>
+                        <div class="profile-class-fixed" aria-label="Priskirta klasė">@SelectedClassLabel</div>
                     </div>
                     <button class="button button-ghost reset-progress-btn profile-reset-main" @onclick="() => confirmResetOpen = true">Atkurti pažangą</button>
                 </section>
@@ -324,8 +309,6 @@ else
 @code {
     private StudentProgress? progress;
     private string classGroup = "5-6";
-    private bool classSaved;
-    private bool profileClassMenuOpen;
     private bool showLevels;
     private bool editingName;
     private string nameDraft = string.Empty;
@@ -461,23 +444,8 @@ else
         editingName = false;
     }
 
-    private async Task SaveClass()
-    {
-        if (progress is null) return;
-        await Progress.SaveClassGroupAsync(classGroup);
-        progress.ClassGroup = classGroup;
-        classSaved = true;
-    }
-
-    private void ToggleProfileClassMenu() => profileClassMenuOpen = !profileClassMenuOpen;
     private void OpenSubjectMap(string subject) => expandedSubject = subject;
     private void CloseSubjectMap() => expandedSubject = null;
-
-    private void SelectProfileClass(string option)
-    {
-        classGroup = option;
-        profileClassMenuOpen = false;
-    }
 
     private async Task SelectAvatar(string avatarId)
     {
@@ -531,9 +499,7 @@ else
         progress = await Progress.GetAsync();
         progress.Name = string.IsNullOrWhiteSpace(preservedName) ? progress.Name : preservedName;
         classGroup = progress.ClassGroup;
-        classSaved = false;
         editingName = false;
-        profileClassMenuOpen = false;
         avatarOpen = false;
         showLevels = false;
         confirmResetOpen = false;

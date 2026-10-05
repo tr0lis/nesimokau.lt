@@ -245,6 +245,29 @@ public sealed class ProgressService(IJSRuntime js)
         Changed?.Invoke();
     }
 
+    public async Task ApplyAccountProfileAsync(string username, string avatarId, string classGroup)
+    {
+        var progress = await GetAsync();
+
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            progress.Name = username.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(avatarId))
+        {
+            progress.AvatarId = avatarId;
+            if (!progress.UnlockedAvatarIds.Contains(avatarId)) progress.UnlockedAvatarIds.Add(avatarId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(classGroup))
+        {
+            progress.ClassGroup = classGroup;
+        }
+
+        await SaveAsync(progress);
+    }
+
     public async Task ResetAsync()
     {
         cached = new StudentProgress();

@@ -12,5 +12,6 @@ builder.Services.AddSingleton<GameCatalogService>();
 builder.Services.AddScoped<ProgressService>();
 builder.Services.AddScoped<DictationService>();
 builder.Services.AddScoped<LeaderboardService>();
+builder.Services.AddScoped<AuthService>();
 
 await builder.Build().RunAsync();
