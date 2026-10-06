@@ -8,7 +8,7 @@ public static class MathQuestionFactory
 
     public static IReadOnlyList<MathQuestion> CreateAll()
     {
-        var questions = new List<MathQuestion>(120);
+        var questions = new List<MathQuestion>(360);
         var id = 1;
 
         for (var grade = 1; grade <= 4; grade++)
@@ -17,7 +17,10 @@ public static class MathQuestionFactory
             {
                 for (var i = 1; i <= 10; i++)
                 {
-                    questions.Add(CreateQuestion(id++, grade, difficulty, i));
+                    var points = PointsForDifficulty(difficulty);
+                    questions.Add(CreateWordProblem(id++, grade, difficulty, i, points));
+                    questions.Add(CreateGeometryQuestion(id++, grade, difficulty, i, points));
+                    questions.Add(CreatePatternQuestion(id++, grade, difficulty, i, points));
                 }
             }
         }
@@ -25,111 +28,113 @@ public static class MathQuestionFactory
         return questions;
     }
 
-    private static MathQuestion CreateQuestion(int id, int grade, string difficulty, int index)
+    private static MathQuestion CreateWordProblem(int id, int grade, string difficulty, int questionNumber, int points)
     {
-        var categoryType = (index - 1) % 3;
-        var points = PointsForDifficulty(difficulty);
-
-        return categoryType switch
+        var baseValue = grade switch
         {
-            0 => CreateArithmeticQuestion(id, grade, difficulty, index, points),
-            1 => CreateGeometryQuestion(id, grade, difficulty, index, points),
-            _ => CreatePatternQuestion(id, grade, difficulty, index, points)
+            1 => 6,
+            2 => 12,
+            3 => 24,
+            _ => 40
+        };
+
+        var first = baseValue + questionNumber * 2;
+        var second = grade + 2 + questionNumber % 4;
+
+        var variant = questionNumber % 5;
+        return variant switch
+        {
+            0 => CreateAdditionStory(id, grade, difficulty, points, first, second),
+            1 => CreateSubtractionStory(id, grade, difficulty, points, first + second, second),
+            2 => CreateMultiplicationStory(id, grade, difficulty, points, grade + 2, second),
+            3 => CreateDivisionStory(id, grade, difficulty, points, grade + 2, second),
+            _ => CreateTwoStepStory(id, grade, difficulty, points, first, second)
         };
     }
 
-    private static MathQuestion CreateArithmeticQuestion(int id, int grade, string difficulty, int index, int points)
+    private static MathQuestion CreateAdditionStory(int id, int grade, string difficulty, int points, int first, int second)
     {
-        if (difficulty == "Lengvas")
-        {
-            if (index % 2 == 0)
-            {
-                var a = 5 + grade + index;
-                var b = 2 + grade;
-                var answer = a + b;
-                return new MathQuestion(id, "Sudėtis", "Skaičiai ir skaičiavimai", $"Kiek yra {a} + {b}?", "Sudėk abu skaičius.", answer.ToString(), [answer.ToString()], $"{a} + {b} = {answer}.", difficulty, grade, points);
-            }
-
-            var a2 = 14 + grade + index;
-            var b2 = 3 + grade;
-            var answer2 = a2 - b2;
-            return new MathQuestion(id, "Atimtis", "Skaičiai ir skaičiavimai", $"Kiek yra {a2} - {b2}?", "Iš pirmo skaičiaus atimk antrą.", answer2.ToString(), [answer2.ToString()], $"{a2} - {b2} = {answer2}.", difficulty, grade, points);
-        }
-
-        if (difficulty == "Vidutinis")
-        {
-            if (index % 2 == 0)
-            {
-                var a = 12 + grade * 4 + index;
-                var b = 9 + grade * 3;
-                var answer = a + b;
-                return new MathQuestion(id, "Sudėtis 100 ribose", "Skaičiai ir skaičiavimai", $"Kiek yra {a} + {b}?", "Sudėk dešimtis ir vienetus.", answer.ToString(), [answer.ToString()], $"{a} + {b} = {answer}.", difficulty, grade, points);
-            }
-
-            var a2 = 70 + grade * 5 + index;
-            var b2 = 18 + grade * 2;
-            var answer2 = a2 - b2;
-            return new MathQuestion(id, "Atimtis 100 ribose", "Skaičiai ir skaičiavimai", $"Kiek yra {a2} - {b2}?", "Atimk dešimtis, tada vienetus.", answer2.ToString(), [answer2.ToString()], $"{a2} - {b2} = {answer2}.", difficulty, grade, points);
-        }
-
-        if (index % 2 == 0)
-        {
-            var a = 4 + grade + index % 4;
-            var b = 5 + index % 5;
-            var answer = a * b;
-            return new MathQuestion(id, "Daugyba", "Skaičiai ir skaičiavimai", $"Kiek yra {a} × {b}?", "Naudok daugybos lentelę.", answer.ToString(), [answer.ToString()], $"{a} × {b} = {answer}.", difficulty, grade, points);
-        }
-
-        var divisor = 3 + index % 6;
-        var quotient = 4 + grade + index % 4;
-        var dividend = divisor * quotient;
-        return new MathQuestion(id, "Dalyba", "Skaičiai ir skaičiavimai", $"Kiek yra {dividend} ÷ {divisor}?", $"Pagalvok, kiek kartų {divisor} telpa į {dividend}.", quotient.ToString(), [quotient.ToString()], $"{dividend} ÷ {divisor} = {quotient}.", difficulty, grade, points);
+        var answer = first + second;
+        return new MathQuestion(id, "Tekstiniai uždaviniai", "Skaičiai ir skaičiavimai", $"Ieva surinko {first} kaštonus, o Tomas – {second} kaštonus. Kiek kaštonų jie surinko kartu?", "Sudėk abiejų vaikų surinktus kaštonus.", answer.ToString(), [answer.ToString()], $"{first} + {second} = {answer}.", difficulty, grade, points);
     }
 
-    private static MathQuestion CreateGeometryQuestion(int id, int grade, string difficulty, int index, int points)
+    private static MathQuestion CreateSubtractionStory(int id, int grade, string difficulty, int points, int total, int removed)
     {
-        if (difficulty == "Lengvas")
-        {
-            var length = 3 + grade + index % 5;
-            var width = 2 + index % 3;
-            var answer = length * width;
-            return new MathQuestion(id, "Ilgis ir plotas", "Geometrija ir matavimai", $"Stačiakampio ilgis {length} cm, plotis {width} cm. Koks plotas?", "Plotas = ilgis × plotis.", answer.ToString(), [answer.ToString()], $"{length} × {width} = {answer} cm².", difficulty, grade, points);
-        }
-
-        if (difficulty == "Vidutinis")
-        {
-            var a = 4 + grade + index % 4;
-            var b = 3 + index % 4;
-            var answer = 2 * (a + b);
-            return new MathQuestion(id, "Perimetras", "Geometrija ir matavimai", $"Stačiakampio kraštinės yra {a} cm ir {b} cm. Koks perimetras?", "Perimetras = 2 × (a + b).", answer.ToString(), [answer.ToString()], $"2 × ({a} + {b}) = {answer} cm.", difficulty, grade, points);
-        }
-
-        var edge = 5 + grade + index % 4;
-        var area = edge * edge;
-        return new MathQuestion(id, "Kvadrato plotas", "Geometrija ir matavimai", $"Kvadrato kraštinė yra {edge} cm. Koks kvadrato plotas?", "Kvadrato plotas = kraštinė × kraštinė.", area.ToString(), [area.ToString()], $"{edge} × {edge} = {area} cm².", difficulty, grade, points);
+        var answer = total - removed;
+        return new MathQuestion(id, "Tekstiniai uždaviniai", "Skaičiai ir skaičiavimai", $"Bibliotekoje buvo {total} naujų knygų. Mokiniai pasiėmė {removed} knygas. Kiek knygų liko?", "Iš visų knygų atimk paimtas.", answer.ToString(), [answer.ToString()], $"{total} - {removed} = {answer}.", difficulty, grade, points);
     }
 
-    private static MathQuestion CreatePatternQuestion(int id, int grade, string difficulty, int index, int points)
+    private static MathQuestion CreateMultiplicationStory(int id, int grade, string difficulty, int points, int groups, int each)
     {
-        if (difficulty == "Lengvas")
-        {
-            var start = grade + index;
-            var step = 2 + index % 3;
-            var answer = start + 4 * step;
-            return new MathQuestion(id, "Dėsningumai", "Modeliai ir sąryšiai", $"Koks kitas skaičius sekoje: {start}, {start + step}, {start + 2 * step}, {start + 3 * step}, ...?", "Skaičiai didėja tuo pačiu skirtumu.", answer.ToString(), [answer.ToString()], $"Didėja po {step}, todėl kitas skaičius {answer}.", difficulty, grade, points);
-        }
+        var answer = groups * each;
+        return new MathQuestion(id, "Tekstiniai uždaviniai", "Skaičiai ir skaičiavimai", $"Į {groups} dėžutes sudėta po {each} pieštukus. Kiek pieštukų yra visose dėžutėse?", "Vienodų grupių skaičių padaugink iš kiekio vienoje grupėje.", answer.ToString(), [answer.ToString()], $"{groups} × {each} = {answer}.", difficulty, grade, points);
+    }
 
-        if (difficulty == "Vidutinis")
-        {
-            var start = 2 + grade + index % 3;
-            var answer = start * 16;
-            return new MathQuestion(id, "Dvigubėjanti seka", "Modeliai ir sąryšiai", $"Koks kitas skaičius sekoje: {start}, {start * 2}, {start * 4}, {start * 8}, ...?", "Kiekvienas skaičius dvigubinamas.", answer.ToString(), [answer.ToString()], $"Po {start * 8} eina {answer}.", difficulty, grade, points);
-        }
+    private static MathQuestion CreateDivisionStory(int id, int grade, string difficulty, int points, int children, int each)
+    {
+        var total = children * each;
+        return new MathQuestion(id, "Tekstiniai uždaviniai", "Skaičiai ir skaičiavimai", $"{total} lipdukų reikia po lygiai padalyti {children} vaikams. Kiek lipdukų gaus kiekvienas vaikas?", "Visą kiekį padalyk vaikų skaičiui.", each.ToString(), [each.ToString()], $"{total} ÷ {children} = {each}.", difficulty, grade, points);
+    }
 
-        var a = 40 + grade * 5 + index;
-        var b = 30 + grade * 4 + index;
-        var answer2 = Math.Max(a, b);
-        return new MathQuestion(id, "Loginis mąstymas", "Modeliai ir sąryšiai", $"Kuris skaičius didesnis: {a} ar {b}?", "Palygink dešimtis, tada vienetus.", answer2.ToString(), [answer2.ToString()], $"Didesnis skaičius yra {answer2}.", difficulty, grade, points);
+    private static MathQuestion CreateTwoStepStory(int id, int grade, string difficulty, int points, int first, int second)
+    {
+        var added = grade + 3;
+        var answer = first - second + added;
+        return new MathQuestion(id, "Tekstiniai uždaviniai", "Skaičiai ir skaičiavimai", "Autobuse važiavo " + first + " keleiviai. Stotelėje išlipo " + second + ", o įlipo " + added + ". Kiek keleivių dabar važiuoja autobusu?", "Pirmiausia atimk išlipusius, po to pridėk įlipusius.", answer.ToString(), [answer.ToString()], $"{first} - {second} + {added} = {answer}.", difficulty, grade, points);
+    }
+
+    private static MathQuestion CreateGeometryQuestion(int id, int grade, string difficulty, int questionNumber, int points)
+    {
+        var length = 4 + grade + questionNumber % 5;
+        var width = 2 + questionNumber % 4;
+        var side = 3 + grade + questionNumber % 4;
+
+        var variant = questionNumber % 5;
+        return variant switch
+        {
+            0 => new MathQuestion(id, "Stačiakampio plotas", "Geometrija ir matavimai", $"Gėlyno ilgis {length} m, plotis {width} m. Koks jo plotas?", "Plotas = ilgis × plotis.", (length * width).ToString(), [(length * width).ToString()], $"{length} × {width} = {length * width} m².", difficulty, grade, points),
+            1 => new MathQuestion(id, "Stačiakampio perimetras", "Geometrija ir matavimai", $"Stačiakampio kraštinės yra {length} cm ir {width} cm. Koks jo perimetras?", "Sudėk visas keturias kraštines.", (2 * (length + width)).ToString(), [(2 * (length + width)).ToString()], $"2 × ({length} + {width}) = {2 * (length + width)} cm.", difficulty, grade, points),
+            2 => new MathQuestion(id, "Kvadrato perimetras", "Geometrija ir matavimai", $"Kvadrato kraštinė yra {side} cm. Koks jo perimetras?", "Kvadratas turi keturias vienodas kraštines.", (4 * side).ToString(), [(4 * side).ToString()], $"4 × {side} = {4 * side} cm.", difficulty, grade, points),
+            3 => new MathQuestion(id, "Ilgio vienetai", "Geometrija ir matavimai", $"Juosta yra {length} m ilgio. Kiek tai yra centimetrų?", "Vienas metras yra 100 centimetrų.", (length * 100).ToString(), [(length * 100).ToString()], $"{length} m = {length * 100} cm.", difficulty, grade, points),
+            _ => new MathQuestion(id, "Trūkstama kraštinė", "Geometrija ir matavimai", $"Stačiakampio perimetras yra {2 * (length + width)} cm, o ilgis – {length} cm. Koks jo plotis?", "Iš perimetro atimk abiejų ilgių sumą ir padalyk iš 2.", width.ToString(), [width.ToString()], $"Plotis yra {width} cm.", difficulty, grade, points)
+        };
+    }
+
+    private static MathQuestion CreatePatternQuestion(int id, int grade, string difficulty, int questionNumber, int points)
+    {
+        var start = grade + questionNumber;
+        var step = 2 + questionNumber % 4;
+
+        var variant = questionNumber % 5;
+        return variant switch
+        {
+            0 => new MathQuestion(id, "Didėjanti seka", "Modeliai ir sąryšiai", $"Įrašyk kitą sekos skaičių: {start}, {start + step}, {start + 2 * step}, {start + 3 * step}, ...", "Kiekvieną kartą pridedamas tas pats skaičius.", (start + 4 * step).ToString(), [(start + 4 * step).ToString()], $"Kiekvieną kartą pridedama po {step}.", difficulty, grade, points),
+            1 => new MathQuestion(id, "Mažėjanti seka", "Modeliai ir sąryšiai", $"Įrašyk kitą sekos skaičių: {start + 5 * step}, {start + 4 * step}, {start + 3 * step}, {start + 2 * step}, ...", "Kiekvieną kartą atimamas tas pats skaičius.", (start + step).ToString(), [(start + step).ToString()], $"Kiekvieną kartą atimama po {step}.", difficulty, grade, points),
+            2 => CreateDoublingPattern(id, grade, difficulty, questionNumber, points),
+            3 => CreateAlternatingPattern(id, grade, difficulty, questionNumber, points),
+            _ => CreateOperationPattern(id, grade, difficulty, questionNumber, points)
+        };
+    }
+
+    private static MathQuestion CreateDoublingPattern(int id, int grade, string difficulty, int questionNumber, int points)
+    {
+        var start = 2 + grade + questionNumber % 3;
+        var answer = start * 16;
+        return new MathQuestion(id, "Dvigubėjanti seka", "Modeliai ir sąryšiai", $"Įrašyk kitą sekos skaičių: {start}, {start * 2}, {start * 4}, {start * 8}, ...", "Kiekvienas skaičius yra dvigubas už ankstesnį.", answer.ToString(), [answer.ToString()], $"{start * 8} × 2 = {answer}.", difficulty, grade, points);
+    }
+
+    private static MathQuestion CreateAlternatingPattern(int id, int grade, string difficulty, int questionNumber, int points)
+    {
+        var first = grade + questionNumber;
+        var second = first + 3;
+        return new MathQuestion(id, "Pasikartojanti seka", "Modeliai ir sąryšiai", $"Įrašyk kitą sekos skaičių: {first}, {second}, {first}, {second}, {first}, ...", "Seka kartoja du skaičius.", second.ToString(), [second.ToString()], $"Kartojasi {first}, {second}.", difficulty, grade, points);
+    }
+
+    private static MathQuestion CreateOperationPattern(int id, int grade, string difficulty, int questionNumber, int points)
+    {
+        var start = 3 + grade + questionNumber;
+        var answer = start + 12;
+        return new MathQuestion(id, "Veiksmų seka", "Modeliai ir sąryšiai", $"Įrašyk kitą sekos skaičių: {start}, {start + 3}, {start + 6}, {start + 9}, ...", "Kiekvieną kartą pridedama po 3.", answer.ToString(), [answer.ToString()], $"{start + 9} + 3 = {answer}.", difficulty, grade, points);
     }
 
     private static int PointsForDifficulty(string difficulty)

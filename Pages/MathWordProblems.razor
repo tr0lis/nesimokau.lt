@@ -197,9 +197,7 @@ else if (current is not null)
         var acceptable = new List<string> { current.Answer };
         if (current.AcceptableAnswers is not null) acceptable.AddRange(current.AcceptableAnswers);
 
-        isCorrect = acceptable.Any(a =>
-            string.Equals(studentAnswer, a, StringComparison.OrdinalIgnoreCase) ||
-            (int.TryParse(studentAnswer, out var sa) && int.TryParse(a, out var ea) && sa == ea));
+        isCorrect = MathAnswerComparer.IsMatch(studentAnswer, acceptable);
 
         if (isCorrect)
         {

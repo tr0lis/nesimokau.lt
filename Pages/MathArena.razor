@@ -61,7 +61,7 @@ else if (current is not null)
         <div class="prompt-label"><span class="prompt-pulse"></span> APSKAIČIUOK</div>
         <div class="math-problem">@current.Prompt</div>
         <p class="prompt-hint">@current.Hint</p>
-        <div class="answer-area"><input @ref="answerInput" @bind="answer" @bind:event="oninput" @onkeydown="HandleKeyDown" placeholder="Įrašyk atsakymą..." autocomplete="off" inputmode="numeric" aria-label="Atsakymas" /><button class="hint-inline-button" @onclick="OpenHintConfirm" disabled="@(feedback is not null || hintUsed || !CanPurchaseHint)" aria-label="Išspręsti">💡</button><span class="hint-inline-tooltip">IŠSPRĘSTI (-100)</span></div>
+        <div class="answer-area"><input type="number" step="1" @ref="answerInput" @bind="answer" @bind:event="oninput" @onkeydown="HandleKeyDown" placeholder="Įrašyk atsakymą..." autocomplete="off" inputmode="numeric" aria-label="Atsakymas" /><button class="hint-inline-button" @onclick="OpenHintConfirm" disabled="@(feedback is not null || hintUsed || !CanPurchaseHint)" aria-label="Išspręsti">💡</button><span class="hint-inline-tooltip">IŠSPRĘSTI (-100)</span></div>
         @if (feedback is not null)
         {
             <div class="feedback @(isCorrect ? "feedback-good" : "feedback-bad")"><strong>@(isCorrect ? "Teisingai!" : "Dar kartą pagalvok")</strong><span>@feedback</span></div>
@@ -203,11 +203,35 @@ else if (current is not null)
         var op = random.Next(4);
         return op switch
         {
-            0 => new ArenaQuestion(id, $"{random.Next(10, 100)} + {random.Next(10, 100)} = ?", "Sudėk dešimtis ir vienetus.", "", "", 75),
+            0 => GenerateAdditionMedium(random, id),
             1 => GenerateSubtractionMedium(random, id),
-            2 => new ArenaQuestion(id, $"{random.Next(2, 10)} × {random.Next(2, 10)} = ?", "Naudok daugybos lentelę.", "", "", 75),
-            _ => new ArenaQuestion(id, $"{random.Next(2, 10) * random.Next(2, 10)} ÷ {random.Next(2, 10)} = ?", "Padalyk ir patikrink daugyba.", "", "", 75)
+            2 => GenerateMultiplicationMedium(random, id),
+            _ => GenerateDivisionMedium(random, id)
         };
+    }
+
+    private ArenaQuestion GenerateAdditionMedium(Random random, int id)
+    {
+        var a = random.Next(10, 70);
+        var b = random.Next(10, 70);
+        var result = a + b;
+        return new ArenaQuestion(id, $"{a} + {b} = ?", "Sudėk dešimtis ir vienetus.", result.ToString(), $"{a} + {b} = {result}", 75);
+    }
+
+    private ArenaQuestion GenerateMultiplicationMedium(Random random, int id)
+    {
+        var a = random.Next(2, 10);
+        var b = random.Next(2, 10);
+        var result = a * b;
+        return new ArenaQuestion(id, $"{a} × {b} = ?", "Naudok daugybos lentelę.", result.ToString(), $"{a} × {b} = {result}", 75);
+    }
+
+    private ArenaQuestion GenerateDivisionMedium(Random random, int id)
+    {
+        var divisor = random.Next(2, 10);
+        var quotient = random.Next(2, 11);
+        var dividend = divisor * quotient;
+        return new ArenaQuestion(id, $"{dividend} ÷ {divisor} = ?", "Padalyk ir patikrink daugyba.", quotient.ToString(), $"{dividend} ÷ {divisor} = {quotient}", 75);
     }
 
     private ArenaQuestion GenerateSubtractionMedium(Random random, int id)
@@ -222,11 +246,35 @@ else if (current is not null)
         var op = random.Next(4);
         return op switch
         {
-            0 => new ArenaQuestion(id, $"{random.Next(50, 200)} + {random.Next(50, 200)} = ?", "Sudėk šimtus, dešimtis, vienetus.", "", "", 100),
+            0 => GenerateAdditionHard(random, id),
             1 => GenerateSubtractionHard(random, id),
-            2 => new ArenaQuestion(id, $"{random.Next(11, 20)} × {random.Next(3, 10)} = ?", "Skaldyk dauginamąjį.", "", "", 100),
-            _ => new ArenaQuestion(id, $"{random.Next(10, 20) * random.Next(3, 10)} ÷ {random.Next(3, 10)} = ?", "Padalyk ir patikrink daugyba.", "", "", 100)
+            2 => GenerateMultiplicationHard(random, id),
+            _ => GenerateDivisionHard(random, id)
         };
+    }
+
+    private ArenaQuestion GenerateAdditionHard(Random random, int id)
+    {
+        var a = random.Next(50, 200);
+        var b = random.Next(50, 200);
+        var result = a + b;
+        return new ArenaQuestion(id, $"{a} + {b} = ?", "Sudėk šimtus, dešimtis, vienetus.", result.ToString(), $"{a} + {b} = {result}", 100);
+    }
+
+    private ArenaQuestion GenerateMultiplicationHard(Random random, int id)
+    {
+        var a = random.Next(11, 20);
+        var b = random.Next(3, 10);
+        var result = a * b;
+        return new ArenaQuestion(id, $"{a} × {b} = ?", "Skaldyk dauginamąjį.", result.ToString(), $"{a} × {b} = {result}", 100);
+    }
+
+    private ArenaQuestion GenerateDivisionHard(Random random, int id)
+    {
+        var divisor = random.Next(3, 10);
+        var quotient = random.Next(6, 21);
+        var dividend = divisor * quotient;
+        return new ArenaQuestion(id, $"{dividend} ÷ {divisor} = ?", "Padalyk ir patikrink daugyba.", quotient.ToString(), $"{dividend} ÷ {divisor} = {quotient}", 100);
     }
 
     private ArenaQuestion GenerateSubtractionHard(Random random, int id)
