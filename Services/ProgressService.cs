@@ -32,14 +32,18 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         if (!string.IsNullOrWhiteSpace(userId) && IsDbReady())
         {
             var remote = await LoadFromDbAsync(userId);
-            if (remote is not null)
+            if (remote.Progress is not null)
             {
-                cached = remote;
+                cached = remote.Progress;
+            }
+            else if (remote.RequestSucceeded)
+            {
+                cached = local;
+                await UpsertToDbAsync(userId, cached);
             }
             else
             {
                 cached = local;
-                await UpsertToDbAsync(userId, cached);
             }
         }
         else
@@ -394,22 +398,24 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         return request;
     }
 
-    private async Task<StudentProgress?> LoadFromDbAsync(string userId)
+    private async Task<DbLoadResult> LoadFromDbAsync(string userId)
     {
         try
         {
             using var request = CreateRequest(HttpMethod.Get, $"rest/v1/user_progress?select=*&user_id=eq.{Uri.EscapeDataString(userId)}&limit=1");
             using var response = await http.SendAsync(request);
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode) return DbLoadResult.Failed();
 
             var json = await response.Content.ReadAsStringAsync();
             var rows = JsonSerializer.Deserialize<List<UserProgressRow>>(json, JsonOptions) ?? [];
             var row = rows.FirstOrDefault();
-            return row is null ? null : ToStudentProgress(row);
+            return row is null
+                ? DbLoadResult.Success(null)
+                : DbLoadResult.Success(ToStudentProgress(row));
         }
         catch
         {
-            return null;
+            return DbLoadResult.Failed();
         }
     }
 
@@ -502,5 +508,11 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         progress.DiagnosticAttempts ??= [];
         progress.RecentResults ??= [];
         EnsureHintCounterForToday(progress);
+    }
+
+    private sealed record DbLoadResult(bool RequestSucceeded, StudentProgress? Progress)
+    {
+        public static DbLoadResult Success(StudentProgress? progress) => new(true, progress);
+        public static DbLoadResult Failed() => new(false, null);
     }
 }
