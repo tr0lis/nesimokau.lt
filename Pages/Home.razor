@@ -12,6 +12,7 @@
             <p class="eyebrow">Mokymasis žaidžiant <span class="spark">✦</span></p>
             <h1>Pasirink dalyką</h1>
             <p class="subtitle">Pagrindiniame puslapyje rodomi tik dalykai. Pratimai atsidaro pasirinkto dalyko lange.</p>
+            <p class="subtitle">DB būsena: <strong>@SyncStateLabel</strong> · @sync.UpdatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</p>
         </div>
         <button class="level-card level-card-@CurrentLevel.Color" @onclick="() => showLevels = true" title="Peržiūrėti lygius">
             <div class="level-top"><span class="level-label">LYGIS @CurrentLevel.Number</span><strong>⚡ @progress.Xp Energija</strong></div>
@@ -61,6 +62,7 @@
 
 @code {
     private StudentProgress progress = new();
+    private ProgressService.DbSyncStatus sync = new("unknown", "Tikrinama...", DateTime.UtcNow);
     private bool showLevels;
     private LevelDefinition CurrentLevel => LevelCatalog.All.Last(level => level.RequiredXp <= progress.Xp);
     private LevelDefinition? NextLevel => LevelCatalog.All.FirstOrDefault(level => level.RequiredXp > progress.Xp);
@@ -77,16 +79,37 @@
     protected override async Task OnInitializedAsync()
     {
         progress = await Progress.GetAsync();
+        sync = Progress.GetDbSyncStatus();
         Progress.Changed += HandleProgressChanged;
+        Progress.SyncStatusChanged += HandleSyncChanged;
     }
 
     private void HandleProgressChanged() => _ = InvokeAsync(async () =>
     {
         progress = await Progress.GetAsync();
+        sync = Progress.GetDbSyncStatus();
         StateHasChanged();
     });
 
-    public void Dispose() => Progress.Changed -= HandleProgressChanged;
+    private void HandleSyncChanged() => _ = InvokeAsync(() =>
+    {
+        sync = Progress.GetDbSyncStatus();
+        StateHasChanged();
+    });
+
+    private string SyncStateLabel => sync.State switch
+    {
+        "synced" => "Sinchronizuota",
+        "failed" => "Klaida (lokalus režimas)",
+        "local" => "Tik lokalus režimas",
+        _ => "Tikrinama"
+    };
+
+    public void Dispose()
+    {
+        Progress.Changed -= HandleProgressChanged;
+        Progress.SyncStatusChanged -= HandleSyncChanged;
+    }
 
     private static string SubjectCardClass(SubjectCard subject) => subject.IsReady ? "subject-card" : "subject-card is-disabled";
 

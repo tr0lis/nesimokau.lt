@@ -20,16 +20,31 @@ else if (!started)
 {
     <section class="difficulty-screen">
         <button class="button button-ghost prestart-back" @onclick="GoBackToSubject">← Atgal</button>
-        <p class="eyebrow">PASIRINK SUNKUMĄ</p>
+        <p class="eyebrow">PASIRINK REŽIMĄ</p>
         <h1>Praleistos raidės</h1>
-        <p class="subtitle">Pasirink sudėtingumą ir spręsk visas to lygio užduotis.</p>
-        <div class="difficulty-options">
-            @foreach (var option in difficultyOptions)
-            {
-                <button class="difficulty-option @(selectedDifficulty == option.Key ? "selected" : "")" @onclick="() => selectedDifficulty = option.Key"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
-            }
-        </div>
-        <button class="button button-primary" @onclick="StartGame">Pradėti <span>→</span></button>
+        <p class="subtitle">Pasirink, kaip nori spręsti užduotis.</p>
+
+        @if (selectedMode is null)
+        {
+            <div class="difficulty-options">
+                <button class="difficulty-option" @onclick="StartAllMode"><span>∞</span><strong>Visi</strong><small>Spręsti visas esančias užduotis.</small></button>
+                <button class="difficulty-option" @onclick='() => selectedMode = "simple"'><span>20</span><strong>Paprastas</strong><small>Paprastas režimas: 20 uždavinių.</small></button>
+            </div>
+        }
+        else if (selectedMode == "simple")
+        {
+            <p class="eyebrow">PAPRASTAS · PASIRINK SUNKUMĄ</p>
+            <div class="difficulty-options">
+                @foreach (var option in difficultyOptions)
+                {
+                    <button class="difficulty-option @(selectedDifficulty == option.Key ? "selected" : "")" @onclick="() => selectedDifficulty = option.Key"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
+                }
+            </div>
+            <div class="result-actions">
+                <button class="button button-ghost" @onclick="() => selectedMode = null">← Atgal</button>
+                <button class="button button-primary" @onclick="StartSimpleMode">Pradėti <span>→</span></button>
+            </div>
+        }
     </section>
 }
 else if (finished)
@@ -97,6 +112,9 @@ else if (current is not null)
     private int earnedCoins;
     private LevelDefinition? levelUp;
     private string selectedDifficulty = "Lengvas";
+    private string? selectedMode;
+    private bool simpleMode;
+    private const int SimpleModeTaskCount = 20;
     private HashSet<int> sessionSolvedQuestionIds = [];
     private bool showHintConfirm;
     private bool hintUsed;
@@ -130,19 +148,26 @@ else if (current is not null)
         remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
         var solvedQuestionIds = (await Progress.GetSolvedQuestionIdsAsync("missing-letters")).ToHashSet();
 
-        var pool = allQuestions
-            .Where(question => string.Equals(question.Difficulty, selectedDifficulty, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-        if (pool.Count == 0) pool = allQuestions.ToList();
+        var pool = allQuestions.ToList();
+        if (simpleMode)
+        {
+            pool = allQuestions
+                .Where(question => string.Equals(question.Difficulty, selectedDifficulty, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (pool.Count == 0) pool = allQuestions.ToList();
+        }
 
         var unsolved = pool
             .Where(question => !solvedQuestionIds.Contains(question.Id))
             .OrderBy(_ => Random.Shared.Next())
             .ToList();
 
-        questions = (unsolved.Count > 0 ? unsolved : pool)
-            .OrderBy(_ => Random.Shared.Next())
-            .ToList();
+        var sequence = (unsolved.Count > 0 ? unsolved : pool)
+            .OrderBy(_ => Random.Shared.Next());
+
+        questions = simpleMode
+            ? sequence.Take(Math.Min(SimpleModeTaskCount, pool.Count)).ToList()
+            : sequence.ToList();
         current = questions.FirstOrDefault();
         started = current is not null;
 
@@ -155,7 +180,8 @@ else if (current is not null)
                 evt.GameTitle = "Įrašyk praleistas raides";
                 evt.ClassGroup = ParseClassGroup(playerProgress.ClassGroup);
                 evt.Payload["taskCount"] = questions.Count;
-                evt.Payload["difficulty"] = selectedDifficulty;
+                evt.Payload["mode"] = simpleMode ? "simple" : "all";
+                if (simpleMode) evt.Payload["difficulty"] = selectedDifficulty;
             });
         }
 
@@ -260,6 +286,19 @@ else if (current is not null)
     }
 
     private void Restart() => Navigation.NavigateTo(RouteBase(), true);
+    private async Task StartAllMode()
+    {
+        simpleMode = false;
+        selectedMode = "all";
+        await StartGame();
+    }
+
+    private async Task StartSimpleMode()
+    {
+        simpleMode = true;
+        await StartGame();
+    }
+
     private void GoHome() => Navigation.NavigateTo(ClassSlug is null ? "/" : "/lietuviu-kalba");
     private void GoBackToSubject() => Navigation.NavigateTo("/lietuviu-kalba");
     private int EnergyPerCorrect => 10;

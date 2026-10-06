@@ -9,6 +9,8 @@ namespace nesimokau.lt.Services;
 
 public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLog, AuthService auth, HttpClient http, IConfiguration config)
 {
+    public sealed record DbSyncStatus(string State, string Message, DateTime UpdatedAtUtc);
+
     public enum HintPurchaseResult
     {
         Success,
@@ -21,7 +23,11 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     private readonly string? supabaseUrl = config["Supabase:Url"];
     private readonly string? supabaseKey = config["Supabase:PublishableKey"];
     private StudentProgress? cached;
+    private DbSyncStatus syncStatus = new("unknown", "Tikrinama...", DateTime.UtcNow);
     public event Action? Changed;
+    public event Action? SyncStatusChanged;
+
+    public DbSyncStatus GetDbSyncStatus() => syncStatus;
 
     public async Task<StudentProgress> GetAsync()
     {
@@ -35,20 +41,24 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
             if (remote.Progress is not null)
             {
                 cached = remote.Progress;
+                SetSyncStatus("synced", "Sinchronizuota su DB");
             }
             else if (remote.RequestSucceeded)
             {
                 cached = local;
-                await UpsertToDbAsync(userId, cached);
+                var seeded = await UpsertToDbAsync(userId, cached);
+                SetSyncStatus(seeded ? "synced" : "failed", seeded ? "Sukurta DB būsena" : "DB įrašymas nepavyko");
             }
             else
             {
                 cached = local;
+                SetSyncStatus("failed", "DB nepasiekiama, naudojama lokali būsena");
             }
         }
         else
         {
             cached = local;
+            SetSyncStatus("local", "Nėra aktyvios DB sesijos");
         }
 
         Normalize(cached);
@@ -249,7 +259,16 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         var userId = await GetCurrentUserIdAsync();
         if (!string.IsNullOrWhiteSpace(userId) && IsDbReady())
         {
-            await UpsertToDbAsync(userId, progress);
+            var remote = await LoadFromDbAsync(userId);
+            var merged = remote.Progress is null ? progress : MergeProgress(progress, remote.Progress);
+            var persisted = await UpsertToDbAsync(userId, merged);
+            cached = merged;
+            await PersistLocalAsync(merged);
+            SetSyncStatus(persisted ? "synced" : "failed", persisted ? "Sinchronizuota su DB" : "DB įrašymas nepavyko");
+        }
+        else
+        {
+            SetSyncStatus("local", "Nėra aktyvios DB sesijos");
         }
 
         Changed?.Invoke();
@@ -419,7 +438,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         }
     }
 
-    private async Task UpsertToDbAsync(string userId, StudentProgress progress)
+    private async Task<bool> UpsertToDbAsync(string userId, StudentProgress progress)
     {
         try
         {
@@ -427,11 +446,12 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
             using var request = CreateRequest(HttpMethod.Post, "rest/v1/user_progress?on_conflict=user_id");
             request.Headers.TryAddWithoutValidation("Prefer", "resolution=merge-duplicates,return=minimal");
             request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
-            _ = await http.SendAsync(request);
+            using var response = await http.SendAsync(request);
+            return response.IsSuccessStatusCode;
         }
         catch
         {
-            // fallback remains local persistence
+            return false;
         }
     }
 
@@ -508,6 +528,67 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         progress.DiagnosticAttempts ??= [];
         progress.RecentResults ??= [];
         EnsureHintCounterForToday(progress);
+    }
+
+    private static StudentProgress MergeProgress(StudentProgress local, StudentProgress remote)
+    {
+        var mergedSolved = new Dictionary<string, List<int>>(remote.SolvedQuestionIdsByGame);
+        foreach (var (gameId, ids) in local.SolvedQuestionIdsByGame)
+        {
+            if (!mergedSolved.TryGetValue(gameId, out var existing))
+            {
+                mergedSolved[gameId] = ids.Distinct().ToList();
+                continue;
+            }
+
+            mergedSolved[gameId] = existing.Concat(ids).Distinct().ToList();
+        }
+
+        var mergedRecent = remote.RecentResults
+            .Concat(local.RecentResults)
+            .OrderByDescending(x => x.PlayedAt)
+            .DistinctBy(x => $"{x.GameId}|{x.GameTitle}|{x.Score}|{x.PlayedAt:O}")
+            .Take(120)
+            .ToList();
+
+        var merged = new StudentProgress
+        {
+            Name = !string.IsNullOrWhiteSpace(local.Name) ? local.Name : remote.Name,
+            AvatarId = !string.IsNullOrWhiteSpace(local.AvatarId) ? local.AvatarId : remote.AvatarId,
+            AvatarBackground = !string.IsNullOrWhiteSpace(local.AvatarBackground) ? local.AvatarBackground : remote.AvatarBackground,
+            ClassGroup = !string.IsNullOrWhiteSpace(local.ClassGroup) ? local.ClassGroup : remote.ClassGroup,
+            Theme = !string.IsNullOrWhiteSpace(local.Theme) ? local.Theme : remote.Theme,
+            Level = Math.Max(local.Level, remote.Level),
+            Xp = Math.Max(local.Xp, remote.Xp),
+            Coins = Math.Max(local.Coins, remote.Coins),
+            Streak = Math.Max(local.Streak, remote.Streak),
+            BestScore = Math.Max(local.BestScore, remote.BestScore),
+            GamesCompleted = Math.Max(local.GamesCompleted, remote.GamesCompleted),
+            UnlockedAvatarIds = remote.UnlockedAvatarIds.Concat(local.UnlockedAvatarIds).Distinct().ToList(),
+            UnlockedAchievementIds = remote.UnlockedAchievementIds.Concat(local.UnlockedAchievementIds).Distinct().ToList(),
+            BookmarkedGameIds = remote.BookmarkedGameIds.Concat(local.BookmarkedGameIds).Distinct().ToList(),
+            PracticeMistakeCounts = remote.PracticeMistakeCounts
+                .Concat(local.PracticeMistakeCounts)
+                .GroupBy(x => x.Key)
+                .ToDictionary(g => g.Key, g => g.Max(x => x.Value)),
+            SolvedQuestionIdsByGame = mergedSolved,
+            HintPurchaseDateUtc = string.CompareOrdinal(local.HintPurchaseDateUtc, remote.HintPurchaseDateUtc) >= 0 ? local.HintPurchaseDateUtc : remote.HintPurchaseDateUtc,
+            HintPurchasesToday = Math.Max(local.HintPurchasesToday, remote.HintPurchasesToday),
+            CustomAvatarDataUrl = !string.IsNullOrWhiteSpace(local.CustomAvatarDataUrl) ? local.CustomAvatarDataUrl : remote.CustomAvatarDataUrl,
+            DiagnosticAttempts = remote.DiagnosticAttempts.Concat(local.DiagnosticAttempts).DistinctBy(x => x.Id).Take(30).ToList(),
+            RecentResults = mergedRecent
+        };
+
+        Normalize(merged);
+        return merged;
+    }
+
+    private void SetSyncStatus(string state, string message)
+    {
+        var next = new DbSyncStatus(state, message, DateTime.UtcNow);
+        if (next == syncStatus) return;
+        syncStatus = next;
+        SyncStatusChanged?.Invoke();
     }
 
     private sealed record DbLoadResult(bool RequestSucceeded, StudentProgress? Progress)

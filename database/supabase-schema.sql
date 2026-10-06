@@ -12,6 +12,7 @@ create table if not exists public.player_accounts (
   password_hash text not null,
   avatar_id text not null default 'a1',
   class_group text not null default '5-6' check (class_group in ('1-2','3-4','5-6','7-8','9-10','11-12')),
+	created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -27,7 +28,10 @@ create index if not exists idx_player_accounts_updated_at
 -- =========================
 create table if not exists public.user_progress (
   user_id text primary key,
+	created_at timestamptz not null default now(),
+  created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
   updated_at timestamptz not null default now(),
+	updated_at_lt timestamptz generated always as (updated_at at time zone 'Europe/Vilnius') stored,
   name text not null default '',
   avatar_id text not null default 'a1',
   avatar_background text not null default 'bg-violet',
@@ -63,6 +67,8 @@ create table if not exists public.leaderboard (
   avatar text not null,
   country_flag text not null,
   score int not null default 0,
+	created_at timestamptz not null default now(),
+  created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
   updated_at timestamptz not null default now()
 );
 
@@ -78,6 +84,7 @@ create index if not exists idx_leaderboard_nickname
 create table if not exists public.user_activity_log (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
+	created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
   user_id text,
   username text,
   event_type text not null,
@@ -251,6 +258,7 @@ with check (true);
 create or replace view public.v_user_timeline as
 select
   created_at,
+	created_at_lt,
   user_id,
   username,
   event_type,
@@ -272,6 +280,20 @@ select
   payload
 from public.user_activity_log
 order by created_at desc;
+
+create or replace view public.v_user_progress_lt as
+select
+  user_id,
+  name,
+  class_group,
+  level,
+  xp,
+  coins,
+  games_completed,
+  created_at_lt,
+  updated_at_lt
+from public.user_progress
+order by updated_at desc;
 
 create or replace view public.v_user_error_summary as
 select
