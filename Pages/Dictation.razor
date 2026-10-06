@@ -5,6 +5,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject ProgressService Progress
+@inject ActivityLogService ActivityLog
 @inject NavigationManager Navigation
 
 
@@ -172,6 +173,20 @@ else if (current is not null)
         questions = selected.OrderBy(_ => Random.Shared.Next()).ToList();
         current = questions.FirstOrDefault();
         started = current is not null;
+
+        if (started)
+        {
+            await ActivityLog.LogAsync("exercise_started", evt =>
+            {
+                evt.Subject = "Lietuvių kalba";
+                evt.GameId = "dictation";
+                evt.GameTitle = "Žodžių diktantas";
+                evt.ClassGroup = ParseClassGroup(playerProgress.ClassGroup);
+                evt.Payload["taskCount"] = questions.Count;
+                evt.Payload["dailyMode"] = dailyMode;
+            });
+        }
+
         await InvokeAsync(StateHasChanged);
         await Task.Delay(60);
         await Speak();
@@ -180,6 +195,7 @@ else if (current is not null)
     private async Task Submit()
     {
         if (current is null || feedback is not null || string.IsNullOrWhiteSpace(answer)) return;
+        var studentAnswer = answer.Trim();
         isCorrect = string.Equals(answer.Trim(), current.Answer, StringComparison.OrdinalIgnoreCase);
         if (isCorrect)
         {
@@ -195,6 +211,23 @@ else if (current is not null)
             }
         }
         else { wrongAnswers++; lives--; feedback = $"Teisingas atsakymas: {current.Answer}. {current.Explanation}"; }
+
+        await ActivityLog.LogAsync("answer_submitted", evt =>
+        {
+            evt.Subject = "Lietuvių kalba";
+            evt.GameId = "dictation";
+            evt.GameTitle = "Žodžių diktantas";
+            evt.ClassGroup = ParseClassGroup(playerProgress.ClassGroup);
+            evt.IsCorrect = isCorrect;
+            evt.QuestionId = current.Id.ToString();
+            evt.MistakeType = isCorrect ? null : "spelling";
+            evt.Payload["prompt"] = current.Prompt;
+            evt.Payload["expected"] = current.Answer;
+            evt.Payload["studentAnswer"] = studentAnswer;
+            evt.Payload["hintUsed"] = hintUsed;
+            evt.Payload["questionIndex"] = index + 1;
+        });
+
         await InvokeAsync(StateHasChanged);
     }
 

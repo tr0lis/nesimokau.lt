@@ -5,6 +5,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject ProgressService Progress
+@inject ActivityLogService ActivityLog
 @inject NavigationManager Navigation
 
 
@@ -147,12 +148,26 @@ else if (current is not null)
         questions = selected.OrderBy(_ => Random.Shared.Next()).ToList();
         current = questions.FirstOrDefault();
         started = current is not null;
+
+        if (started)
+        {
+            await ActivityLog.LogAsync("exercise_started", evt =>
+            {
+                evt.Subject = "Lietuvių kalba";
+                evt.GameId = "missing-letters";
+                evt.GameTitle = "Įrašyk praleistas raides";
+                evt.ClassGroup = ParseClassGroup(playerProgress.ClassGroup);
+                evt.Payload["taskCount"] = questions.Count;
+            });
+        }
+
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task Submit()
     {
         if (current is null || feedback is not null || string.IsNullOrWhiteSpace(answer)) return;
+        var studentAnswer = answer.Trim();
         isCorrect = string.Equals(answer.Trim(), current.MissingLetters, StringComparison.OrdinalIgnoreCase);
         if (isCorrect)
         {
@@ -168,6 +183,23 @@ else if (current is not null)
             }
         }
         else { wrongAnswers++; feedback = $"Neteisinga. Teisinga frazė: {current.Answer}"; }
+
+        await ActivityLog.LogAsync("answer_submitted", evt =>
+        {
+            evt.Subject = "Lietuvių kalba";
+            evt.GameId = "missing-letters";
+            evt.GameTitle = "Įrašyk praleistas raides";
+            evt.ClassGroup = ParseClassGroup(playerProgress.ClassGroup);
+            evt.IsCorrect = isCorrect;
+            evt.QuestionId = current.Id.ToString();
+            evt.MistakeType = isCorrect ? null : "missing_letters";
+            evt.Payload["pattern"] = current.Pattern;
+            evt.Payload["expected"] = current.MissingLetters;
+            evt.Payload["studentAnswer"] = studentAnswer;
+            evt.Payload["hintUsed"] = hintUsed;
+            evt.Payload["questionIndex"] = index + 1;
+        });
+
         await InvokeAsync(StateHasChanged);
     }
 
