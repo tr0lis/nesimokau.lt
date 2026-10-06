@@ -280,6 +280,7 @@ with check (true);
 -- =========================
 -- Convenience views
 -- =========================
+drop view if exists public.v_user_timeline;
 create or replace view public.v_user_timeline as
 select
   created_at,
@@ -306,6 +307,7 @@ select
 from public.user_activity_log
 order by created_at desc;
 
+drop view if exists public.v_user_progress_lt;
 create or replace view public.v_user_progress_lt as
 select
   user_id,
@@ -320,6 +322,7 @@ select
 from public.user_progress
 order by updated_at desc;
 
+drop view if exists public.v_user_error_summary;
 create or replace view public.v_user_error_summary as
 select
   coalesce(username, user_id, 'unknown') as user_key,
@@ -335,6 +338,7 @@ from public.user_activity_log
 where event_type in ('game_result_saved', 'diagnostic_saved')
 group by 1,2,3;
 
+drop view if exists public.v_daily_activity;
 create or replace view public.v_daily_activity as
 select
   date_trunc('day', created_at) as day,

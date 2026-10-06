@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using Microsoft.JSInterop;
 using Microsoft.Extensions.Configuration;
 using nesimokau.lt.Models;
@@ -28,6 +29,10 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     private DbSyncStatus syncStatus = new("unknown", "Tikrinama...", DateTime.UtcNow);
     private int pendingSyncCount;
     private DateTime? lastSuccessfulSyncUtc;
+    private PeriodicTimer? autoSyncTimer;
+    private CancellationTokenSource? autoSyncCts;
+    private bool autoSyncStarted;
+    private bool syncInProgress;
     public event Action? Changed;
     public event Action? SyncStatusChanged;
 
@@ -63,6 +68,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
 
     public async Task<StudentProgress> GetAsync()
     {
+        EnsureAutoSyncStarted();
         if (cached is not null) return cached;
 
         await LoadSyncMetaAsync();
@@ -100,6 +106,39 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         Normalize(cached);
         await PersistLocalAsync(cached);
         return cached;
+    }
+
+    private void EnsureAutoSyncStarted()
+    {
+        if (autoSyncStarted) return;
+        autoSyncStarted = true;
+        autoSyncCts = new CancellationTokenSource();
+        autoSyncTimer = new PeriodicTimer(TimeSpan.FromSeconds(60));
+        _ = RunAutoSyncLoopAsync(autoSyncCts.Token);
+    }
+
+    private async Task RunAutoSyncLoopAsync(CancellationToken token)
+    {
+        try
+        {
+            while (autoSyncTimer is not null && await autoSyncTimer.WaitForNextTickAsync(token))
+            {
+                if (syncInProgress) continue;
+                syncInProgress = true;
+                try
+                {
+                    _ = await RetrySyncNowAsync();
+                }
+                finally
+                {
+                    syncInProgress = false;
+                }
+            }
+        }
+        catch
+        {
+            // keep silent in WASM background sync
+        }
     }
 
     public async Task SaveDiagnosticAttemptAsync(DiagnosticAttempt attempt)

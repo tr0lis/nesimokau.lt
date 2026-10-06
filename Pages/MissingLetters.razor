@@ -37,6 +37,7 @@ else if (!started)
             <div class="difficulty-options">
                 <button class="difficulty-option" @onclick="StartAllMode"><span>∞</span><strong>Visi</strong><small>Spręsti visas esančias užduotis.</small></button>
                 <button class="difficulty-option" @onclick='() => selectedMode = "simple"'><span>20</span><strong>Paprastas</strong><small>Paprastas režimas: 20 uždavinių.</small></button>
+                <button class="difficulty-option" @onclick="ContinueUnsolved" disabled="@(remainingAllQuestions <= 0)"><span>↻</span><strong>Tęsti nuo nebaigtų</strong><small>@(remainingAllQuestions > 0 ? "Tęsia tik neišspręstas užduotis." : "Viskas išspręsta.")</small></button>
             </div>
         }
         else if (selectedMode == "simple")
