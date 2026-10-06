@@ -19,13 +19,15 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         DailyLimitReached
     }
 
-    private const string StorageKey = "nesimokau-progress";
+    private const string StorageKeyPrefix = "nesimokau-progress";
+    private const string LegacyStorageKey = "nesimokau-progress";
     private const string PendingQueueKey = "nesimokau-progress-sync-queue";
     private const string LastSuccessKey = "nesimokau-progress-last-sync-success-utc";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly string? supabaseUrl = config["Supabase:Url"];
     private readonly string? supabaseKey = config["Supabase:PublishableKey"];
     private StudentProgress? cached;
+    private string? cachedUserKey;
     private DbSyncStatus syncStatus = new("unknown", "Tikrinama...", DateTime.UtcNow);
     private int pendingSyncCount;
     private DateTime? lastSuccessfulSyncUtc;
@@ -69,11 +71,15 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     public async Task<StudentProgress> GetAsync()
     {
         EnsureAutoSyncStarted();
-        if (cached is not null) return cached;
+        var userId = await GetCurrentUserIdAsync();
+        var userKey = ResolveUserKey(userId);
+        if (cached is not null && string.Equals(cachedUserKey, userKey, StringComparison.Ordinal)) return cached;
+
+        cached = null;
+        cachedUserKey = null;
 
         await LoadSyncMetaAsync();
-        var local = await LoadLocalAsync();
-        var userId = await GetCurrentUserIdAsync();
+        var local = await LoadLocalAsync(userId);
 
         if (!string.IsNullOrWhiteSpace(userId) && IsDbReady())
         {
@@ -104,7 +110,8 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         }
 
         Normalize(cached);
-        await PersistLocalAsync(cached);
+        cachedUserKey = userKey;
+        await PersistLocalAsync(cached, userId);
         return cached;
     }
 
@@ -329,16 +336,18 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
 
     private async Task SaveAsync(StudentProgress progress, bool preferLocalPracticeTargets = false)
     {
-        Normalize(progress);
-        await PersistLocalAsync(progress);
         var userId = await GetCurrentUserIdAsync();
+        var userKey = ResolveUserKey(userId);
+        Normalize(progress);
+        await PersistLocalAsync(progress, userId);
         if (!string.IsNullOrWhiteSpace(userId) && IsDbReady())
         {
             var remote = await LoadFromDbAsync(userId);
             var merged = remote.Progress is null ? progress : MergeProgress(progress, remote.Progress, preferLocalPracticeTargets);
             var persisted = await UpsertToDbAsync(userId, merged);
             cached = merged;
-            await PersistLocalAsync(merged);
+            cachedUserKey = userKey;
+            await PersistLocalAsync(merged, userId);
             if (persisted)
             {
                 await MarkSuccessfulSyncAsync();
@@ -353,6 +362,8 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         }
         else
         {
+            cached = progress;
+            cachedUserKey = userKey;
             SetSyncStatus("local", "Nėra aktyvios DB sesijos");
         }
 
@@ -470,19 +481,33 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         }
     }
 
-    private async Task<StudentProgress> LoadLocalAsync()
+    private async Task<StudentProgress> LoadLocalAsync(string? userId)
     {
-        var json = await js.InvokeAsync<string?>("localStorage.getItem", StorageKey);
+        var key = BuildStorageKey(userId);
+        var json = await js.InvokeAsync<string?>("localStorage.getItem", key);
+
+        if (string.IsNullOrWhiteSpace(json) && string.IsNullOrWhiteSpace(userId))
+        {
+            json = await js.InvokeAsync<string?>("localStorage.getItem", LegacyStorageKey);
+        }
+
         return string.IsNullOrWhiteSpace(json)
             ? new StudentProgress()
             : JsonSerializer.Deserialize<StudentProgress>(json) ?? new StudentProgress();
     }
 
-    private async Task PersistLocalAsync(StudentProgress progress)
+    private async Task PersistLocalAsync(StudentProgress progress, string? userId)
     {
+        var key = BuildStorageKey(userId);
         var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
+        await js.InvokeVoidAsync("localStorage.setItem", key, json);
     }
+
+    private static string ResolveUserKey(string? userId)
+        => string.IsNullOrWhiteSpace(userId) ? "guest" : userId;
+
+    private static string BuildStorageKey(string? userId)
+        => $"{StorageKeyPrefix}:{ResolveUserKey(userId)}";
 
     private async Task<List<PendingSyncItem>> LoadPendingQueueAsync()
     {
