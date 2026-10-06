@@ -109,6 +109,7 @@
     private bool isCheckingUsername;
     private bool isRedirecting;
     private bool fastRedirect;
+    private bool shouldAutoRedirect;
     private string errorMessage = string.Empty;
     private string usernameStatus = string.Empty;
     private bool usernameTaken;
@@ -119,11 +120,19 @@
     {
         if (await Auth.IsAuthenticatedAsync())
         {
-            fastRedirect = true;
-            isRedirecting = true;
-            await Task.Delay(360);
-            Navigation.NavigateTo("/", replace: true);
+            shouldAutoRedirect = true;
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !shouldAutoRedirect) return;
+
+        fastRedirect = true;
+        isRedirecting = true;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(520);
+        Navigation.NavigateTo("/", replace: true);
     }
 
     private async Task RegisterAsync(EditContext _)
@@ -180,6 +189,7 @@
 
         await Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup);
         isRedirecting = true;
+        await InvokeAsync(StateHasChanged);
         await Task.Delay(520);
         Navigation.NavigateTo("/", replace: true);
     }
