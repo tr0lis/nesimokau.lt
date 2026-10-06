@@ -72,7 +72,8 @@ else if (current is not null)
                                 @onclick="() => ToggleAccentMenu(i)"
                                 disabled="@(feedback is not null)"
                                 aria-label="@SlotAriaLabel(i)">
-                            @LetterDisplay(i)
+                            <span class="accent-letter-accent">@DisplayedAccentText(i)</span>
+                            <span class="accent-letter-char">@current.Word[i]</span>
                         </button>
                     }
                 </div>
@@ -322,23 +323,8 @@ else if (current is not null)
         return string.IsNullOrEmpty(type) ? $"Raidė {slotIndex + 1}" : $"Raidė {slotIndex + 1}, {AccentSymbol(type)}";
     }
 
-    private string LetterDisplay(int slotIndex)
-    {
-        if (current is null)
-        {
-            return string.Empty;
-        }
-
-        var combiningAccent = SlotAccentType(slotIndex) switch
-        {
-            "kairinis" => "\u0300",
-            "dešininis" => "\u0301",
-            "riestinis" => "\u0303",
-            _ => string.Empty
-        };
-
-        return $"{current.Word[slotIndex]}{combiningAccent}";
-    }
+    private string DisplayedAccentText(int slotIndex)
+        => AccentSymbol(SlotAccentType(slotIndex));
 
     private string SlotFeedbackClass(int slotIndex)
     {
