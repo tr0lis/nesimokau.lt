@@ -92,7 +92,7 @@
 
     @if (isRedirecting)
     {
-        <div class="auth-success-transition" role="status" aria-live="polite">
+        <div class="auth-success-transition @(fastRedirect ? "is-fast" : string.Empty)" role="status" aria-live="polite">
             <div class="auth-success-transition-inner">
                 <span class="auth-success-spinner"></span>
                 <strong>Sveikinu atvykus 🎉</strong>
@@ -108,6 +108,7 @@
     private bool isSubmitting;
     private bool isCheckingUsername;
     private bool isRedirecting;
+    private bool fastRedirect;
     private string errorMessage = string.Empty;
     private string usernameStatus = string.Empty;
     private bool usernameTaken;
@@ -118,6 +119,9 @@
     {
         if (await Auth.IsAuthenticatedAsync())
         {
+            fastRedirect = true;
+            isRedirecting = true;
+            await Task.Delay(360);
             Navigation.NavigateTo("/", replace: true);
         }
     }

@@ -25,13 +25,6 @@ else if (!started)
         <p class="subtitle">Pasirink, kaip nori spręsti užduotis.</p>
         <p class="subtitle">Liko neišspręstų: <strong>@remainingAllQuestions</strong> iš @allQuestions.Count</p>
 
-        @if (remainingAllQuestions > 0)
-        {
-            <div class="result-actions" style="margin-bottom:.8rem;">
-                <button class="button button-primary" @onclick="ContinueUnsolved">Tęsti nuo nebaigtų <span>→</span></button>
-            </div>
-        }
-
         @if (selectedMode is null)
         {
             <div class="difficulty-options">
