@@ -3821,14 +3821,15 @@ h1:focus { outline: none !important; }
     background: #fff;
 }
 .accent-letter-button {
-    position: relative;
     width: 34px;
     height: 42px;
-    padding: 15px 0 4px;
+    padding: 0;
     display: grid;
-    place-items: end center;
+    place-items: center;
     cursor: pointer;
-    line-height: 1;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.2;
 }
 .accent-letter-button.is-open {
     border-color: #7a62f2;
@@ -3838,24 +3839,6 @@ h1:focus { outline: none !important; }
     border-color: #7a62f2;
     background: #ece6ff;
     color: #5c48d7;
-}
-.accent-letter-accent {
-    position: absolute;
-    inset: 0 0 auto;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #5c48d7;
-    font-size: 18px;
-    font-weight: 900;
-    line-height: 1;
-    pointer-events: none;
-}
-.accent-letter-char {
-    font-size: 18px;
-    font-weight: 800;
-    line-height: 1;
 }
 .accent-drop-slot.is-correct,
 .accent-letter.is-correct {
@@ -3901,9 +3884,6 @@ h1:focus { outline: none !important; }
 :root[data-theme="dark"] .accent-letter-button.is-filled {
     background: #352b56;
     border-color: #8f7de5;
-    color: #d5caff;
-}
-:root[data-theme="dark"] .accent-letter-accent {
     color: #d5caff;
 }
 :root[data-theme="dark"] .accent-drop-slot.is-open {
