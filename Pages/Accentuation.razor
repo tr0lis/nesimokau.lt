@@ -111,9 +111,9 @@ else if (current is not null)
 
     private readonly (string Key, string Symbol)[] accentOptions =
     [
-        ("kairinis", "ˋ") ,
-        ("dešininis", "ˊ"),
-        ("riestinis", "˜")
+        ("kairinis", "`"),
+        ("dešininis", "´"),
+        ("riestinis", "~")
     ];
 
     private List<AccentuationWord> allWords = [];
@@ -368,9 +368,9 @@ else if (current is not null)
     private string AccentSymbol(string? accentType)
         => accentType switch
         {
-            "kairinis" => "ˋ",
-            "dešininis" => "ˊ",
-            "riestinis" => "˜",
+            "kairinis" => "`",
+            "dešininis" => "´",
+            "riestinis" => "~",
             _ => string.Empty
         };
 
