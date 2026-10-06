@@ -60,7 +60,7 @@ else if (current is not null)
                     <div class="accent-inline-picker" role="menu">
                         @foreach (var accent in accentOptions)
                         {
-                            <button type="button" class="accent-choice" role="menuitem" aria-label="@accent.Title" @onclick="() => PlaceAccent(openAccentMenuIndex.Value, accent.Key)">@AccentMark(accent.Key)</button>
+                            <button type="button" class="accent-choice" role="menuitem" aria-label="@accent.Title" @onclick="() => PlaceAccent(openAccentMenuIndex.Value, accent.Key)">@AccentSymbol(accent.Key)</button>
                         }
                     </div>
                 }
@@ -72,7 +72,7 @@ else if (current is not null)
                                 @onclick="() => ToggleAccentMenu(i)"
                                 disabled="@(feedback is not null)"
                                 aria-label="@SlotAriaLabel(i)">
-                            <span class="accent-letter-accent">@AccentMark(SlotAccentType(i))</span>
+                            <span class="accent-letter-accent">@AccentSymbol(SlotAccentType(i))</span>
                             <span class="accent-letter-char">@current.Word[i]</span>
                         </button>
                     }
@@ -322,28 +322,6 @@ else if (current is not null)
         var type = SlotAccentType(slotIndex);
         return string.IsNullOrEmpty(type) ? $"Raidė {slotIndex + 1}" : $"Raidė {slotIndex + 1}, {AccentSymbol(type)}";
     }
-
-    private RenderFragment AccentMark(string? accentType) => builder =>
-    {
-        if (string.IsNullOrEmpty(accentType))
-            return;
-
-        var symbol = accentType switch
-        {
-            "kairinis" => "`",
-            "dešininis" => "´",
-            "riestinis" => "~",
-            _ => string.Empty
-        };
-
-        if (string.IsNullOrEmpty(symbol))
-            return;
-
-        builder.OpenElement(0, "span");
-        builder.AddAttribute(1, "class", "accent-symbol");
-        builder.AddContent(2, symbol);
-        builder.CloseElement();
-    };
 
     private string SlotFeedbackClass(int slotIndex)
     {

@@ -3775,14 +3775,14 @@ h1:focus { outline: none !important; }
     border-radius: 8px;
     background: #f8f6ff;
     color: #5c48d7;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 0;
-    line-height: 0;
-    cursor: pointer;
-}
-.accent-choice .accent-symbol {
     font-size: 22px;
+    line-height: 1;
+    font-weight: 900;
+    cursor: pointer;
 }
 .accent-choice:hover { background: #ece6ff; border-color: #806bf3; }
 .accent-clear-inline {
@@ -3821,13 +3821,12 @@ h1:focus { outline: none !important; }
     background: #fff;
 }
 .accent-letter-button {
+    position: relative;
     width: 34px;
     height: 42px;
-    padding: 3px 0 4px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
+    padding: 15px 0 4px;
+    display: grid;
+    place-items: end center;
     cursor: pointer;
     line-height: 1;
 }
@@ -3841,15 +3840,17 @@ h1:focus { outline: none !important; }
     color: #5c48d7;
 }
 .accent-letter-accent {
-    width: 100%;
-    min-height: 12px;
+    position: absolute;
+    inset: 0 0 auto;
+    height: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-}
-.accent-letter-accent .accent-symbol {
-    font-size: 15px;
-    transform: translateY(0);
+    color: #5c48d7;
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1;
+    pointer-events: none;
 }
 .accent-letter-char {
     font-size: 18px;
@@ -3900,6 +3901,9 @@ h1:focus { outline: none !important; }
 :root[data-theme="dark"] .accent-letter-button.is-filled {
     background: #352b56;
     border-color: #8f7de5;
+    color: #d5caff;
+}
+:root[data-theme="dark"] .accent-letter-accent {
     color: #d5caff;
 }
 :root[data-theme="dark"] .accent-drop-slot.is-open {
