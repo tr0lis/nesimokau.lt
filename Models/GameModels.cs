@@ -47,6 +47,14 @@ public sealed record MathQuestion(
     int Grade,
     int Points);
 
+public sealed record AccentuationWord(
+    int Id,
+    string Word,
+    int AccentIndex,
+    string AccentType,
+    string Difficulty,
+    string Explanation);
+
 public sealed record LevelDefinition(int Number, string Title, string Badge, int RequiredXp, string Color);
 
 public static class LevelCatalog

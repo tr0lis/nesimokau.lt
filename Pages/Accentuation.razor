@@ -1,0 +1,298 @@
+@page "/zaidimai/kirciavimas"
+@page "/lietuviu-kalba/{ClassSlug}/kirciavimas"
+@using Microsoft.AspNetCore.Components
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject HttpClient Http
+@inject ProgressService Progress
+@inject ActivityLogService ActivityLog
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Kirčiavimo pratimas | nesimokau.lt</PageTitle>
+
+@if (loading)
+{
+    <div class="loading-state"><span class="loader"></span><p>Ruošiame kirčiavimo pratimą...</p></div>
+}
+else if (!started)
+{
+    <section class="difficulty-screen">
+        <button class="button button-ghost prestart-back" @onclick="GoBackToSubject">← Atgal</button>
+        <p class="eyebrow">PASIRINK SUNKUMĄ</p>
+        <h1>Kirčiavimo pratimas</h1>
+        <p class="subtitle">Nuvilk kirtį ant teisingos raidės.</p>
+        <div class="difficulty-options">
+            @foreach (var option in difficultyOptions)
+            {
+                <button class="difficulty-option @(selectedDifficulty == option.Key ? "selected" : "")" @onclick="() => selectedDifficulty = option.Key"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
+            }
+        </div>
+        <button class="button button-primary" @onclick="StartGame">Pradėti <span>→</span></button>
+    </section>
+}
+else if (finished)
+{
+    <section class="result-screen">
+        <div class="result-burst">ˈ</div><p class="eyebrow">Pratimas baigtas!</p><h1>Kirčiuoji vis tiksliau<span class="gradient-text">!</span></h1>
+        <p class="subtitle">Kuo daugiau praktikos, tuo užtikrintesnė tartis ir rašyba.</p>
+        <div class="result-score"><strong>@score</strong><span>taškai</span></div>
+        <div class="result-stats"><div><strong>@Accuracy%</strong><span>Tikslumas</span></div><div><strong>⚡ +@earnedXp</strong><span>Uždirbta energija</span></div><div><strong>🪙 +@earnedCoins</strong><span>Uždirbtos monetos</span></div></div>
+        <div class="result-actions"><button class="button button-primary" @onclick="Restart">Žaisti dar kartą <span>↗</span></button><button class="button button-ghost" @onclick="GoHome">Grįžti į pradžią</button></div>
+    </section>
+}
+else if (current is not null)
+{
+    <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="true" />
+    <div class="game-header"><button class="back-button" @onclick="GoHome" aria-label="Grįžti">←</button><div class="game-title"><span class="game-icon icon-violet">ˈ</span><div><p class="eyebrow">LIETUVIŲ KALBA</p><h1>Kirčiavimas</h1></div></div></div>
+    <div class="game-progress"><div><span>@(@index + 1) / @questions.Count</span><span>@score taškai</span></div><div class="progress-track"><span style="width:@ProgressPercent%"></span></div></div>
+
+    <section class="game-panel accentuation-panel">
+        <div class="tip-card tip-card-inline"><span>✦</span><div><strong>Užduotis</strong><p>Nuvilk pasirinktą kirčio ženklą ant raidės langelio virš žodžio.</p></div></div>
+
+        <div class="accentuation-board">
+            <aside class="accent-palette">
+                <p class="eyebrow">KIRČIAI</p>
+                @foreach (var accent in accentOptions)
+                {
+                    <div class="accent-chip" draggable="true" @ondragstart="() => StartDrag(accent.Key)">
+                        <strong>@accent.Symbol</strong><small>@accent.Label</small>
+                    </div>
+                }
+                <button class="button button-ghost accent-clear" @onclick="ClearDrop">Išvalyti</button>
+            </aside>
+
+            <div class="accent-word-wrap">
+                <div class="accent-drop-row">
+                    @for (var i = 0; i < current.Word.Length; i++)
+                    {
+                        <div class="accent-drop-slot" @ondrop="() => DropAccent(i)" @ondragover:preventDefault>
+                            <span>@(placedAccentIndex == i ? AccentSymbol(placedAccentType) : "")</span>
+                        </div>
+                    }
+                </div>
+                <div class="accent-letter-row">
+                    @foreach (var ch in current.Word)
+                    {
+                        <span class="accent-letter">@ch</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (feedback is not null)
+        {
+            <div class="feedback @(isCorrect ? "feedback-good" : "feedback-bad")"><strong>@(isCorrect ? "Teisingai!" : "Dar kartą pagalvok")</strong><span>@feedback</span></div>
+            <button class="button button-primary next-button" @onclick="Next">@(isLast ? "Pamatyti rezultatą" : "Kitas žodis") <span>→</span></button>
+        }
+        else
+        {
+            <button class="button button-primary submit-button" @onclick="Submit" disabled="@(placedAccentIndex is null || string.IsNullOrWhiteSpace(placedAccentType))">Patikrinti <span>↗</span></button>
+        }
+    </section>
+}
+
+@code {
+    private readonly (string Key, string Title, string Hint, string Icon)[] difficultyOptions =
+    [
+        ("Lengvas", "Lengvas", "Paprasti žodžiai", "ˈ"),
+        ("Vidutinis", "Vidutinis", "Dažnesnės išimtys", "ˈˈ"),
+        ("Sudėtingas", "Sudėtingas", "Sudėtingesni atvejai", "ˈˈˈ")
+    ];
+
+    private readonly (string Key, string Label, string Symbol)[] accentOptions =
+    [
+        ("kairinis", "Kairinis", "`") ,
+        ("dešininis", "Dešininis", "´"),
+        ("riestinis", "Riestinis", "~")
+    ];
+
+    private List<AccentuationWord> allWords = [];
+    private List<AccentuationWord> questions = [];
+    private AccentuationWord? current;
+    private bool loading = true;
+    private bool started;
+    private bool finished;
+    private int index;
+    private int score;
+    private int wrongAnswers;
+    private int earnedXp;
+    private int earnedCoins;
+    private string selectedDifficulty = "Lengvas";
+    private string? feedback;
+    private bool isCorrect;
+    private int? placedAccentIndex;
+    private string? placedAccentType;
+    private string? draggingAccent;
+    private HashSet<int> sessionSolvedQuestionIds = [];
+    private bool isLast => index == questions.Count - 1;
+    private int ProgressPercent => questions.Count == 0 ? 0 : (index + 1) * 100 / questions.Count;
+    private int Accuracy => questions.Count == 0 ? 0 : Math.Max(0, (questions.Count - wrongAnswers) * 100 / questions.Count);
+
+    [Parameter] public string? ClassSlug { get; set; }
+    [SupplyParameterFromQuery(Name = "level")] public string? LevelSlug { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var source = await Http.GetFromJsonAsync<List<AccentuationWord>>("data/accentuation.json") ?? [];
+        allWords = source;
+        selectedDifficulty = ResolveDifficultyFromLevel(LevelSlug);
+        loading = false;
+    }
+
+    private async Task StartGame()
+    {
+        var solvedQuestionIds = (await Progress.GetSolvedQuestionIdsAsync("accentuation")).ToHashSet();
+        var pool = allWords.Where(x => string.Equals(x.Difficulty, selectedDifficulty, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (pool.Count == 0) pool = allWords;
+
+        var unsolved = pool.Where(x => !solvedQuestionIds.Contains(x.Id)).OrderBy(_ => Random.Shared.Next()).ToList();
+        questions = (unsolved.Count > 0 ? unsolved : pool).OrderBy(_ => Random.Shared.Next()).Take(10).ToList();
+
+        sessionSolvedQuestionIds = [];
+        index = 0;
+        score = 0;
+        wrongAnswers = 0;
+        feedback = null;
+        placedAccentIndex = null;
+        placedAccentType = null;
+        draggingAccent = null;
+        current = questions.FirstOrDefault();
+        started = current is not null;
+
+        if (started)
+        {
+            await ActivityLog.LogAsync("exercise_started", evt =>
+            {
+                evt.Subject = "Lietuvių kalba";
+                evt.GameId = "accentuation";
+                evt.GameTitle = "Kirčiavimo pratimas";
+                evt.Payload["taskCount"] = questions.Count;
+                evt.Payload["difficulty"] = selectedDifficulty;
+            });
+        }
+    }
+
+    private void StartDrag(string accentType) => draggingAccent = accentType;
+
+    private void DropAccent(int index)
+    {
+        if (string.IsNullOrWhiteSpace(draggingAccent) || current is null || feedback is not null) return;
+        placedAccentIndex = index;
+        placedAccentType = draggingAccent;
+    }
+
+    private void ClearDrop()
+    {
+        if (feedback is not null) return;
+        placedAccentIndex = null;
+        placedAccentType = null;
+    }
+
+    private async Task Submit()
+    {
+        if (current is null || feedback is not null || placedAccentIndex is null || string.IsNullOrWhiteSpace(placedAccentType)) return;
+
+        isCorrect = placedAccentIndex.Value == current.AccentIndex
+            && string.Equals(placedAccentType, current.AccentType, StringComparison.OrdinalIgnoreCase);
+
+        if (isCorrect)
+        {
+            score += PointsForDifficulty(current.Difficulty);
+            sessionSolvedQuestionIds.Add(current.Id);
+            feedback = "Teisingai pažymėjai kirčio vietą ir tipą.";
+        }
+        else
+        {
+            wrongAnswers++;
+            feedback = $"Teisinga vieta: {current.AccentIndex + 1} raidė, kirtis: {current.AccentType}. {current.Explanation}";
+        }
+
+        await ActivityLog.LogAsync("answer_submitted", evt =>
+        {
+            evt.Subject = "Lietuvių kalba";
+            evt.GameId = "accentuation";
+            evt.GameTitle = "Kirčiavimo pratimas";
+            evt.IsCorrect = isCorrect;
+            evt.QuestionId = current.Id.ToString();
+            evt.MistakeType = isCorrect ? null : "accentuation";
+            evt.Payload["word"] = current.Word;
+            evt.Payload["expectedIndex"] = current.AccentIndex;
+            evt.Payload["expectedType"] = current.AccentType;
+            evt.Payload["placedIndex"] = placedAccentIndex;
+            evt.Payload["placedType"] = placedAccentType;
+        });
+    }
+
+    private async Task Next()
+    {
+        if (isLast)
+        {
+            finished = true;
+            var totalQuestions = allWords.Count;
+            var savedProgress = await Progress.GetAsync();
+            var alreadyCompleted = totalQuestions > 0 && savedProgress.SolvedQuestionIdsByGame.GetValueOrDefault("accentuation")?.Distinct().Count() >= totalQuestions;
+            var persistedScore = alreadyCompleted ? 0 : score;
+            earnedXp = alreadyCompleted ? 0 : score / 10;
+            earnedCoins = alreadyCompleted ? 0 : score / 50 + (Accuracy == 100 ? 2 : 0);
+
+            await Progress.SaveResultAsync(new GameResult("accentuation", "Kirčiavimo pratimas", persistedScore, Accuracy, earnedXp, earnedCoins, DateTime.Now)
+            {
+                ClassGroup = savedProgress.ClassGroup,
+                CorrectAnswers = questions.Count - wrongAnswers,
+                IncorrectAnswers = wrongAnswers
+            });
+
+            if (Accuracy == 100) await Progress.ClearPracticeTargetAsync("accentuation");
+            else await Progress.SavePracticeTargetAsync("accentuation", wrongAnswers);
+            await Progress.SaveSolvedQuestionIdsAsync("accentuation", sessionSolvedQuestionIds);
+            return;
+        }
+
+        index++;
+        current = questions[index];
+        feedback = null;
+        isCorrect = false;
+        placedAccentIndex = null;
+        placedAccentType = null;
+        draggingAccent = null;
+    }
+
+    private static int PointsForDifficulty(string difficulty)
+        => difficulty switch
+        {
+            "Lengvas" => 50,
+            "Vidutinis" => 75,
+            _ => 100
+        };
+
+    private string AccentSymbol(string? accentType)
+        => accentType switch
+        {
+            "kairinis" => "`",
+            "dešininis" => "´",
+            "riestinis" => "~",
+            _ => string.Empty
+        };
+
+    private void Restart() => Navigation.NavigateTo(RouteBase(), true);
+    private void GoHome() => Navigation.NavigateTo(ClassSlug is null ? "/" : "/lietuviu-kalba");
+    private void GoBackToSubject() => Navigation.NavigateTo("/lietuviu-kalba");
+    private string RouteBase() => ClassSlug is null ? "zaidimai/kirciavimas" : $"lietuviu-kalba/{ClassSlug}/kirciavimas";
+    private static string ResolveDifficultyFromLevel(string? level)
+        => level?.Trim().ToLowerInvariant() switch
+        {
+            "a1-a2" => "Lengvas",
+            "b1-b2" => "Vidutinis",
+            "c1-c2" => "Sudėtingas",
+            _ => "Lengvas"
+        };
+
+    private async Task ConfirmLeave(LocationChangingContext context)
+    {
+        if (!finished && !await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti."))
+        {
+            context.PreventNavigation();
+        }
+    }
+}

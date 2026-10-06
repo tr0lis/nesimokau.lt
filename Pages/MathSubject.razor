@@ -1,10 +1,8 @@
 @page "/matematika"
-@page "/matematika/{LevelSlug}"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject GameCatalogService Catalog
 @inject ProgressService Progress
-@inject NavigationManager Navigation
 @implements IDisposable
 
 <PageTitle>Matematika | nesimokau.lt</PageTitle>
@@ -18,14 +16,6 @@
 
     <div class="subject-page-layout">
         <aside class="subject-filters" aria-label="Pratimų filtrai">
-            <div class="subject-filter-card">
-                <h3>Lygis</h3>
-                @foreach (var level in LevelOptions)
-                {
-                    <label class="filter-radio"><input type="radio" name="math-level" checked="@(SelectedLevel == level.Slug)" @onchange="() => SetLevel(level.Slug)" /><span>@level.Label</span></label>
-                }
-            </div>
-
             <div class="subject-filter-card">
                 <h3>Klasės</h3>
                 @foreach (var grade in GradeOptions)
@@ -94,7 +84,6 @@
 @code {
     private StudentProgress progress = new();
     private string statusFilter = "all";
-    private string SelectedLevel { get; set; } = "a1-a2";
     private HashSet<string> SelectedGrades { get; set; } = [];
     private HashSet<string> SelectedTopics { get; set; } = [];
     private Dictionary<string, int> totalQuestionsByGame = [];
@@ -105,15 +94,6 @@
         ("2", "2 klasė"),
         ("3", "3 klasė"),
         ("4", "4 klasė")
-    ];
-
-    [Parameter] public string? LevelSlug { get; set; }
-
-    private static IReadOnlyList<(string Slug, string Label, string[] Difficulties)> LevelOptions { get; } =
-    [
-        ("a1-a2", "A1-A2", ["Lengvas"]),
-        ("b1-b2", "B1-B2", ["Vidutinis"]),
-        ("c1-c2", "C1-C2", ["Sudėtingas"])
     ];
 
     private static IReadOnlyDictionary<string, string[]> TopicByExerciseId { get; } = new Dictionary<string, string[]>
@@ -129,11 +109,6 @@
     private IEnumerable<string> AllTopics => SubjectExercises.SelectMany(exercise => ExerciseTopics(exercise.Id)).Distinct();
 
     private IEnumerable<GameDefinition> FilteredExercises => SubjectExercises.Where(PassesFilters);
-
-    protected override void OnInitialized()
-    {
-        SelectedLevel = ResolveLevel(LevelSlug);
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -197,18 +172,6 @@
     private void SetStatusAll(ChangeEventArgs _) => statusFilter = "all";
     private void SetStatusDone(ChangeEventArgs _) => statusFilter = "done";
     private void SetStatusPending(ChangeEventArgs _) => statusFilter = "pending";
-
-    private void SetLevel(string slug)
-    {
-        SelectedLevel = ResolveLevel(slug);
-        Navigation.NavigateTo($"/matematika/{SelectedLevel}", false);
-    }
-
-    private static string ResolveLevel(string? slug)
-    {
-        var normalized = slug?.Trim().ToLowerInvariant();
-        return LevelOptions.Any(option => option.Slug == normalized) ? normalized! : "a1-a2";
-    }
 
     private void HandleProgressChanged() => _ = InvokeAsync(async () =>
     {

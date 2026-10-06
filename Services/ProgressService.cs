@@ -404,6 +404,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         var progress = await GetAsync();
         progress.AvatarId = avatarId;
         await SaveAsync(progress);
+        await auth.UpdateCurrentAvatarAsync(avatarId);
     }
 
     public async Task SaveAvatarBackgroundAsync(string avatarBackground)

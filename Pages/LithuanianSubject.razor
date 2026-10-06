@@ -138,7 +138,8 @@
     private static IReadOnlyDictionary<string, string[]> TopicByExerciseId { get; } = new Dictionary<string, string[]>
     {
         ["dictation"] = ["Diktantas", "Žodynas"],
-        ["missing-letters"] = ["Rašyba", "Raidės"]
+        ["missing-letters"] = ["Rašyba", "Raidės"],
+        ["accentuation"] = ["Kirčiavimas", "Tartis"]
     };
 
     private IEnumerable<GameDefinition> SubjectExercises => Catalog.Games.Where(game => game.Subject == "Lietuvių kalba" && game.Status == GameStatus.Ready);
@@ -232,7 +233,8 @@
         totalQuestionsByGame = new Dictionary<string, int>
         {
             ["dictation"] = dictation.Count,
-            ["missing-letters"] = missingLetters.Count
+            ["missing-letters"] = missingLetters.Count,
+            ["accentuation"] = 24
         };
     }
 
@@ -247,6 +249,7 @@
         {
             "dictation" => $"/lietuviu-kalba/{slug}-klases/zodziu-diktantas{levelQuery}",
             "missing-letters" => $"/lietuviu-kalba/{slug}-klases/praleistos-raides{levelQuery}",
+            "accentuation" => $"/lietuviu-kalba/{slug}-klases/kirciavimas{levelQuery}",
             _ => "/lietuviu-kalba"
         };
     }

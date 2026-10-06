@@ -2,7 +2,6 @@
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject LeaderboardService Leaderboard
-@inject ProgressService Progress
 @implements IDisposable
 
 <PageTitle>Turnyrinė lentelė | nesimokau.lt</PageTitle>
@@ -76,7 +75,6 @@
 @code {
     private List<LeaderboardEntry> entries = [];
     private string currentPlayerId = string.Empty;
-    private string currentAvatarBgClass = "avatar-bg-violet";
     private bool isLoading = true;
     private PeriodicTimer? timer;
     private CancellationTokenSource? cts;
@@ -88,13 +86,12 @@
     private string AvatarBgClassFor(LeaderboardEntry? entry)
     {
         if (entry is null) return "avatar-bg-violet";
-        return entry.Id == currentPlayerId ? currentAvatarBgClass : "avatar-bg-violet";
+        return ToAvatarBgClass(entry.AvatarBackground);
     }
 
     protected override async Task OnInitializedAsync()
     {
         currentPlayerId = await Leaderboard.GetCurrentPlayerIdAsync();
-        await RefreshCurrentAvatarBackgroundAsync();
         entries = (await Leaderboard.GetEntriesAsync()).ToList();
         isLoading = false;
 
@@ -104,17 +101,10 @@
         {
             while (timer is not null && await timer.WaitForNextTickAsync(cts.Token))
             {
-                await RefreshCurrentAvatarBackgroundAsync();
                 entries = (await Leaderboard.RefreshRealtimeAsync()).ToList();
                 await InvokeAsync(StateHasChanged);
             }
         }, cts.Token);
-    }
-
-    private async Task RefreshCurrentAvatarBackgroundAsync()
-    {
-        var saved = await Progress.GetAsync();
-        currentAvatarBgClass = ToAvatarBgClass(saved.AvatarBackground);
     }
 
     private static string ToAvatarBgClass(string? value)

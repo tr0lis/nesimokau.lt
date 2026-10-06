@@ -183,6 +183,29 @@ public sealed class AuthService(HttpClient http, IConfiguration config, IJSRunti
         return existing is not null;
     }
 
+    public async Task UpdateCurrentAvatarAsync(string avatarId)
+    {
+        if (string.IsNullOrWhiteSpace(avatarId) || !IsReady()) return;
+
+        var session = await GetSessionAsync();
+        if (session is null || string.IsNullOrWhiteSpace(session.UserId)) return;
+
+        var payload = new PlayerAccountRow
+        {
+            AvatarId = avatarId,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        using var request = CreateRestRequest(HttpMethod.Patch, $"rest/v1/player_accounts?id=eq.{Uri.EscapeDataString(session.UserId)}");
+        request.Headers.TryAddWithoutValidation("Prefer", "return=minimal");
+        request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
+
+        _ = await SendWithTimeoutAsync(request);
+
+        session.AvatarId = avatarId;
+        await SaveSessionAsync(session);
+    }
+
     private async Task SaveSessionAsync(AuthSession session)
     {
         var json = JsonSerializer.Serialize(session, JsonOptions);

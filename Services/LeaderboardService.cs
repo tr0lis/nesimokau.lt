@@ -104,13 +104,38 @@ public sealed class LeaderboardService(IJSRuntime js, ProgressService progress, 
 
         var json = await response.Content.ReadAsStringAsync();
         var rows = JsonSerializer.Deserialize<List<SupabaseLeaderboardRow>>(json, JsonOptions) ?? [];
+        var backgrounds = await LoadAvatarBackgroundMapAsync();
         return rows
             .OrderByDescending(x => x.Score)
             .ThenBy(x => x.UpdatedAt ?? DateTime.MaxValue)
-            .Select(x => new LeaderboardEntry(x.PlayerId ?? string.Empty, x.Nickname ?? "Svečias", x.Score, "🥇", x.Avatar ?? "🙂", x.CountryFlag ?? "🇱🇹"))
+            .Select(x =>
+            {
+                var playerId = x.PlayerId ?? string.Empty;
+                var userId = TryExtractUserId(playerId);
+                var bg = userId is not null && backgrounds.TryGetValue(userId, out var value)
+                    ? value
+                    : "bg-violet";
+                return new LeaderboardEntry(playerId, x.Nickname ?? "Svečias", x.Score, "🥇", x.Avatar ?? "🙂", x.CountryFlag ?? "🇱🇹", bg);
+            })
             .Where(x => !string.IsNullOrWhiteSpace(x.Id))
             .ToList();
     }
+
+    private async Task<Dictionary<string, string>> LoadAvatarBackgroundMapAsync()
+    {
+        using var request = CreateRequest(HttpMethod.Get, "rest/v1/user_progress?select=user_id,avatar_background");
+        using var response = await http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return [];
+
+        var json = await response.Content.ReadAsStringAsync();
+        var rows = JsonSerializer.Deserialize<List<UserProgressAvatarRow>>(json, JsonOptions) ?? [];
+        return rows
+            .Where(row => !string.IsNullOrWhiteSpace(row.UserId))
+            .ToDictionary(row => row.UserId!, row => string.IsNullOrWhiteSpace(row.AvatarBackground) ? "bg-violet" : row.AvatarBackground!);
+    }
+
+    private static string? TryExtractUserId(string playerId)
+        => playerId.StartsWith("user-", StringComparison.Ordinal) ? playerId[5..] : null;
 
     private HttpRequestMessage CreateRequest(HttpMethod method, string path)
     {
@@ -174,5 +199,14 @@ public sealed class LeaderboardService(IJSRuntime js, ProgressService progress, 
 
         [JsonPropertyName("updated_at")]
         public DateTime? UpdatedAt { get; set; }
+    }
+
+    private sealed class UserProgressAvatarRow
+    {
+        [JsonPropertyName("user_id")]
+        public string? UserId { get; set; }
+
+        [JsonPropertyName("avatar_background")]
+        public string? AvatarBackground { get; set; }
     }
 }

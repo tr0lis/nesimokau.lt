@@ -1,0 +1,28 @@
+[
+  { "id": 1, "word": "stalas", "accentIndex": 0, "accentType": "dešininis", "difficulty": "Lengvas", "explanation": "Kirčiuojamas pirmas skiemuo." },
+  { "id": 2, "word": "langas", "accentIndex": 0, "accentType": "dešininis", "difficulty": "Lengvas", "explanation": "Kirčiuojamas pirmas skiemuo." },
+  { "id": 3, "word": "miškas", "accentIndex": 1, "accentType": "dešininis", "difficulty": "Lengvas", "explanation": "Kirčiuojama balsė i." },
+  { "id": 4, "word": "upė", "accentIndex": 0, "accentType": "dešininis", "difficulty": "Lengvas", "explanation": "Kirčiuojama pirma balsė." },
+  { "id": 5, "word": "kelias", "accentIndex": 1, "accentType": "dešininis", "difficulty": "Lengvas", "explanation": "Kirčiuojama balsė e." },
+  { "id": 6, "word": "namas", "accentIndex": 1, "accentType": "dešininis", "difficulty": "Lengvas", "explanation": "Kirčiuojama balsė a." },
+  { "id": 7, "word": "žodis", "accentIndex": 1, "accentType": "dešininis", "difficulty": "Lengvas", "explanation": "Kirčiuojama balsė o." },
+  { "id": 8, "word": "diena", "accentIndex": 2, "accentType": "dešininis", "difficulty": "Lengvas", "explanation": "Kirčiuojama balsė e." },
+
+  { "id": 9, "word": "mokykla", "accentIndex": 3, "accentType": "dešininis", "difficulty": "Vidutinis", "explanation": "Kirčiuojamas antras skiemuo." },
+  { "id": 10, "word": "knygynas", "accentIndex": 4, "accentType": "dešininis", "difficulty": "Vidutinis", "explanation": "Kirčiuojama balsė y." },
+  { "id": 11, "word": "sąsiuvinis", "accentIndex": 4, "accentType": "dešininis", "difficulty": "Vidutinis", "explanation": "Kirčiuojama balsė u." },
+  { "id": 12, "word": "rašinys", "accentIndex": 3, "accentType": "dešininis", "difficulty": "Vidutinis", "explanation": "Kirčiuojama balsė i." },
+  { "id": 13, "word": "vanduo", "accentIndex": 1, "accentType": "dešininis", "difficulty": "Vidutinis", "explanation": "Kirčiuojama balsė a." },
+  { "id": 14, "word": "pavasaris", "accentIndex": 3, "accentType": "dešininis", "difficulty": "Vidutinis", "explanation": "Kirčiuojama balsė a." },
+  { "id": 15, "word": "darželis", "accentIndex": 1, "accentType": "dešininis", "difficulty": "Vidutinis", "explanation": "Kirčiuojama balsė a." },
+  { "id": 16, "word": "mokytojas", "accentIndex": 3, "accentType": "dešininis", "difficulty": "Vidutinis", "explanation": "Kirčiuojama balsė y." },
+
+  { "id": 17, "word": "žąsinas", "accentIndex": 3, "accentType": "kairinis", "difficulty": "Sudėtingas", "explanation": "Pabrėžiamas kairinis kirčio tipas." },
+  { "id": 18, "word": "vėžlys", "accentIndex": 1, "accentType": "riestinis", "difficulty": "Sudėtingas", "explanation": "Pabrėžiamas riestinis kirčio tipas." },
+  { "id": 19, "word": "mokslininkas", "accentIndex": 4, "accentType": "dešininis", "difficulty": "Sudėtingas", "explanation": "Kirčiuojama vidurinė balsė." },
+  { "id": 20, "word": "paskaitėlė", "accentIndex": 6, "accentType": "riestinis", "difficulty": "Sudėtingas", "explanation": "Skiriamas riestinis kirčio tipas." },
+  { "id": 21, "word": "sveikatingumas", "accentIndex": 6, "accentType": "kairinis", "difficulty": "Sudėtingas", "explanation": "Kirčiuojama ilgoji balsė su kairiniu kirčiu." },
+  { "id": 22, "word": "biblioteka", "accentIndex": 5, "accentType": "dešininis", "difficulty": "Sudėtingas", "explanation": "Kirčiuojamas priešpaskutinis skiemuo." },
+  { "id": 23, "word": "lietuviškas", "accentIndex": 4, "accentType": "dešininis", "difficulty": "Sudėtingas", "explanation": "Kirčiuojamas vidurinis skiemuo." },
+  { "id": 24, "word": "raštingumas", "accentIndex": 4, "accentType": "kairinis", "difficulty": "Sudėtingas", "explanation": "Pabrėžiamas kairinis kirčio tipas." }
+]
