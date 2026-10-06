@@ -33,6 +33,33 @@ body, button, input, select {
     animation-duration: .24s;
 }
 
+.auth-success-transition.is-login-success {
+    background: rgba(14, 43, 24, .42);
+}
+
+.auth-success-transition.is-login-success .auth-success-transition-inner {
+    border-color: #ccebd7;
+    background: linear-gradient(160deg, #f7fff9, #eefcf2);
+    box-shadow: 0 18px 38px rgba(22, 110, 55, .24);
+}
+
+.auth-success-transition.is-login-success .auth-success-transition-inner strong {
+    color: #185c36;
+}
+
+.auth-success-transition.is-login-success .auth-success-transition-inner small {
+    color: #397055;
+}
+
+.auth-success-transition.is-login-success .auth-success-transition-inner::before {
+    background: linear-gradient(90deg, #72d28f, #3aa862);
+}
+
+.auth-success-transition.is-login-success .auth-success-spinner {
+    border-color: #d5f3df;
+    border-top-color: #3aa862;
+}
+
 .auth-username-status {
     font-size: 11px;
     font-weight: 700;

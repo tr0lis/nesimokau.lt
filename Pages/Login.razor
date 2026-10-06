@@ -37,10 +37,10 @@
 
     @if (isRedirecting)
     {
-        <div class="auth-success-transition @(fastRedirect ? "is-fast" : string.Empty)" role="status" aria-live="polite">
+        <div class="auth-success-transition is-login-success @((fastRedirect ? "is-fast" : string.Empty))" role="status" aria-live="polite">
             <div class="auth-success-transition-inner">
                 <span class="auth-success-spinner"></span>
-                <strong>Sveikinu prisijungus ✨</strong>
+                <strong>Sėkmingai prisijungei!</strong>
                 <small>Sėkmingai prisijungei. Atidarome tavo pagrindinį puslapį…</small>
             </div>
         </div>

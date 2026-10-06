@@ -324,10 +324,10 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     public async Task ClearPracticeTargetAsync(string gameId)
     {
         var progress = await GetAsync();
-        if (progress.PracticeMistakeCounts.Remove(gameId)) await SaveAsync(progress);
+        if (progress.PracticeMistakeCounts.Remove(gameId)) await SaveAsync(progress, preferLocalPracticeTargets: true);
     }
 
-    private async Task SaveAsync(StudentProgress progress)
+    private async Task SaveAsync(StudentProgress progress, bool preferLocalPracticeTargets = false)
     {
         Normalize(progress);
         await PersistLocalAsync(progress);
@@ -335,7 +335,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         if (!string.IsNullOrWhiteSpace(userId) && IsDbReady())
         {
             var remote = await LoadFromDbAsync(userId);
-            var merged = remote.Progress is null ? progress : MergeProgress(progress, remote.Progress);
+            var merged = remote.Progress is null ? progress : MergeProgress(progress, remote.Progress, preferLocalPracticeTargets);
             var persisted = await UpsertToDbAsync(userId, merged);
             cached = merged;
             await PersistLocalAsync(merged);
@@ -695,7 +695,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         EnsureHintCounterForToday(progress);
     }
 
-    private static StudentProgress MergeProgress(StudentProgress local, StudentProgress remote)
+    private static StudentProgress MergeProgress(StudentProgress local, StudentProgress remote, bool preferLocalPracticeTargets)
     {
         var mergedSolved = new Dictionary<string, List<int>>(remote.SolvedQuestionIdsByGame);
         foreach (var (gameId, ids) in local.SolvedQuestionIdsByGame)
@@ -732,10 +732,12 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
             UnlockedAvatarIds = remote.UnlockedAvatarIds.Concat(local.UnlockedAvatarIds).Distinct().ToList(),
             UnlockedAchievementIds = remote.UnlockedAchievementIds.Concat(local.UnlockedAchievementIds).Distinct().ToList(),
             BookmarkedGameIds = remote.BookmarkedGameIds.Concat(local.BookmarkedGameIds).Distinct().ToList(),
-            PracticeMistakeCounts = remote.PracticeMistakeCounts
-                .Concat(local.PracticeMistakeCounts)
-                .GroupBy(x => x.Key)
-                .ToDictionary(g => g.Key, g => g.Max(x => x.Value)),
+            PracticeMistakeCounts = preferLocalPracticeTargets
+                ? new Dictionary<string, int>(local.PracticeMistakeCounts)
+                : remote.PracticeMistakeCounts
+                    .Concat(local.PracticeMistakeCounts)
+                    .GroupBy(x => x.Key)
+                    .ToDictionary(g => g.Key, g => g.Max(x => x.Value)),
             SolvedQuestionIdsByGame = mergedSolved,
             HintPurchaseDateUtc = string.CompareOrdinal(local.HintPurchaseDateUtc, remote.HintPurchaseDateUtc) >= 0 ? local.HintPurchaseDateUtc : remote.HintPurchaseDateUtc,
             HintPurchasesToday = Math.Max(local.HintPurchasesToday, remote.HintPurchasesToday),
