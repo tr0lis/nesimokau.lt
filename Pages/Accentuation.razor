@@ -1,5 +1,8 @@
 @page "/zaidimai/kirciavimas"
 @page "/lietuviu-kalba/{ClassSlug}/kirciavimas"
+@implements IDisposable
+@using System.Globalization
+@using System.Text
 @using Microsoft.AspNetCore.Components
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
@@ -48,36 +51,44 @@ else if (current is not null)
     <div class="game-progress"><div><span>@(@index + 1) / @questions.Count</span><span>@score taškai</span></div><div class="progress-track"><span style="width:@ProgressPercent%"></span></div></div>
 
     <section class="game-panel accentuation-panel">
-        <div class="tip-card tip-card-inline"><span>✦</span><div><strong>Užduotis</strong><p>Nuvilk pasirinktą kirčio ženklą ant raidės langelio virš žodžio.</p></div></div>
+        <div class="tip-card tip-card-inline"><span>✦</span><div><strong>Užduotis</strong><p>Paspausk langelį virš raidės ir pasirink kirčio ženklą.</p></div></div>
 
         <div class="accentuation-board">
-            <aside class="accent-palette">
-                <p class="eyebrow">KIRČIAI</p>
-                @foreach (var accent in accentOptions)
-                {
-                    <div class="accent-chip" draggable="true" @ondragstart="() => StartDrag(accent.Key)">
-                        <strong>@accent.Symbol</strong><small>@accent.Label</small>
-                    </div>
-                }
-                <button class="button button-ghost accent-clear" @onclick="ClearDrop">Išvalyti</button>
-            </aside>
-
             <div class="accent-word-wrap">
                 <div class="accent-drop-row">
                     @for (var i = 0; i < current.Word.Length; i++)
                     {
-                        <div class="accent-drop-slot" @ondrop="() => DropAccent(i)" @ondragover:preventDefault>
-                            <span>@(placedAccentIndex == i ? AccentSymbol(placedAccentType) : "")</span>
+                        <div class="accent-slot-wrap">
+                            <button type="button"
+                                    class="accent-drop-slot @SlotFeedbackClass(i) @(placedAccentIndex == i ? "is-filled" : string.Empty) @(openAccentMenuIndex == i ? "is-open" : string.Empty)"
+                                    @onclick="() => ToggleAccentMenu(i)"
+                                    disabled="@(feedback is not null)">
+                                <span>@SlotSymbol(i)</span>
+                            </button>
+                            @if (openAccentMenuIndex == i && feedback is null)
+                            {
+                                <div class="accent-choice-menu" role="menu">
+                                    @foreach (var accent in accentOptions)
+                                    {
+                                        <button type="button" class="accent-choice" role="menuitem" @onclick="() => PlaceAccent(i, accent.Key)">@accent.Symbol</button>
+                                    }
+                                </div>
+                            }
                         </div>
                     }
                 </div>
                 <div class="accent-letter-row">
-                    @foreach (var ch in current.Word)
+                    @for (var i = 0; i < current.Word.Length; i++)
                     {
-                        <span class="accent-letter">@ch</span>
+                        <span class="accent-letter @SlotFeedbackClass(i)">@current.Word[i]</span>
                     }
                 </div>
             </div>
+
+        @if (feedback is null && placedAccentIndex is not null)
+        {
+            <button type="button" class="accent-clear-inline" @onclick="ClearDrop">↺ Išvalyti pasirinktą kirtį</button>
+        }
         </div>
 
         @if (feedback is not null)
@@ -100,11 +111,11 @@ else if (current is not null)
         ("Sudėtingas", "Sudėtingas", "Sudėtingesni atvejai", "ˈˈˈ")
     ];
 
-    private readonly (string Key, string Label, string Symbol)[] accentOptions =
+    private readonly (string Key, string Symbol)[] accentOptions =
     [
-        ("kairinis", "Kairinis", "`") ,
-        ("dešininis", "Dešininis", "´"),
-        ("riestinis", "Riestinis", "~")
+        ("kairinis", "ˋ") ,
+        ("dešininis", "ˊ"),
+        ("riestinis", "˜")
     ];
 
     private List<AccentuationWord> allWords = [];
@@ -123,7 +134,10 @@ else if (current is not null)
     private bool isCorrect;
     private int? placedAccentIndex;
     private string? placedAccentType;
-    private string? draggingAccent;
+    private int? openAccentMenuIndex;
+    private (int Index, string Type)? expectedAccent;
+    private bool showExpectedAccent;
+    private CancellationTokenSource? feedbackAnimationCancellation;
     private HashSet<int> sessionSolvedQuestionIds = [];
     private bool isLast => index == questions.Count - 1;
     private int ProgressPercent => questions.Count == 0 ? 0 : (index + 1) * 100 / questions.Count;
@@ -156,7 +170,9 @@ else if (current is not null)
         feedback = null;
         placedAccentIndex = null;
         placedAccentType = null;
-        draggingAccent = null;
+        openAccentMenuIndex = null;
+        expectedAccent = null;
+        showExpectedAccent = false;
         current = questions.FirstOrDefault();
         started = current is not null;
 
@@ -173,13 +189,18 @@ else if (current is not null)
         }
     }
 
-    private void StartDrag(string accentType) => draggingAccent = accentType;
-
-    private void DropAccent(int index)
+    private void ToggleAccentMenu(int index)
     {
-        if (string.IsNullOrWhiteSpace(draggingAccent) || current is null || feedback is not null) return;
+        if (feedback is not null) return;
+        openAccentMenuIndex = openAccentMenuIndex == index ? null : index;
+    }
+
+    private void PlaceAccent(int index, string accentType)
+    {
+        if (feedback is not null) return;
         placedAccentIndex = index;
-        placedAccentType = draggingAccent;
+        placedAccentType = accentType;
+        openAccentMenuIndex = null;
     }
 
     private void ClearDrop()
@@ -187,14 +208,18 @@ else if (current is not null)
         if (feedback is not null) return;
         placedAccentIndex = null;
         placedAccentType = null;
+        openAccentMenuIndex = null;
     }
 
     private async Task Submit()
     {
         if (current is null || feedback is not null || placedAccentIndex is null || string.IsNullOrWhiteSpace(placedAccentType)) return;
 
-        isCorrect = placedAccentIndex.Value == current.AccentIndex
-            && string.Equals(placedAccentType, current.AccentType, StringComparison.OrdinalIgnoreCase);
+        var expected = ParseExpectedAccent(current.Word, current.AccentedWord);
+        expectedAccent = expected;
+
+        isCorrect = placedAccentIndex.Value == expected.Index
+            && string.Equals(placedAccentType, expected.Type, StringComparison.OrdinalIgnoreCase);
 
         if (isCorrect)
         {
@@ -205,7 +230,12 @@ else if (current is not null)
         else
         {
             wrongAnswers++;
-            feedback = $"Teisinga vieta: {current.AccentIndex + 1} raidė, kirtis: {current.AccentType}. {current.Explanation}";
+            feedback = $"Teisinga vieta: {expected.Index + 1} raidė, kirtis: {AccentSymbol(expected.Type)}. {current.Explanation}";
+
+            if (placedAccentIndex == expected.Index)
+            {
+                StartFeedbackAnimation();
+            }
         }
 
         await ActivityLog.LogAsync("answer_submitted", evt =>
@@ -217,8 +247,8 @@ else if (current is not null)
             evt.QuestionId = current.Id.ToString();
             evt.MistakeType = isCorrect ? null : "accentuation";
             evt.Payload["word"] = current.Word;
-            evt.Payload["expectedIndex"] = current.AccentIndex;
-            evt.Payload["expectedType"] = current.AccentType;
+            evt.Payload["expectedIndex"] = expected.Index;
+            evt.Payload["expectedType"] = expected.Type;
             evt.Payload["placedIndex"] = placedAccentIndex;
             evt.Payload["placedType"] = placedAccentType;
         });
@@ -226,6 +256,8 @@ else if (current is not null)
 
     private async Task Next()
     {
+        StopFeedbackAnimation();
+
         if (isLast)
         {
             finished = true;
@@ -255,7 +287,9 @@ else if (current is not null)
         isCorrect = false;
         placedAccentIndex = null;
         placedAccentType = null;
-        draggingAccent = null;
+        openAccentMenuIndex = null;
+        expectedAccent = null;
+        showExpectedAccent = false;
     }
 
     private static int PointsForDifficulty(string difficulty)
@@ -266,14 +300,123 @@ else if (current is not null)
             _ => 100
         };
 
+    private string SlotSymbol(int slotIndex)
+    {
+        if (feedback is not null && expectedAccent is { } expected)
+        {
+            if (isCorrect && slotIndex == expected.Index)
+            {
+                return AccentSymbol(expected.Type);
+            }
+
+            if (!isCorrect && placedAccentIndex == expected.Index && slotIndex == expected.Index)
+            {
+                return AccentSymbol(showExpectedAccent ? expected.Type : placedAccentType);
+            }
+
+            if (!isCorrect && slotIndex == expected.Index)
+            {
+                return AccentSymbol(expected.Type);
+            }
+        }
+
+        return placedAccentIndex == slotIndex ? AccentSymbol(placedAccentType) : string.Empty;
+    }
+
+    private string SlotFeedbackClass(int slotIndex)
+    {
+        if (feedback is null || expectedAccent is not { } expected) return string.Empty;
+        if (isCorrect) return slotIndex == expected.Index ? "is-correct" : string.Empty;
+
+        if (placedAccentIndex == expected.Index && slotIndex == expected.Index)
+        {
+            return showExpectedAccent ? "is-correct" : "is-incorrect";
+        }
+
+        if (slotIndex == expected.Index) return "is-correct";
+        return slotIndex == placedAccentIndex ? "is-incorrect" : string.Empty;
+    }
+
+    private void StartFeedbackAnimation()
+    {
+        StopFeedbackAnimation();
+        feedbackAnimationCancellation = new CancellationTokenSource();
+        _ = AnimateFeedbackAsync(feedbackAnimationCancellation.Token);
+    }
+
+    private async Task AnimateFeedbackAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                showExpectedAccent = !showExpectedAccent;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void StopFeedbackAnimation()
+    {
+        feedbackAnimationCancellation?.Cancel();
+        feedbackAnimationCancellation?.Dispose();
+        feedbackAnimationCancellation = null;
+    }
+
     private string AccentSymbol(string? accentType)
         => accentType switch
         {
-            "kairinis" => "`",
-            "dešininis" => "´",
-            "riestinis" => "~",
+            "kairinis" => "ˋ",
+            "dešininis" => "ˊ",
+            "riestinis" => "˜",
             _ => string.Empty
         };
+
+    private static (int Index, string Type) ParseExpectedAccent(string plainWord, string accentedWord)
+    {
+        if (string.IsNullOrWhiteSpace(plainWord) || string.IsNullOrWhiteSpace(accentedWord))
+        {
+            return (0, "dešininis");
+        }
+
+        var normalized = accentedWord.Normalize(NormalizationForm.FormD);
+        var letterIndex = -1;
+
+        foreach (var ch in normalized)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(ch);
+
+            if (char.IsLetter(ch))
+            {
+                letterIndex++;
+                continue;
+            }
+
+            if (category == UnicodeCategory.NonSpacingMark)
+            {
+                var type = ch switch
+                {
+                    '\u0300' => "kairinis",
+                    '\u0301' => "dešininis",
+                    '\u0303' => "riestinis",
+                    _ => null
+                };
+
+                if (type is not null)
+                {
+                    return (Math.Clamp(letterIndex, 0, plainWord.Length - 1), type);
+                }
+
+                continue;
+            }
+        }
+
+        return (0, "dešininis");
+    }
 
     private void Restart() => Navigation.NavigateTo(RouteBase(), true);
     private void GoHome() => Navigation.NavigateTo(ClassSlug is null ? "/" : "/lietuviu-kalba");
@@ -295,4 +438,6 @@ else if (current is not null)
             context.PreventNavigation();
         }
     }
+
+    public void Dispose() => StopFeedbackAnimation();
 }

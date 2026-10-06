@@ -3686,3 +3686,217 @@ h1:focus { outline: none !important; }
         opacity: 0;
     }
 }
+
+/* Accentuation exercise layout + readability */
+.accentuation-panel { gap: 14px; }
+
+.accentuation-board { display: block; }
+.accent-word-wrap {
+    background: #fff;
+    border: 1px solid #dfd7ff;
+    border-radius: 14px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 12px 10px 8px;
+}
+.accent-word-wrap,
+.accent-drop-row,
+.accent-letter-row {
+    box-sizing: border-box;
+}
+.accent-drop-row,
+.accent-letter-row {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    min-width: max-content;
+}
+.accent-slot-wrap {
+    position: relative;
+    width: 30px;
+    height: 24px;
+    overflow: visible;
+}
+
+.accent-drop-slot {
+    width: 30px;
+    height: 24px;
+    border: 1px dashed #b7a7ff;
+    border-radius: 6px;
+    background: #f6f3ff;
+    color: #5c48d7;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    line-height: 1;
+    cursor: pointer;
+    position: relative;
+    z-index: 3;
+}
+.accent-drop-slot.is-open {
+    border-style: solid;
+    border-color: #7a62f2;
+    box-shadow: 0 0 0 2px rgba(122, 98, 242, .16);
+}
+.accent-drop-slot span {
+    font-size: 23px;
+    font-weight: 900;
+    line-height: .8;
+    transform: translateY(-2px);
+}
+.accent-drop-slot.is-filled {
+    border-style: solid;
+    border-color: #7a62f2;
+    background: #ece6ff;
+}
+.accent-choice-menu {
+    position: absolute;
+    z-index: 12;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    padding: 6px;
+    border: 1px solid #d9d0ff;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 10px 22px rgba(50, 38, 100, .18);
+}
+.accent-choice {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #ded6ff;
+    border-radius: 8px;
+    background: #f8f6ff;
+    color: #5c48d7;
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+}
+.accent-choice:hover { background: #ece6ff; border-color: #806bf3; }
+.accent-clear-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    border: 0;
+    border-radius: 9px;
+    padding: 8px 12px;
+    background: #f2efff;
+    color: #604acb;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+.accent-clear-inline:hover { background: #e8e1ff; }
+.submit-button {
+    margin-top: 16px;
+}
+.next-button {
+    margin-top: 14px;
+}
+
+.accent-letter {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #dfd8ff;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    font-weight: 800;
+    color: #2e2751;
+    background: #fff;
+}
+.accent-drop-slot.is-correct,
+.accent-letter.is-correct {
+    border-color: #3aac85;
+    background: #e1f7ee;
+    color: #147254;
+}
+.accent-drop-slot.is-incorrect,
+.accent-letter.is-incorrect {
+    border-color: #e26a68;
+    background: #ffebea;
+    color: #b23d3b;
+}
+
+/* Progress line visibility in dark theme */
+:root[data-theme="dark"] .game-progress {
+    background: #26213a;
+    border: 1px solid #3f3760;
+    border-radius: 12px;
+    padding: 8px 10px;
+}
+:root[data-theme="dark"] .game-progress > div span {
+    color: #e9e3ff;
+}
+:root[data-theme="dark"] .progress-track {
+    background: #4a4266;
+}
+
+/* Accentuation dark mode */
+:root[data-theme="dark"] .accent-word-wrap {
+    background: #211d30;
+    border-color: #4a406d;
+}
+:root[data-theme="dark"] .accent-drop-slot {
+    background: #241f35;
+    border-color: #665a96;
+    color: #c6bbff;
+}
+:root[data-theme="dark"] .accent-drop-slot.is-open {
+    border-color: #9b89f2;
+    box-shadow: 0 0 0 2px rgba(155, 137, 242, .28);
+}
+:root[data-theme="dark"] .accent-drop-slot.is-filled {
+    background: #352b56;
+    border-color: #8f7de5;
+}
+
+/* Keep Accentuation spacing/alignment identical in dark and light themes */
+:root[data-theme="dark"] .accentuation-panel,
+:root[data-theme="dark"] .accentuation-board,
+:root[data-theme="dark"] .accent-word-wrap,
+:root[data-theme="dark"] .accent-drop-row,
+:root[data-theme="dark"] .accent-letter-row {
+    margin: 0;
+    padding-left: inherit;
+    padding-right: inherit;
+}
+:root[data-theme="dark"] .accent-choice-menu {
+    background: #2a243e;
+    border-color: #62568c;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, .35);
+}
+:root[data-theme="dark"] .accent-choice {
+    background: #342c4e;
+    border-color: #5d5185;
+    color: #d5caff;
+}
+:root[data-theme="dark"] .accent-choice:hover { background: #433861; border-color: #9b89f2; }
+:root[data-theme="dark"] .accent-clear-inline {
+    background: #30294a;
+    color: #d6ccff;
+}
+:root[data-theme="dark"] .accent-clear-inline:hover { background: #3c3359; }
+:root[data-theme="dark"] .accent-letter {
+    background: #28223c;
+    border-color: #4b406e;
+    color: #f0ebff;
+}
+:root[data-theme="dark"] .accent-drop-slot.is-correct,
+:root[data-theme="dark"] .accent-letter.is-correct {
+    background: #1b4037;
+    border-color: #45b993;
+    color: #b6f4df;
+}
+:root[data-theme="dark"] .accent-drop-slot.is-incorrect,
+:root[data-theme="dark"] .accent-letter.is-incorrect {
+    background: #4a292d;
+    border-color: #df7776;
+    color: #ffd0ce;
+}
