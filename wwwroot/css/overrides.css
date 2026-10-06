@@ -3711,12 +3711,6 @@ h1:focus { outline: none !important; }
     gap: 2px;
     min-width: max-content;
 }
-.accent-slot-wrap {
-    position: relative;
-    width: 30px;
-    height: 24px;
-    overflow: visible;
-}
 
 .accent-drop-slot {
     width: 30px;
@@ -3730,8 +3724,6 @@ h1:focus { outline: none !important; }
     padding: 0;
     line-height: 1;
     cursor: pointer;
-    position: relative;
-    z-index: 3;
 }
 .accent-drop-slot.is-open {
     border-style: solid;
@@ -3749,12 +3741,14 @@ h1:focus { outline: none !important; }
     border-color: #7a62f2;
     background: #ece6ff;
 }
+.accent-inline-picker {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    min-height: 38px;
+}
 .accent-choice-menu {
-    position: absolute;
-    z-index: 12;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
     gap: 5px;
     padding: 6px;
@@ -3862,10 +3856,10 @@ h1:focus { outline: none !important; }
 :root[data-theme="dark"] .accentuation-board,
 :root[data-theme="dark"] .accent-word-wrap,
 :root[data-theme="dark"] .accent-drop-row,
-:root[data-theme="dark"] .accent-letter-row {
-    margin: 0;
-    padding-left: inherit;
-    padding-right: inherit;
+:root[data-theme="dark"] .accent-letter-row,
+:root[data-theme="dark"] .accent-inline-picker {
+    margin-left: auto;
+    margin-right: auto;
 }
 :root[data-theme="dark"] .accent-choice-menu {
     background: #2a243e;
