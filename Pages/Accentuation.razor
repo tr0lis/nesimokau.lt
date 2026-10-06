@@ -60,7 +60,7 @@ else if (current is not null)
                     <div class="accent-inline-picker" role="menu">
                         @foreach (var accent in accentOptions)
                         {
-                            <button type="button" class="accent-choice" role="menuitem" @onclick="() => PlaceAccent(openAccentMenuIndex.Value, accent.Key)">@accent.Symbol</button>
+                            <button type="button" class="accent-choice" role="menuitem" aria-label="@accent.Title" @onclick="() => PlaceAccent(openAccentMenuIndex.Value, accent.Key)">@AccentMark(accent.Key)</button>
                         }
                     </div>
                 }
@@ -70,8 +70,9 @@ else if (current is not null)
                         <button type="button"
                                 class="accent-drop-slot @SlotFeedbackClass(i) @(placedAccentIndex == i ? "is-filled" : string.Empty) @(openAccentMenuIndex == i ? "is-open" : string.Empty)"
                                 @onclick="() => ToggleAccentMenu(i)"
-                                disabled="@(feedback is not null)">
-                            <span>@SlotSymbol(i)</span>
+                                disabled="@(feedback is not null)"
+                                aria-label="@SlotAriaLabel(i)">
+                            <span class="accent-glyph">@AccentMark(SlotAccentType(i))</span>
                         </button>
                     }
                 </div>
@@ -109,11 +110,11 @@ else if (current is not null)
         ("Sudėtingas", "Sudėtingas", "Sudėtingesni atvejai", "ˈˈˈ")
     ];
 
-    private readonly (string Key, string Symbol)[] accentOptions =
+    private readonly (string Key, string Title)[] accentOptions =
     [
-        ("kairinis", "`"),
-        ("dešininis", "´"),
-        ("riestinis", "~")
+        ("kairinis", "Kairinis kirtis"),
+        ("dešininis", "Dešininis kirtis"),
+        ("riestinis", "Riestinis kirtis")
     ];
 
     private List<AccentuationWord> allWords = [];
@@ -298,28 +299,61 @@ else if (current is not null)
             _ => 100
         };
 
-    private string SlotSymbol(int slotIndex)
+    private string? SlotAccentType(int slotIndex)
     {
         if (feedback is not null && expectedAccent is { } expected)
         {
             if (isCorrect && slotIndex == expected.Index)
             {
-                return AccentSymbol(expected.Type);
+                return expected.Type;
             }
 
             if (!isCorrect && placedAccentIndex == expected.Index && slotIndex == expected.Index)
             {
-                return AccentSymbol(showExpectedAccent ? expected.Type : placedAccentType);
+                return showExpectedAccent ? expected.Type : placedAccentType;
             }
 
             if (!isCorrect && slotIndex == expected.Index)
             {
-                return AccentSymbol(expected.Type);
+                return expected.Type;
             }
         }
 
-        return placedAccentIndex == slotIndex ? AccentSymbol(placedAccentType) : string.Empty;
+        return placedAccentIndex == slotIndex ? placedAccentType : null;
     }
+
+    private string SlotAriaLabel(int slotIndex)
+    {
+        var type = SlotAccentType(slotIndex);
+        return string.IsNullOrEmpty(type) ? $"Raidė {slotIndex + 1}" : $"Raidė {slotIndex + 1}, {AccentSymbol(type)}";
+    }
+
+    private RenderFragment AccentMark(string? accentType) => builder =>
+    {
+        if (string.IsNullOrEmpty(accentType)) return;
+
+        var path = accentType switch
+        {
+            "kairinis" => "M5 7.5 L19 16.5",
+            "dešininis" => "M5 16.5 L19 7.5",
+            "riestinis" => "M3 15 C6.2 8 8.8 8 12 12 C15.2 16 17.8 16 21 9",
+            _ => null
+        };
+        if (path is null) return;
+
+        builder.OpenElement(0, "svg");
+        builder.AddAttribute(1, "class", "accent-glyph-svg");
+        builder.AddAttribute(2, "viewBox", "0 0 24 24");
+        builder.AddAttribute(3, "aria-hidden", "true");
+        builder.OpenElement(4, "path");
+        builder.AddAttribute(5, "d", path);
+        builder.AddAttribute(6, "fill", "none");
+        builder.AddAttribute(7, "stroke", "currentColor");
+        builder.AddAttribute(8, "stroke-width", "3.4");
+        builder.AddAttribute(9, "stroke-linecap", "round");
+        builder.CloseElement();
+        builder.CloseElement();
+    };
 
     private string SlotFeedbackClass(int slotIndex)
     {
