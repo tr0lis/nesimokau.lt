@@ -60,7 +60,7 @@ else if (current is not null)
                     <div class="accent-inline-picker" role="menu">
                         @foreach (var accent in accentOptions)
                         {
-                            <button type="button" class="accent-choice" role="menuitem" aria-label="@accent.Title" @onclick="() => PlaceAccent(openAccentMenuIndex.Value, accent.Key, accent.Symbol)">@accent.Symbol</button>
+                            <button type="button" class="accent-choice" role="menuitem" aria-label="@accent.Title" @onclick="() => PlaceAccent(openAccentMenuIndex.Value, accent.Key)">@accent.Symbol</button>
                         }
                     </div>
                 }
@@ -128,7 +128,6 @@ else if (current is not null)
     private bool isCorrect;
     private int? placedAccentIndex;
     private string? placedAccentType;
-    private string? placedAccentSymbol;
     private int? openAccentMenuIndex;
     private (int Index, string Type)? expectedAccent;
     private bool showExpectedAccent;
@@ -165,7 +164,6 @@ else if (current is not null)
         feedback = null;
         placedAccentIndex = null;
         placedAccentType = null;
-        placedAccentSymbol = null;
         openAccentMenuIndex = null;
         expectedAccent = null;
         showExpectedAccent = false;
@@ -191,13 +189,13 @@ else if (current is not null)
         openAccentMenuIndex = openAccentMenuIndex == index ? null : index;
     }
 
-    private void PlaceAccent(int index, string accentType, string accentSymbol)
+    private void PlaceAccent(int index, string accentType)
     {
         if (feedback is not null) return;
         placedAccentIndex = index;
         placedAccentType = accentType;
-        placedAccentSymbol = accentSymbol;
         openAccentMenuIndex = null;
+        StateHasChanged();
     }
 
     private void ClearDrop()
@@ -205,7 +203,6 @@ else if (current is not null)
         if (feedback is not null) return;
         placedAccentIndex = null;
         placedAccentType = null;
-        placedAccentSymbol = null;
         openAccentMenuIndex = null;
     }
 
@@ -285,7 +282,6 @@ else if (current is not null)
         isCorrect = false;
         placedAccentIndex = null;
         placedAccentType = null;
-        placedAccentSymbol = null;
         openAccentMenuIndex = null;
         expectedAccent = null;
         showExpectedAccent = false;
@@ -332,7 +328,7 @@ else if (current is not null)
     {
         if (feedback is null)
         {
-            return placedAccentIndex == slotIndex ? placedAccentSymbol ?? string.Empty : string.Empty;
+            return placedAccentIndex == slotIndex ? AccentSymbol(placedAccentType) : string.Empty;
         }
 
         return AccentSymbol(SlotAccentType(slotIndex));
