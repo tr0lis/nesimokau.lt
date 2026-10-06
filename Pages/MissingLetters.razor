@@ -206,7 +206,7 @@ else if (current is not null)
             }
             else
             {
-                score += 100;
+                score += PointsForDifficulty(current.Difficulty);
                 sessionSolvedQuestionIds.Add(current.Id);
                 feedback = $"Teisinga. {current.Answer}";
             }
@@ -269,13 +269,11 @@ else if (current is not null)
         {
             finished = true;
             var savedProgress = await Progress.GetAsync();
-            var isRepeat = savedProgress.PracticeMistakeCounts.ContainsKey("missing-letters");
-            var previousMistakes = savedProgress.PracticeMistakeCounts.GetValueOrDefault("missing-letters");
             var totalQuestions = allQuestions.Count;
             var alreadyCompleted = totalQuestions > 0 && savedProgress.SolvedQuestionIdsByGame.GetValueOrDefault("missing-letters")?.Distinct().Count() >= totalQuestions;
             var persistedScore = alreadyCompleted ? 0 : score;
-            earnedXp = alreadyCompleted ? 0 : isRepeat && Accuracy == 100 ? previousMistakes * EnergyPerCorrect : score / 100 * EnergyPerCorrect;
-            earnedCoins = alreadyCompleted ? 0 : isRepeat ? (Accuracy == 100 ? previousMistakes * CoinsPerCorrect : 0) : score / 100 * CoinsPerCorrect + (Accuracy == 100 ? 2 : 0);
+            earnedXp = alreadyCompleted ? 0 : score / 10;
+            earnedCoins = alreadyCompleted ? 0 : score / 50 + (Accuracy == 100 ? 2 : 0);
             levelUp = await Progress.SaveResultAsync(new GameResult("missing-letters", "Įrašyk praleistas raides", persistedScore, Accuracy, earnedXp, earnedCoins, DateTime.Now)
             {
                 ClassGroup = ParseClassGroup(savedProgress.ClassGroup),
@@ -320,8 +318,18 @@ else if (current is not null)
 
     private void GoHome() => Navigation.NavigateTo(ClassSlug is null ? "/" : "/lietuviu-kalba");
     private void GoBackToSubject() => Navigation.NavigateTo("/lietuviu-kalba");
-    private int EnergyPerCorrect => 10;
-    private int CoinsPerCorrect => 2;
+    private int EnergyPerCorrect => selectedDifficulty switch
+    {
+        "Lengvas" => 5,
+        "Vidutinis" => 8,
+        _ => 10
+    };
+    private int CoinsPerCorrect => selectedDifficulty switch
+    {
+        "Lengvas" => 1,
+        "Vidutinis" => 2,
+        _ => 2
+    };
     private string RouteBase() => ClassSlug is null ? "zaidimai/praleistos-raides" : $"lietuviu-kalba/{ClassSlug}/praleistos-raides";
     private static string ResolveDifficultyFromLevel(string? level)
         => level?.Trim().ToLowerInvariant() switch
@@ -340,4 +348,12 @@ else if (current is not null)
     }
     private void DismissLevelUp() => levelUp = null;
     private async Task ConfirmLeave(LocationChangingContext context) { if (!finished && !await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti.")) context.PreventNavigation(); }
+
+    private static int PointsForDifficulty(string difficulty)
+        => difficulty switch
+        {
+            "Lengvas" => 50,
+            "Vidutinis" => 75,
+            _ => 100
+        };
 }

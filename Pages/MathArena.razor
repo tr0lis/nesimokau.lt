@@ -1,0 +1,354 @@
+@page "/matematika/zaidimai/skaiciu-arena"
+@using Microsoft.AspNetCore.Components
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject ProgressService Progress
+@inject ActivityLogService ActivityLog
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Skaičių arena | nesimokau.lt</PageTitle>
+
+@if (loading)
+{
+    <div class="loading-state"><span class="loader"></span><p>Ruošiame skaičių areną...</p></div>
+}
+else if (!started)
+{
+    <section class="difficulty-screen">
+        <button class="button button-ghost prestart-back" @onclick="GoBackToSubject">← Atgal</button>
+        <p class="eyebrow">PASIRINK SUNKUMĄ</p>
+        <h1>Skaičių arena</h1>
+        <p class="subtitle">Greitas skaičiavimas: sudėtis, atimtis, daugyba, dalyba.</p>
+        <div class="difficulty-options">
+            @foreach (var option in difficultyOptions)
+            {
+                <button class="difficulty-option @(selectedDifficulty == option.Key ? "selected" : "")" @onclick="() => selectedDifficulty = option.Key"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
+            }
+        </div>
+        <button class="button button-primary" @onclick="StartGame">Pradėti <span>→</span></button>
+    </section>
+}
+else if (finished)
+{
+    <section class="result-screen">
+        <div class="result-burst">✦</div><p class="eyebrow">Arena įveikta!</p><h1>Skaičiavimas sėkmingas<span class="gradient-text">!</span></h1>
+        <p class="subtitle">Tavo greitis ir tikslumas auga su kiekvienu bandymu.</p>
+        <div class="result-score"><strong>@score</strong><span>taškai</span></div>
+        <div class="result-stats"><div><strong>@Accuracy%</strong><span>Tikslumas</span></div><div><strong>⚡ +@earnedXp</strong><span>Uždirbta energija</span></div><div><strong>🪙 +@earnedCoins</strong><span>Uždirbtos monetos</span></div></div>
+        <div class="result-actions"><button class="button button-primary" @onclick="Restart">Žaisti dar kartą <span>↗</span></button><button class="button button-ghost" @onclick="GoHome">Grįžti į pradžią</button></div>
+    </section>
+    @if (levelUp is not null)
+    {
+        <div class="levelup-overlay">
+            <section class="levelup-popup">
+                <p class="eyebrow">SVEIKINAME!</p>
+                <h2>Pakilai į @levelUp.Number lygį</h2>
+                <div class="levelup-badge badge-@levelUp.Color">@levelUp.Badge</div>
+                <p>@levelUp.Title</p>
+                <button class="button button-primary" @onclick="DismissLevelUp">Puiku!</button>
+            </section>
+        </div>
+    }
+}
+else if (current is not null)
+{
+    <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="true" />
+    <div class="game-header"><button class="back-button" @onclick="GoHome" aria-label="Grįžti">←</button><div class="game-title"><span class="game-icon icon-blue">∑</span><div><p class="eyebrow">MATEMATIKA</p><h1>Skaičių arena</h1></div></div><div class="lives" aria-label="Liko gyvybių">@for (var i = 0; i < lives; i++) { <span>♥</span> }</div></div>
+    <div class="game-progress"><div><span>@(@index + 1) / @questions.Count</span><span>@score taškai</span></div><div class="progress-track"><span style="width:@ProgressPercent%"></span></div></div>
+    <section class="game-panel">
+        <div class="tip-card tip-card-inline"><span>∑</span><div><strong>Mažas patarimas</strong><p>Skaičiuok mintinai, naudok skaidymo strategiją.</p></div></div>
+        <div class="prompt-label"><span class="prompt-pulse"></span> APSKAIČIUOK</div>
+        <div class="math-problem">@current.Prompt</div>
+        <p class="prompt-hint">@current.Hint</p>
+        <div class="answer-area"><input @ref="answerInput" @bind="answer" @bind:event="oninput" @onkeydown="HandleKeyDown" placeholder="Įrašyk atsakymą..." autocomplete="off" inputmode="numeric" aria-label="Atsakymas" /><button class="hint-inline-button" @onclick="OpenHintConfirm" disabled="@(feedback is not null || hintUsed || !CanPurchaseHint)" aria-label="Išspręsti">💡</button><span class="hint-inline-tooltip">IŠSPRĘSTI (-100)</span></div>
+        @if (feedback is not null)
+        {
+            <div class="feedback @(isCorrect ? "feedback-good" : "feedback-bad")"><strong>@(isCorrect ? "Teisingai!" : "Dar kartą pagalvok")</strong><span>@feedback</span></div>
+            <button class="button button-primary next-button" @onclick="Next">@(isLast ? "Pamatyti rezultatą" : "Kita užduotis") <span>→</span></button>
+        }
+        else
+        { <button class="button button-primary submit-button" @onclick="Submit" disabled="@string.IsNullOrWhiteSpace(answer)">Patikrinti <span>↗</span></button> }
+        <p class="keyboard-hint">Patikrinti atsakymą: paspausk <kbd>ENTER</kbd></p>
+    </section>
+}
+
+@if (showHintConfirm)
+{
+    <div class="level-modal-backdrop" @onclick="CloseHintConfirm">
+        <section class="levels-modal hint-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="hint-title">
+            <button class="modal-close" @onclick="CloseHintConfirm" aria-label="Uždaryti">×</button>
+            <p class="eyebrow">PATVIRTINIMAS</p>
+            <h2 id="hint-title">Pirkti užuominą?</h2>
+            <p class="modal-subtitle">Tai kainuos 100 monetų ir parodys teisingą atsakymą šiai užduočiai. Liko @remainingHints iš 5 šiandien.</p>
+            <div class="reset-actions">
+                <button class="button button-ghost" @onclick="CloseHintConfirm">Atšaukti</button>
+                <button class="button button-primary" @onclick="UseHint" disabled="@(!CanPurchaseHint)">Taip, pirkti</button>
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    private readonly (string Key, string Title, string Hint, string Icon)[] difficultyOptions =
+    [
+        ("Lengvas", "Lengvas", "1-2 klasė", "✎"),
+        ("Vidutinis", "Vidutinis", "3 klasė", "✎✎"),
+        ("Sudėtingas", "Sudėtingas", "4 klasė", "✎✎✎")
+    ];
+
+    private sealed record ArenaQuestion(int Id, string Prompt, string Hint, string Answer, string Explanation, int Points);
+
+    private List<ArenaQuestion> questions = [];
+    private ArenaQuestion? current;
+    private ElementReference answerInput;
+    private string answer = string.Empty;
+    private string? feedback;
+    private bool isCorrect;
+    private bool loading = true;
+    private bool started;
+    private bool finished;
+    private int index;
+    private int score;
+    private int wrongAnswers;
+    private int lives = 3;
+    private int earnedXp;
+    private int earnedCoins;
+    private LevelDefinition? levelUp;
+    private string selectedDifficulty = "Lengvas";
+    private bool hintUsed;
+    private bool showHintConfirm;
+    private int remainingHints;
+    private StudentProgress playerProgress = new();
+    private readonly List<int> sessionSolvedQuestionIds = [];
+    private int ProgressPercent => questions.Count == 0 ? 0 : (index + 1) * 100 / questions.Count;
+    private bool isLast => index == questions.Count - 1;
+    private int Accuracy => questions.Count == 0 ? 0 : Math.Max(0, (questions.Count - wrongAnswers) * 100 / questions.Count);
+    private bool CanPurchaseHint => remainingHints > 0 && playerProgress.Coins >= 100;
+    private const int HintCost = 100;
+    private const int DailyHintLimit = 5;
+    private int EnergyPerCorrect => selectedDifficulty switch
+    {
+        "Lengvas" => 5,
+        "Vidutinis" => 8,
+        _ => 10
+    };
+    private int CoinsPerCorrect => selectedDifficulty switch
+    {
+        "Lengvas" => 1,
+        "Vidutinis" => 2,
+        _ => 2
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        playerProgress = await Progress.GetAsync();
+        remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
+        loading = false;
+    }
+
+    private void StartGame()
+    {
+        questions = GenerateQuestions(selectedDifficulty, 10);
+        if (questions.Count == 0) return;
+        started = true;
+        current = questions[0];
+        score = 0;
+        wrongAnswers = 0;
+        lives = 3;
+        index = 0;
+    }
+
+    private List<ArenaQuestion> GenerateQuestions(string difficulty, int count)
+    {
+        var random = new Random();
+        var list = new List<ArenaQuestion>();
+        for (var i = 0; i < count; i++)
+        {
+            list.Add(GenerateQuestion(random, difficulty, i + 1));
+        }
+        return list;
+    }
+
+    private ArenaQuestion GenerateQuestion(Random random, string difficulty, int id)
+    {
+        return difficulty switch
+        {
+            "Lengvas" => GenerateEasy(random, id),
+            "Vidutinis" => GenerateMedium(random, id),
+            "Sudėtingas" => GenerateHard(random, id),
+            _ => GenerateEasy(random, id)
+        };
+    }
+
+    private ArenaQuestion GenerateEasy(Random random, int id)
+    {
+        var op = random.Next(2) == 0 ? "+" : "-";
+        if (op == "+")
+        {
+            var a = random.Next(1, 16);
+            var b = random.Next(1, 20 - a);
+            return new ArenaQuestion(id, $"{a} + {b} = ?", $"Sudėk {a} ir {b}.", (a + b).ToString(), $"{a} + {b} = {a + b}", 50);
+        }
+        else
+        {
+            var a = random.Next(5, 20);
+            var b = random.Next(1, a);
+            return new ArenaQuestion(id, $"{a} - {b} = ?", $"Atimk {b} iš {a}.", (a - b).ToString(), $"{a} - {b} = {a - b}", 50);
+        }
+    }
+
+    private ArenaQuestion GenerateMedium(Random random, int id)
+    {
+        var op = random.Next(4);
+        return op switch
+        {
+            0 => new ArenaQuestion(id, $"{random.Next(10, 100)} + {random.Next(10, 100)} = ?", "Sudėk dešimtis ir vienetus.", "", "", 75),
+            1 => GenerateSubtractionMedium(random, id),
+            2 => new ArenaQuestion(id, $"{random.Next(2, 10)} × {random.Next(2, 10)} = ?", "Naudok daugybos lentelę.", "", "", 75),
+            _ => new ArenaQuestion(id, $"{random.Next(2, 10) * random.Next(2, 10)} ÷ {random.Next(2, 10)} = ?", "Padalyk ir patikrink daugyba.", "", "", 75)
+        };
+    }
+
+    private ArenaQuestion GenerateSubtractionMedium(Random random, int id)
+    {
+        var a = random.Next(20, 100);
+        var b = random.Next(10, a);
+        return new ArenaQuestion(id, $"{a} - {b} = ?", "Atimk dešimtis, tada vienetus.", (a - b).ToString(), $"{a} - {b} = {a - b}", 75);
+    }
+
+    private ArenaQuestion GenerateHard(Random random, int id)
+    {
+        var op = random.Next(4);
+        return op switch
+        {
+            0 => new ArenaQuestion(id, $"{random.Next(50, 200)} + {random.Next(50, 200)} = ?", "Sudėk šimtus, dešimtis, vienetus.", "", "", 100),
+            1 => GenerateSubtractionHard(random, id),
+            2 => new ArenaQuestion(id, $"{random.Next(11, 20)} × {random.Next(3, 10)} = ?", "Skaldyk dauginamąjį.", "", "", 100),
+            _ => new ArenaQuestion(id, $"{random.Next(10, 20) * random.Next(3, 10)} ÷ {random.Next(3, 10)} = ?", "Padalyk ir patikrink daugyba.", "", "", 100)
+        };
+    }
+
+    private ArenaQuestion GenerateSubtractionHard(Random random, int id)
+    {
+        var a = random.Next(100, 300);
+        var b = random.Next(50, a);
+        return new ArenaQuestion(id, $"{a} - {b} = ?", "Atimk šimtus, dešimtis, vienetus.", (a - b).ToString(), $"{a} - {b} = {a - b}", 100);
+    }
+
+    private async Task Submit()
+    {
+        if (current is null || feedback is not null) return;
+        var studentAnswer = answer.Trim();
+        if (string.IsNullOrWhiteSpace(studentAnswer)) return;
+
+        var expected = current.Answer;
+        var correct = studentAnswer.Equals(expected, StringComparison.OrdinalIgnoreCase)
+            || (int.TryParse(studentAnswer, out var sa) && int.TryParse(expected, out var ea) && sa == ea);
+
+        if (correct)
+        {
+            isCorrect = true;
+            if (hintUsed)
+            {
+                feedback = "Atsakymas atskleistas už 100 monetų.";
+            }
+            else
+            {
+                score += current.Points;
+                sessionSolvedQuestionIds.Add(current.Id);
+                feedback = "Puikiai! Skaičiavai teisingai.";
+            }
+        }
+        else
+        {
+            wrongAnswers++;
+            lives--;
+            feedback = $"Teisingas atsakymas: {current.Answer}. {current.Explanation}";
+        }
+
+        await ActivityLog.LogAsync("answer_submitted", evt =>
+        {
+            evt.Subject = "Matematika";
+            evt.GameId = "math-arena";
+            evt.GameTitle = "Skaičių arena";
+            evt.IsCorrect = isCorrect;
+            evt.QuestionId = current.Id.ToString();
+            evt.MistakeType = isCorrect ? null : "calculation";
+            evt.Payload["prompt"] = current.Prompt;
+            evt.Payload["expected"] = current.Answer;
+            evt.Payload["studentAnswer"] = studentAnswer;
+            evt.Payload["hintUsed"] = hintUsed;
+            evt.Payload["questionIndex"] = index + 1;
+        });
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenHintConfirm()
+    {
+        if (feedback is not null || hintUsed || current is null || !CanPurchaseHint) return;
+        showHintConfirm = true;
+    }
+
+    private void CloseHintConfirm() => showHintConfirm = false;
+
+    private async Task UseHint()
+    {
+        if (current is null || hintUsed) return;
+        var purchase = await Progress.TryPurchaseHintAsync(HintCost, DailyHintLimit);
+        if (purchase != ProgressService.HintPurchaseResult.Success)
+        {
+            showHintConfirm = false;
+            playerProgress = await Progress.GetAsync();
+            remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
+            return;
+        }
+        showHintConfirm = false;
+        hintUsed = true;
+        playerProgress = await Progress.GetAsync();
+        remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
+        answer = current.Answer;
+        await Submit();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e) { if (e.Key == "Enter") { if (feedback is null) await Submit(); else await Next(); } }
+
+    private async Task Next()
+    {
+        if (isLast)
+        {
+            finished = true;
+            var savedProgress = await Progress.GetAsync();
+            var totalQuestions = questions.Count;
+            var alreadyCompleted = totalQuestions > 0 && savedProgress.SolvedQuestionIdsByGame.GetValueOrDefault("math-arena")?.Distinct().Count() >= totalQuestions;
+            var persistedScore = alreadyCompleted ? 0 : score;
+            earnedXp = alreadyCompleted ? 0 : score / 10;
+            earnedCoins = alreadyCompleted ? 0 : score / 50 + (Accuracy == 100 ? 2 : 0);
+            levelUp = await Progress.SaveResultAsync(new GameResult("math-arena", "Skaičių arena", persistedScore, Accuracy, earnedXp, earnedCoins, DateTime.Now)
+            {
+                ClassGroup = savedProgress.ClassGroup,
+                CorrectAnswers = questions.Count - wrongAnswers,
+                IncorrectAnswers = wrongAnswers
+            });
+            await Progress.SaveSolvedQuestionIdsAsync("math-arena", sessionSolvedQuestionIds);
+            if (levelUp is not null) await JS.InvokeVoidAsync("nesimokau.celebrateLevelUp");
+            return;
+        }
+        index++;
+        current = questions[index];
+        answer = string.Empty;
+        feedback = null;
+        isCorrect = false;
+        hintUsed = false;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(50);
+        await answerInput.FocusAsync();
+    }
+
+    private void Restart() => Navigation.NavigateTo("/matematika/zaidimai/skaiciu-arena", true);
+    private void GoHome() => Navigation.NavigateTo("/matematika");
+    private void GoBackToSubject() => Navigation.NavigateTo("/matematika");
+    private void DismissLevelUp() => levelUp = null;
+    private async Task ConfirmLeave(LocationChangingContext context) { if (!finished && !await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti.")) context.PreventNavigation(); }
+}

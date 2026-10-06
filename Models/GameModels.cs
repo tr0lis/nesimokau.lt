@@ -34,6 +34,19 @@ public sealed record MissingLettersQuestion(
     string Difficulty,
     string MissingLetters);
 
+public sealed record MathQuestion(
+    int Id,
+    string Topic,
+    string Category,
+    string Prompt,
+    string? Hint,
+    string Answer,
+    string[]? AcceptableAnswers,
+    string Explanation,
+    string Difficulty,
+    int Grade,
+    int Points);
+
 public sealed record LevelDefinition(int Number, string Title, string Badge, int RequiredXp, string Color);
 
 public static class LevelCatalog
