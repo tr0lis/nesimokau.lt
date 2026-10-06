@@ -23,6 +23,14 @@ else if (!started)
         <p class="eyebrow">PASIRINK REŽIMĄ</p>
         <h1>Praleistos raidės</h1>
         <p class="subtitle">Pasirink, kaip nori spręsti užduotis.</p>
+        <p class="subtitle">Liko neišspręstų: <strong>@remainingAllQuestions</strong> iš @allQuestions.Count</p>
+
+        @if (remainingAllQuestions > 0)
+        {
+            <div class="result-actions" style="margin-bottom:.8rem;">
+                <button class="button button-primary" @onclick="ContinueUnsolved">Tęsti nuo nebaigtų <span>→</span></button>
+            </div>
+        }
 
         @if (selectedMode is null)
         {
@@ -115,6 +123,7 @@ else if (current is not null)
     private string? selectedMode;
     private bool simpleMode;
     private const int SimpleModeTaskCount = 20;
+    private int remainingAllQuestions;
     private HashSet<int> sessionSolvedQuestionIds = [];
     private bool showHintConfirm;
     private bool hintUsed;
@@ -133,6 +142,7 @@ else if (current is not null)
         allQuestions = await Http.GetFromJsonAsync<List<MissingLettersQuestion>>("data/missing-letters.json") ?? [];
         selectedDifficulty = ResolveDifficultyFromLevel(LevelSlug);
         playerProgress = await Progress.GetAsync();
+        await RefreshRemainingAsync();
         remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
         loading = false;
     }
@@ -145,6 +155,7 @@ else if (current is not null)
         showHintConfirm = false;
         hintUsed = false;
         playerProgress = await Progress.GetAsync();
+        await RefreshRemainingAsync();
         remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
         var solvedQuestionIds = (await Progress.GetSolvedQuestionIdsAsync("missing-letters")).ToHashSet();
 
@@ -297,6 +308,19 @@ else if (current is not null)
     {
         simpleMode = true;
         await StartGame();
+    }
+
+    private async Task ContinueUnsolved()
+    {
+        simpleMode = false;
+        selectedMode = "all";
+        await StartGame();
+    }
+
+    private async Task RefreshRemainingAsync()
+    {
+        var solved = (await Progress.GetSolvedQuestionIdsAsync("missing-letters")).ToHashSet();
+        remainingAllQuestions = allQuestions.Count(question => !solved.Contains(question.Id));
     }
 
     private void GoHome() => Navigation.NavigateTo(ClassSlug is null ? "/" : "/lietuviu-kalba");

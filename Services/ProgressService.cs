@@ -19,19 +19,53 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     }
 
     private const string StorageKey = "nesimokau-progress";
+    private const string PendingQueueKey = "nesimokau-progress-sync-queue";
+    private const string LastSuccessKey = "nesimokau-progress-last-sync-success-utc";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly string? supabaseUrl = config["Supabase:Url"];
     private readonly string? supabaseKey = config["Supabase:PublishableKey"];
     private StudentProgress? cached;
     private DbSyncStatus syncStatus = new("unknown", "Tikrinama...", DateTime.UtcNow);
+    private int pendingSyncCount;
+    private DateTime? lastSuccessfulSyncUtc;
     public event Action? Changed;
     public event Action? SyncStatusChanged;
 
     public DbSyncStatus GetDbSyncStatus() => syncStatus;
+    public int GetPendingSyncCount() => pendingSyncCount;
+    public DateTime? GetLastSuccessfulSyncUtc() => lastSuccessfulSyncUtc;
+
+    public async Task<bool> RetrySyncNowAsync()
+    {
+        var progress = await GetAsync();
+        var userId = await GetCurrentUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId) || !IsDbReady())
+        {
+            SetSyncStatus("local", "Nėra aktyvios DB sesijos");
+            return false;
+        }
+
+        var persisted = await UpsertToDbAsync(userId, progress);
+        if (persisted)
+        {
+            await MarkSuccessfulSyncAsync();
+            await FlushPendingQueueAsync(userId);
+            SetSyncStatus("synced", "Priverstinė sinchronizacija pavyko");
+        }
+        else
+        {
+            await EnqueuePendingSyncAsync(userId, progress);
+            SetSyncStatus("failed", "Priverstinė sinchronizacija nepavyko");
+        }
+
+        return persisted;
+    }
 
     public async Task<StudentProgress> GetAsync()
     {
         if (cached is not null) return cached;
+
+        await LoadSyncMetaAsync();
         var local = await LoadLocalAsync();
         var userId = await GetCurrentUserIdAsync();
 
@@ -41,12 +75,14 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
             if (remote.Progress is not null)
             {
                 cached = remote.Progress;
+                await FlushPendingQueueAsync(userId);
                 SetSyncStatus("synced", "Sinchronizuota su DB");
             }
             else if (remote.RequestSucceeded)
             {
                 cached = local;
                 var seeded = await UpsertToDbAsync(userId, cached);
+                if (seeded) await MarkSuccessfulSyncAsync();
                 SetSyncStatus(seeded ? "synced" : "failed", seeded ? "Sukurta DB būsena" : "DB įrašymas nepavyko");
             }
             else
@@ -264,6 +300,16 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
             var persisted = await UpsertToDbAsync(userId, merged);
             cached = merged;
             await PersistLocalAsync(merged);
+            if (persisted)
+            {
+                await MarkSuccessfulSyncAsync();
+                await FlushPendingQueueAsync(userId);
+            }
+            else
+            {
+                await EnqueuePendingSyncAsync(userId, merged);
+            }
+
             SetSyncStatus(persisted ? "synced" : "failed", persisted ? "Sinchronizuota su DB" : "DB įrašymas nepavyko");
         }
         else
@@ -397,6 +443,86 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     {
         var json = JsonSerializer.Serialize(progress);
         await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
+    }
+
+    private async Task<List<PendingSyncItem>> LoadPendingQueueAsync()
+    {
+        var json = await js.InvokeAsync<string?>("localStorage.getItem", PendingQueueKey);
+        var queue = string.IsNullOrWhiteSpace(json)
+            ? []
+            : JsonSerializer.Deserialize<List<PendingSyncItem>>(json, JsonOptions) ?? [];
+        pendingSyncCount = queue.Count;
+        return queue;
+    }
+
+    private async Task SavePendingQueueAsync(List<PendingSyncItem> queue)
+    {
+        var json = JsonSerializer.Serialize(queue, JsonOptions);
+        await js.InvokeVoidAsync("localStorage.setItem", PendingQueueKey, json);
+        pendingSyncCount = queue.Count;
+        SyncStatusChanged?.Invoke();
+    }
+
+    private async Task EnqueuePendingSyncAsync(string userId, StudentProgress progress)
+    {
+        var queue = await LoadPendingQueueAsync();
+        queue.RemoveAll(item => string.Equals(item.UserId, userId, StringComparison.Ordinal));
+        queue.Add(new PendingSyncItem
+        {
+            UserId = userId,
+            Progress = progress,
+            EnqueuedAtUtc = DateTime.UtcNow
+        });
+        await SavePendingQueueAsync(queue);
+    }
+
+    private async Task FlushPendingQueueAsync(string currentUserId)
+    {
+        var queue = await LoadPendingQueueAsync();
+        if (queue.Count == 0) return;
+
+        var pending = queue
+            .Where(item => string.Equals(item.UserId, currentUserId, StringComparison.Ordinal))
+            .OrderBy(item => item.EnqueuedAtUtc)
+            .ToList();
+
+        if (pending.Count == 0) return;
+
+        var stillPending = new List<PendingSyncItem>();
+        foreach (var item in pending)
+        {
+            var ok = await UpsertToDbAsync(item.UserId, item.Progress);
+            if (!ok) stillPending.Add(item);
+        }
+
+        queue.RemoveAll(item => string.Equals(item.UserId, currentUserId, StringComparison.Ordinal));
+        queue.AddRange(stillPending);
+        await SavePendingQueueAsync(queue);
+        if (stillPending.Count == 0)
+        {
+            await MarkSuccessfulSyncAsync();
+        }
+    }
+
+    private async Task LoadSyncMetaAsync()
+    {
+        if (lastSuccessfulSyncUtc is null)
+        {
+            var value = await js.InvokeAsync<string?>("localStorage.getItem", LastSuccessKey);
+            if (DateTime.TryParse(value, out var parsed))
+            {
+                lastSuccessfulSyncUtc = DateTime.SpecifyKind(parsed, DateTimeKind.Utc);
+            }
+        }
+
+        _ = await LoadPendingQueueAsync();
+    }
+
+    private async Task MarkSuccessfulSyncAsync()
+    {
+        lastSuccessfulSyncUtc = DateTime.UtcNow;
+        await js.InvokeVoidAsync("localStorage.setItem", LastSuccessKey, lastSuccessfulSyncUtc.Value.ToString("O"));
+        SyncStatusChanged?.Invoke();
     }
 
     private async Task<string?> GetCurrentUserIdAsync()
@@ -595,5 +721,12 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     {
         public static DbLoadResult Success(StudentProgress? progress) => new(true, progress);
         public static DbLoadResult Failed() => new(false, null);
+    }
+
+    private sealed class PendingSyncItem
+    {
+        public string UserId { get; set; } = string.Empty;
+        public DateTime EnqueuedAtUtc { get; set; }
+        public StudentProgress Progress { get; set; } = new();
     }
 }

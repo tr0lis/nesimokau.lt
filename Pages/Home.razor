@@ -12,7 +12,15 @@
             <p class="eyebrow">Mokymasis žaidžiant <span class="spark">✦</span></p>
             <h1>Pasirink dalyką</h1>
             <p class="subtitle">Pagrindiniame puslapyje rodomi tik dalykai. Pratimai atsidaro pasirinkto dalyko lange.</p>
-            <p class="subtitle">DB būsena: <strong>@SyncStateLabel</strong> · @sync.UpdatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</p>
+            <div class="subtitle" style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+                <span style="display:inline-flex;align-items:center;gap:.4rem;padding:.2rem .6rem;border-radius:999px;background:@SyncBadgeColor;color:white;font-weight:700;">
+                    <span>@SyncBadgeIcon</span>
+                    <span>@SyncStateLabel</span>
+                </span>
+                <span>Paskutinis sėkmingas sync: @LastSyncText</span>
+                <span>Laukia sync: @pendingSyncCount</span>
+                <button class="button button-ghost" @onclick="RetrySync">Bandyti sync dabar</button>
+            </div>
         </div>
         <button class="level-card level-card-@CurrentLevel.Color" @onclick="() => showLevels = true" title="Peržiūrėti lygius">
             <div class="level-top"><span class="level-label">LYGIS @CurrentLevel.Number</span><strong>⚡ @progress.Xp Energija</strong></div>
@@ -63,6 +71,9 @@
 @code {
     private StudentProgress progress = new();
     private ProgressService.DbSyncStatus sync = new("unknown", "Tikrinama...", DateTime.UtcNow);
+    private int pendingSyncCount;
+    private DateTime? lastSuccessfulSyncUtc;
+    private bool syncing;
     private bool showLevels;
     private LevelDefinition CurrentLevel => LevelCatalog.All.Last(level => level.RequiredXp <= progress.Xp);
     private LevelDefinition? NextLevel => LevelCatalog.All.FirstOrDefault(level => level.RequiredXp > progress.Xp);
@@ -80,6 +91,8 @@
     {
         progress = await Progress.GetAsync();
         sync = Progress.GetDbSyncStatus();
+        pendingSyncCount = Progress.GetPendingSyncCount();
+        lastSuccessfulSyncUtc = Progress.GetLastSuccessfulSyncUtc();
         Progress.Changed += HandleProgressChanged;
         Progress.SyncStatusChanged += HandleSyncChanged;
     }
@@ -88,14 +101,36 @@
     {
         progress = await Progress.GetAsync();
         sync = Progress.GetDbSyncStatus();
+        pendingSyncCount = Progress.GetPendingSyncCount();
+        lastSuccessfulSyncUtc = Progress.GetLastSuccessfulSyncUtc();
         StateHasChanged();
     });
 
     private void HandleSyncChanged() => _ = InvokeAsync(() =>
     {
         sync = Progress.GetDbSyncStatus();
+        pendingSyncCount = Progress.GetPendingSyncCount();
+        lastSuccessfulSyncUtc = Progress.GetLastSuccessfulSyncUtc();
         StateHasChanged();
     });
+
+    private async Task RetrySync()
+    {
+        if (syncing) return;
+        syncing = true;
+        try
+        {
+            _ = await Progress.RetrySyncNowAsync();
+            sync = Progress.GetDbSyncStatus();
+            pendingSyncCount = Progress.GetPendingSyncCount();
+            lastSuccessfulSyncUtc = Progress.GetLastSuccessfulSyncUtc();
+        }
+        finally
+        {
+            syncing = false;
+            StateHasChanged();
+        }
+    }
 
     private string SyncStateLabel => sync.State switch
     {
@@ -104,6 +139,35 @@
         "local" => "Tik lokalus režimas",
         _ => "Tikrinama"
     };
+
+    private string SyncBadgeColor => sync.State switch
+    {
+        "synced" => "#2e7d32",
+        "failed" => "#c62828",
+        "local" => "#ef6c00",
+        _ => "#546e7a"
+    };
+
+    private string SyncBadgeIcon => sync.State switch
+    {
+        "synced" => "✓",
+        "failed" => "⚠",
+        "local" => "⌁",
+        _ => "…"
+    };
+
+    private string LastSyncText
+    {
+        get
+        {
+            if (lastSuccessfulSyncUtc is null) return "dar nebuvo";
+            var delta = DateTime.UtcNow - lastSuccessfulSyncUtc.Value;
+            if (delta.TotalSeconds < 60) return "prieš kelias sekundes";
+            if (delta.TotalMinutes < 60) return $"prieš {(int)delta.TotalMinutes} min.";
+            if (delta.TotalHours < 24) return $"prieš {(int)delta.TotalHours} val.";
+            return $"prieš {(int)delta.TotalDays} d.";
+        }
+    }
 
     public void Dispose()
     {

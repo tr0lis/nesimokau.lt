@@ -12,8 +12,8 @@ create table if not exists public.player_accounts (
   password_hash text not null,
   avatar_id text not null default 'a1',
   class_group text not null default '5-6' check (class_group in ('1-2','3-4','5-6','7-8','9-10','11-12')),
-	created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
   created_at timestamptz not null default now(),
+	created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
   updated_at timestamptz not null default now()
 );
 
@@ -28,10 +28,10 @@ create index if not exists idx_player_accounts_updated_at
 -- =========================
 create table if not exists public.user_progress (
   user_id text primary key,
-	created_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
   created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
   updated_at timestamptz not null default now(),
-	updated_at_lt timestamptz generated always as (updated_at at time zone 'Europe/Vilnius') stored,
+  updated_at_lt timestamptz generated always as (updated_at at time zone 'Europe/Vilnius') stored,
   name text not null default '',
   avatar_id text not null default 'a1',
   avatar_background text not null default 'bg-violet',
@@ -66,8 +66,8 @@ create table if not exists public.leaderboard (
   nickname text not null,
   avatar text not null,
   country_flag text not null,
-  score int not null default 0,
-	created_at timestamptz not null default now(),
+	score int not null default 0,
+  created_at timestamptz not null default now(),
   created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
   updated_at timestamptz not null default now()
 );
@@ -84,7 +84,7 @@ create index if not exists idx_leaderboard_nickname
 create table if not exists public.user_activity_log (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
-	created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
+  created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored,
   user_id text,
   username text,
   event_type text not null,
@@ -123,6 +123,31 @@ create index if not exists idx_user_activity_game
 
 create index if not exists idx_user_activity_payload_gin
   on public.user_activity_log using gin (payload);
+
+-- Backfill/migration safety for older DBs
+alter table if exists public.player_accounts
+  add column if not exists created_at timestamptz not null default now();
+
+alter table if exists public.player_accounts
+  add column if not exists created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored;
+
+alter table if exists public.user_progress
+  add column if not exists created_at timestamptz not null default now();
+
+alter table if exists public.user_progress
+  add column if not exists created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored;
+
+alter table if exists public.user_progress
+  add column if not exists updated_at_lt timestamptz generated always as (updated_at at time zone 'Europe/Vilnius') stored;
+
+alter table if exists public.leaderboard
+  add column if not exists created_at timestamptz not null default now();
+
+alter table if exists public.leaderboard
+  add column if not exists created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored;
+
+alter table if exists public.user_activity_log
+  add column if not exists created_at_lt timestamptz generated always as (created_at at time zone 'Europe/Vilnius') stored;
 
 -- =========================
 -- Updated_at trigger helper
