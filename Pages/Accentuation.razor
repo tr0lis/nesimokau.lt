@@ -330,28 +330,23 @@ else if (current is not null)
 
     private RenderFragment AccentMark(string? accentType) => builder =>
     {
-        if (string.IsNullOrEmpty(accentType)) return;
+        if (string.IsNullOrEmpty(accentType))
+            return;
 
-        var path = accentType switch
+        var symbol = accentType switch
         {
-            "kairinis" => "M5 7.5 L19 16.5",
-            "dešininis" => "M5 16.5 L19 7.5",
-            "riestinis" => "M3 15 C6.2 8 8.8 8 12 12 C15.2 16 17.8 16 21 9",
-            _ => null
+            "kairinis" => "`",
+            "dešininis" => "´",
+            "riestinis" => "~",
+            _ => string.Empty
         };
-        if (path is null) return;
 
-        builder.OpenElement(0, "svg");
-        builder.AddAttribute(1, "class", "accent-glyph-svg");
-        builder.AddAttribute(2, "viewBox", "0 0 24 24");
-        builder.AddAttribute(3, "aria-hidden", "true");
-        builder.OpenElement(4, "path");
-        builder.AddAttribute(5, "d", path);
-        builder.AddAttribute(6, "fill", "none");
-        builder.AddAttribute(7, "stroke", "currentColor");
-        builder.AddAttribute(8, "stroke-width", "3.4");
-        builder.AddAttribute(9, "stroke-linecap", "round");
-        builder.CloseElement();
+        if (string.IsNullOrEmpty(symbol))
+            return;
+
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", "accent-symbol");
+        builder.AddContent(2, symbol);
         builder.CloseElement();
     };
 

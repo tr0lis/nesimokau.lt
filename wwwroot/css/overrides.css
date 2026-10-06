@@ -3738,15 +3738,14 @@ h1:focus { outline: none !important; }
     justify-content: center;
     width: 100%;
     height: 100%;
-    line-height: 1;
 }
-.accent-glyph-svg {
+.accent-symbol {
     display: block;
-    width: 22px;
-    height: 22px;
-    overflow: visible;
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 900;
     color: #5c48d7;
-    flex-shrink: 0;
+    transform: translateY(-1px);
 }
 .accent-drop-slot.is-filled {
     border-style: solid;
@@ -3782,9 +3781,8 @@ h1:focus { outline: none !important; }
     line-height: 0;
     cursor: pointer;
 }
-.accent-choice .accent-glyph-svg {
-    width: 20px;
-    height: 20px;
+.accent-choice .accent-symbol {
+    font-size: 22px;
 }
 .accent-choice:hover { background: #ece6ff; border-color: #806bf3; }
 .accent-clear-inline {
