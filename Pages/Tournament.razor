@@ -2,6 +2,7 @@
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject LeaderboardService Leaderboard
+@inject ProgressService Progress
 @implements IDisposable
 
 <PageTitle>Turnyrinė lentelė | nesimokau.lt</PageTitle>
@@ -34,7 +35,7 @@
             @foreach (var item in Podium)
             {
                 <article class="podium-card podium-@item.Place">
-                    <div class="podium-avatar">@item.Entry.Avatar</div>
+                    <div class="podium-avatar @AvatarBgClassFor(item.Entry)">@item.Entry.Avatar</div>
                     <span class="podium-place">#@item.Place</span>
                     <strong>@item.Entry.Name <span class="player-flag">@item.Entry.CountryFlag</span></strong>
                     <small>@item.Entry.Score taškų</small>
@@ -51,7 +52,7 @@
                 {
                     <div class="tournament-row @(row.Entry.Id == currentPlayerId ? "is-self" : "")">
                         <span class="tournament-rank">@row.DisplayRank</span>
-                        <span class="tournament-avatar">@row.Entry.Avatar</span>
+                        <span class="tournament-avatar @AvatarBgClassFor(row.Entry)">@row.Entry.Avatar</span>
                         <strong class="tournament-name">@row.Entry.Name <span class="player-flag">@row.Entry.CountryFlag</span></strong>
                         <b class="tournament-score">@row.Entry.Score</b>
                     </div>
@@ -62,7 +63,7 @@
                     <div class="tournament-separator">…</div>
                     <div class="tournament-row is-self">
                         <span class="tournament-rank">21</span>
-                        <span class="tournament-avatar">@CurrentUserEntry?.Avatar</span>
+                        <span class="tournament-avatar @AvatarBgClassFor(CurrentUserEntry)">@CurrentUserEntry?.Avatar</span>
                         <strong class="tournament-name">@CurrentUserEntry?.Name <span class="player-flag">@CurrentUserEntry?.CountryFlag</span></strong>
                         <b class="tournament-score">@CurrentUserEntry?.Score</b>
                     </div>
@@ -75,6 +76,7 @@
 @code {
     private List<LeaderboardEntry> entries = [];
     private string currentPlayerId = string.Empty;
+    private string currentAvatarBgClass = "avatar-bg-violet";
     private bool isLoading = true;
     private PeriodicTimer? timer;
     private CancellationTokenSource? cts;
@@ -83,10 +85,16 @@
     private IEnumerable<(string DisplayRank, LeaderboardEntry Entry)> TopRows => entries.Take(20).Select((entry, index) => ($"{index + 1}", entry));
     private LeaderboardEntry? CurrentUserEntry => entries.FirstOrDefault(entry => entry.Id == currentPlayerId);
     private bool CurrentUserOutsideTop20 => CurrentUserEntry is not null && entries.FindIndex(entry => entry.Id == currentPlayerId) > 19;
+    private string AvatarBgClassFor(LeaderboardEntry? entry)
+    {
+        if (entry is null) return "avatar-bg-violet";
+        return entry.Id == currentPlayerId ? currentAvatarBgClass : "avatar-bg-violet";
+    }
 
     protected override async Task OnInitializedAsync()
     {
         currentPlayerId = await Leaderboard.GetCurrentPlayerIdAsync();
+        await RefreshCurrentAvatarBackgroundAsync();
         entries = (await Leaderboard.GetEntriesAsync()).ToList();
         isLoading = false;
 
@@ -96,10 +104,25 @@
         {
             while (timer is not null && await timer.WaitForNextTickAsync(cts.Token))
             {
+                await RefreshCurrentAvatarBackgroundAsync();
                 entries = (await Leaderboard.RefreshRealtimeAsync()).ToList();
                 await InvokeAsync(StateHasChanged);
             }
         }, cts.Token);
+    }
+
+    private async Task RefreshCurrentAvatarBackgroundAsync()
+    {
+        var saved = await Progress.GetAsync();
+        currentAvatarBgClass = ToAvatarBgClass(saved.AvatarBackground);
+    }
+
+    private static string ToAvatarBgClass(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "avatar-bg-violet";
+        if (value.StartsWith("avatar-bg-", StringComparison.Ordinal)) return value;
+        if (value.StartsWith("bg-", StringComparison.Ordinal)) return $"avatar-{value}";
+        return $"avatar-bg-{value}";
     }
 
     public void Dispose()

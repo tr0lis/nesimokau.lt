@@ -4,7 +4,7 @@ using nesimokau.lt.Models;
 
 namespace nesimokau.lt.Services;
 
-public sealed class ProgressService(IJSRuntime js)
+public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLog)
 {
     public enum HintPurchaseResult
     {
@@ -49,6 +49,19 @@ public sealed class ProgressService(IJSRuntime js)
         progress.DiagnosticAttempts.Insert(0, attempt);
         if (progress.DiagnosticAttempts.Count > 30) progress.DiagnosticAttempts.RemoveAt(30);
         await SaveAsync(progress);
+
+        await activityLog.LogAsync("diagnostic_saved", evt =>
+        {
+            evt.Subject = attempt.Subject;
+            evt.GameId = "diagnostic";
+            evt.GameTitle = $"{attempt.Subject} diagnostika";
+            evt.ClassGroup = progress.ClassGroup;
+            evt.Accuracy = attempt.Accuracy;
+            evt.CorrectAnswers = attempt.Answers.Count(answer => answer.IsCorrect);
+            evt.IncorrectAnswers = attempt.Answers.Count(answer => !answer.IsCorrect);
+            evt.Payload["durationSeconds"] = attempt.DurationSeconds;
+            evt.Payload["answerCount"] = attempt.Answers.Count;
+        });
     }
 
     public async Task<LevelDefinition?> SaveResultAsync(GameResult result)
@@ -69,6 +82,24 @@ public sealed class ProgressService(IJSRuntime js)
         var json = JsonSerializer.Serialize(progress);
         await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
         Changed?.Invoke();
+
+        await activityLog.LogAsync("game_result_saved", evt =>
+        {
+            evt.Subject = InferSubject(result.GameId, result.GameTitle);
+            evt.GameId = result.GameId;
+            evt.GameTitle = result.GameTitle;
+            evt.ClassGroup = string.IsNullOrWhiteSpace(result.ClassGroup) ? progress.ClassGroup : result.ClassGroup;
+            evt.Score = result.Score;
+            evt.Accuracy = result.Accuracy;
+            evt.CorrectAnswers = result.CorrectAnswers >= 0 ? result.CorrectAnswers : null;
+            evt.IncorrectAnswers = result.IncorrectAnswers >= 0 ? result.IncorrectAnswers : null;
+            evt.XpEarned = result.Energy;
+            evt.CoinsEarned = result.Coins;
+            evt.Payload["playedAt"] = result.PlayedAt;
+            evt.Payload["bestScoreAfter"] = progress.BestScore;
+            evt.Payload["gamesCompletedAfter"] = progress.GamesCompleted;
+        });
+
         return currentLevel.Number > previousLevel.Number ? currentLevel : null;
     }
 
@@ -139,6 +170,16 @@ public sealed class ProgressService(IJSRuntime js)
         progress.Coins -= cost;
         progress.HintPurchasesToday++;
         await SaveAsync(progress);
+
+        await activityLog.LogAsync("hint_used", evt =>
+        {
+            evt.ClassGroup = progress.ClassGroup;
+            evt.CoinsSpent = cost;
+            evt.HintCost = cost;
+            evt.Payload["hintsUsedToday"] = progress.HintPurchasesToday;
+            evt.Payload["dailyLimit"] = dailyLimit;
+        });
+
         return HintPurchaseResult.Success;
     }
 
@@ -175,6 +216,15 @@ public sealed class ProgressService(IJSRuntime js)
         if (existing.Count != before)
         {
             await SaveAsync(progress);
+
+            await activityLog.LogAsync("exercise_progress_updated", evt =>
+            {
+                evt.Subject = InferSubject(gameId, gameId);
+                evt.GameId = gameId;
+                evt.ClassGroup = progress.ClassGroup;
+                evt.Payload["addedCount"] = existing.Count - before;
+                evt.Payload["solvedTotal"] = existing.Count;
+            });
         }
     }
 
@@ -274,7 +324,21 @@ public sealed class ProgressService(IJSRuntime js)
         var json = JsonSerializer.Serialize(cached);
         await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
         Changed?.Invoke();
+
+        await activityLog.LogAsync("progress_reset", evt =>
+        {
+            evt.Payload["reason"] = "user_triggered";
+        });
     }
+
+    private static string InferSubject(string gameId, string title)
+        => gameId switch
+        {
+            "dictation" => "Lietuvių kalba",
+            "missing-letters" => "Lietuvių kalba",
+            _ when title.Contains("diagnost", StringComparison.OrdinalIgnoreCase) => "Diagnostika",
+            _ => "Bendra"
+        };
 
     private static int CalculateCurrentStreak(IEnumerable<GameResult> results)
     {

@@ -2,14 +2,18 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Components;
 using nesimokau.lt.Models;
 using Microsoft.JSInterop;
 
 namespace nesimokau.lt.Services;
 
-public sealed class AuthService(HttpClient http, IConfiguration config, IJSRuntime js)
+public sealed class AuthService(HttpClient http, IConfiguration config, IJSRuntime js, NavigationManager navigation)
 {
     private const string SessionKey = "nesimokau-auth-session";
+    private const string ProgressKey = "nesimokau-progress";
+    private const string LeaderboardPlayerIdKey = "nesimokau-player-id";
+    private const string LocalhostInitKey = "nesimokau-localhost-init";
     private const int PasswordIterations = 120_000;
     private const int SessionDays = 7;
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(7);
@@ -21,6 +25,8 @@ public sealed class AuthService(HttpClient http, IConfiguration config, IJSRunti
 
     public async Task<AuthSession?> GetSessionAsync()
     {
+        await EnsureLocalhostIsolationAsync();
+
         var json = await js.InvokeAsync<string?>("localStorage.getItem", SessionKey);
         if (string.IsNullOrWhiteSpace(json)) return null;
 
@@ -181,6 +187,25 @@ public sealed class AuthService(HttpClient http, IConfiguration config, IJSRunti
     {
         var json = JsonSerializer.Serialize(session, JsonOptions);
         await js.InvokeVoidAsync("localStorage.setItem", SessionKey, json);
+    }
+
+    private async Task EnsureLocalhostIsolationAsync()
+    {
+        if (!IsLocalhost()) return;
+
+        var initialized = await js.InvokeAsync<string?>("sessionStorage.getItem", LocalhostInitKey);
+        if (!string.IsNullOrWhiteSpace(initialized)) return;
+
+        await js.InvokeVoidAsync("localStorage.removeItem", SessionKey);
+        await js.InvokeVoidAsync("localStorage.removeItem", ProgressKey);
+        await js.InvokeVoidAsync("localStorage.removeItem", LeaderboardPlayerIdKey);
+        await js.InvokeVoidAsync("sessionStorage.setItem", LocalhostInitKey, "1");
+    }
+
+    private bool IsLocalhost()
+    {
+        if (!Uri.TryCreate(navigation.BaseUri, UriKind.Absolute, out var uri)) return false;
+        return uri.IsLoopback || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<PlayerAccountRow?> GetAccountByUsernameAsync(string username)

@@ -8,7 +8,7 @@
 <PageTitle>Registracija | nesimokau.lt</PageTitle>
 
 <section class="auth-shell">
-    <article class="auth-card">
+    <article class="auth-card @(isRedirecting ? "is-hiding" : string.Empty)">
         <p class="eyebrow">PRADĖK MOKYTIS</p>
         <h1>Sukurti paskyrą</h1>
         <p class="subtitle">Pasirink avatarą, klasę ir pradėk nuo tau pritaikytos medžiagos.</p>
@@ -95,8 +95,8 @@
         <div class="auth-success-transition" role="status" aria-live="polite">
             <div class="auth-success-transition-inner">
                 <span class="auth-success-spinner"></span>
-                <strong>Sveikas atvykęs!</strong>
-                <small>Krauname tavo pagrindinį puslapį…</small>
+                <strong>Sveikinu atvykus 🎉</strong>
+                <small>Paskyra sukurta. Krauname tavo pagrindinį puslapį…</small>
             </div>
         </div>
     }
@@ -176,7 +176,7 @@
 
         await Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup);
         isRedirecting = true;
-        await Task.Delay(280);
+        await Task.Delay(520);
         Navigation.NavigateTo("/", replace: true);
     }
 
