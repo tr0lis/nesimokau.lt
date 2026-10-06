@@ -55,6 +55,15 @@ else if (current is not null)
 
         <div class="accentuation-board">
             <div class="accent-word-wrap">
+                @if (feedback is null && openAccentMenuIndex is not null)
+                {
+                    <div class="accent-inline-picker" role="menu">
+                        @foreach (var accent in accentOptions)
+                        {
+                            <button type="button" class="accent-choice" role="menuitem" @onclick="() => PlaceAccent(openAccentMenuIndex.Value, accent.Key)">@accent.Symbol</button>
+                        }
+                    </div>
+                }
                 <div class="accent-drop-row">
                     @for (var i = 0; i < current.Word.Length; i++)
                     {
@@ -72,16 +81,6 @@ else if (current is not null)
                         <span class="accent-letter @SlotFeedbackClass(i)">@current.Word[i]</span>
                     }
                 </div>
-
-                @if (feedback is null && openAccentMenuIndex is not null)
-                {
-                    <div class="accent-inline-picker" role="menu">
-                        @foreach (var accent in accentOptions)
-                        {
-                            <button type="button" class="accent-choice" role="menuitem" @onclick="() => PlaceAccent(openAccentMenuIndex.Value, accent.Key)">@accent.Symbol</button>
-                        }
-                    </div>
-                }
             </div>
 
         @if (feedback is null && placedAccentIndex is not null)

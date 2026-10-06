@@ -3714,7 +3714,7 @@ h1:focus { outline: none !important; }
 
 .accent-drop-slot {
     width: 30px;
-    height: 24px;
+    height: 28px;
     border: 1px dashed #b7a7ff;
     border-radius: 6px;
     background: #f6f3ff;
@@ -3724,6 +3724,7 @@ h1:focus { outline: none !important; }
     padding: 0;
     line-height: 1;
     cursor: pointer;
+    overflow: visible;
 }
 .accent-drop-slot.is-open {
     border-style: solid;
@@ -3731,10 +3732,10 @@ h1:focus { outline: none !important; }
     box-shadow: 0 0 0 2px rgba(122, 98, 242, .16);
 }
 .accent-drop-slot span {
-    font-size: 23px;
+    display: block;
+    font-size: 20px;
     font-weight: 900;
-    line-height: .8;
-    transform: translateY(-2px);
+    line-height: 1;
 }
 .accent-drop-slot.is-filled {
     border-style: solid;
@@ -3745,7 +3746,7 @@ h1:focus { outline: none !important; }
     display: flex;
     justify-content: center;
     gap: 6px;
-    margin-top: 10px;
+    margin: 0 0 12px;
     min-height: 38px;
 }
 .accent-choice-menu {
@@ -3854,10 +3855,7 @@ h1:focus { outline: none !important; }
 /* Keep Accentuation spacing/alignment identical in dark and light themes */
 :root[data-theme="dark"] .accentuation-panel,
 :root[data-theme="dark"] .accentuation-board,
-:root[data-theme="dark"] .accent-word-wrap,
-:root[data-theme="dark"] .accent-drop-row,
-:root[data-theme="dark"] .accent-letter-row,
-:root[data-theme="dark"] .accent-inline-picker {
+:root[data-theme="dark"] .accent-word-wrap {
     margin-left: auto;
     margin-right: auto;
 }
