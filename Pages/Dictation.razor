@@ -270,9 +270,10 @@ else if (current is not null)
             var previousMistakes = savedProgress.PracticeMistakeCounts.GetValueOrDefault("dictation");
             var totalQuestions = allQuestions.Count;
             var alreadyCompleted = totalQuestions > 0 && savedProgress.SolvedQuestionIdsByGame.GetValueOrDefault("dictation")?.Distinct().Count() >= totalQuestions;
+            var persistedScore = alreadyCompleted ? 0 : score;
             earnedXp = alreadyCompleted ? 0 : isRepeat && Accuracy == 100 ? previousMistakes * EnergyPerCorrect : score / 100 * EnergyPerCorrect;
             earnedCoins = alreadyCompleted ? 0 : isRepeat ? (Accuracy == 100 ? previousMistakes * CoinsPerCorrect : 0) : score / 100 * CoinsPerCorrect + (Accuracy == 100 ? 2 : 0);
-            levelUp = await Progress.SaveResultAsync(new GameResult("dictation", "Žodžių diktantas", score, Accuracy, earnedXp, earnedCoins, DateTime.Now)
+            levelUp = await Progress.SaveResultAsync(new GameResult("dictation", "Žodžių diktantas", persistedScore, Accuracy, earnedXp, earnedCoins, DateTime.Now)
             {
                 ClassGroup = ParseClassGroup(savedProgress.ClassGroup),
                 CorrectAnswers = questions.Count - wrongAnswers,
