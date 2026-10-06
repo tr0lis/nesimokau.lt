@@ -51,7 +51,7 @@ else if (current is not null)
     <div class="game-progress"><div><span>@(@index + 1) / @questions.Count</span><span>@score taškai</span></div><div class="progress-track"><span style="width:@ProgressPercent%"></span></div></div>
 
     <section class="game-panel accentuation-panel">
-        <div class="tip-card tip-card-inline"><span>✦</span><div><strong>Užduotis</strong><p>Paspausk langelį virš raidės ir pasirink kirčio ženklą.</p></div></div>
+        <div class="tip-card tip-card-inline"><span>✦</span><div><strong>Užduotis</strong><p>Paspausk raidę ir pasirink kirčio ženklą.</p></div></div>
 
         <div class="accentuation-board">
             <div class="accent-word-wrap">
@@ -64,22 +64,17 @@ else if (current is not null)
                         }
                     </div>
                 }
-                <div class="accent-drop-row">
-                    @for (var i = 0; i < current.Word.Length; i++)
-                    {
-                        <button type="button"
-                                class="accent-drop-slot @SlotFeedbackClass(i) @(placedAccentIndex == i ? "is-filled" : string.Empty) @(openAccentMenuIndex == i ? "is-open" : string.Empty)"
-                                @onclick="() => ToggleAccentMenu(i)"
-                                disabled="@(feedback is not null)"
-                                aria-label="@SlotAriaLabel(i)">
-                            <span class="accent-glyph">@AccentMark(SlotAccentType(i))</span>
-                        </button>
-                    }
-                </div>
                 <div class="accent-letter-row">
                     @for (var i = 0; i < current.Word.Length; i++)
                     {
-                        <span class="accent-letter @SlotFeedbackClass(i)">@current.Word[i]</span>
+                        <button type="button"
+                                class="accent-letter accent-letter-button @SlotFeedbackClass(i) @(placedAccentIndex == i ? "is-filled" : string.Empty) @(openAccentMenuIndex == i ? "is-open" : string.Empty)"
+                                @onclick="() => ToggleAccentMenu(i)"
+                                disabled="@(feedback is not null)"
+                                aria-label="@SlotAriaLabel(i)">
+                            <span class="accent-letter-accent">@AccentMark(SlotAccentType(i))</span>
+                            <span class="accent-letter-char">@current.Word[i]</span>
+                        </button>
                     }
                 </div>
             </div>

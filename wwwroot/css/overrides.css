@@ -3744,7 +3744,7 @@ h1:focus { outline: none !important; }
     font-size: 20px;
     line-height: 1;
     font-weight: 900;
-    color: #5c48d7;
+    color: currentColor;
     transform: translateY(-1px);
 }
 .accent-drop-slot.is-filled {
@@ -3820,6 +3820,42 @@ h1:focus { outline: none !important; }
     color: #2e2751;
     background: #fff;
 }
+.accent-letter-button {
+    width: 34px;
+    height: 42px;
+    padding: 3px 0 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    line-height: 1;
+}
+.accent-letter-button.is-open {
+    border-color: #7a62f2;
+    box-shadow: 0 0 0 2px rgba(122, 98, 242, .16);
+}
+.accent-letter-button.is-filled {
+    border-color: #7a62f2;
+    background: #ece6ff;
+    color: #5c48d7;
+}
+.accent-letter-accent {
+    width: 100%;
+    min-height: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.accent-letter-accent .accent-symbol {
+    font-size: 15px;
+    transform: translateY(0);
+}
+.accent-letter-char {
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+}
 .accent-drop-slot.is-correct,
 .accent-letter.is-correct {
     border-color: #3aac85;
@@ -3856,6 +3892,15 @@ h1:focus { outline: none !important; }
     background: #241f35;
     border-color: #665a96;
     color: #c6bbff;
+}
+:root[data-theme="dark"] .accent-letter-button.is-open {
+    border-color: #9b89f2;
+    box-shadow: 0 0 0 2px rgba(155, 137, 242, .28);
+}
+:root[data-theme="dark"] .accent-letter-button.is-filled {
+    background: #352b56;
+    border-color: #8f7de5;
+    color: #d5caff;
 }
 :root[data-theme="dark"] .accent-drop-slot.is-open {
     border-color: #9b89f2;
