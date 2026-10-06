@@ -9,7 +9,7 @@ public sealed class GameCatalogService
         new("dictation", "Žodžių diktantas", "Išgirsk, pagalvok ir parašyk be klaidų.", "Aa", "violet", "Lietuvių kalba", "5–8 kl.", "Vidutinis", GameStatus.Ready, 5),
         new("spelling", "Rašybos iššūkis", "Atpažink taisyklingai parašytą žodį.", "✓", "mint", "Lietuvių kalba", "3–8 kl.", "Lengvas", GameStatus.ComingSoon, 4),
         new("missing-letters", "Įrašyk praleistas raides", "Atkurk žodžius ir patikrink, ar pastebi jų rašybos ypatumus.", "_", "orange", "Lietuvių kalba", "2–6 kl.", "Lengvas", GameStatus.Ready, 5),
-        new("accentuation", "Kirčiavimo pratimas", "Nuvilk kirčio ženklą ant teisingos raidės.", "ˈ", "violet", "Lietuvių kalba", "3–8 kl.", "Vidutinis", GameStatus.Ready, 6),
+        new("accentuation", "Kirčiavimo pratimas", "Nuvilk kirčio ženklą ant teisingos raidės.", "ˈ", "violet", "Lietuvių kalba", "5–8 kl.", "Vidutinis", GameStatus.Ready, 6),
         new("word-match", "Žodžių poros", "Sujunk žodžius su jų reikšmėmis.", "↔", "blue", "Lietuvių kalba", "5–9 kl.", "Vidutinis", GameStatus.ComingSoon, 6),
         new("synonyms", "Sinonimai ir antonimai", "Atrask žodžių ryšius ir prasmes.", "≋", "pink", "Lietuvių kalba", "5–10 kl.", "Sudėtingas", GameStatus.ComingSoon, 6),
         new("sentence-builder", "Sakinio konstruktorius", "Sudėliok žodžius į prasmingą sakinį.", "Aa", "cyan", "Lietuvių kalba", "3–8 kl.", "Vidutinis", GameStatus.ComingSoon, 7),

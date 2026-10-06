@@ -50,8 +50,7 @@ public sealed record MathQuestion(
 public sealed record AccentuationWord(
     int Id,
     string Word,
-    int AccentIndex,
-    string AccentType,
+    string AccentedWord,
     string Difficulty,
     string Explanation);
 
