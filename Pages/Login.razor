@@ -70,7 +70,7 @@
         fastRedirect = true;
         isRedirecting = true;
         await InvokeAsync(StateHasChanged);
-        await Task.Delay(520);
+        await Task.Delay(1500);
         Navigation.NavigateTo("/", replace: true);
     }
 
@@ -97,7 +97,7 @@
         await Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup);
         isRedirecting = true;
         await InvokeAsync(StateHasChanged);
-        await Task.Delay(520);
+        await Task.Delay(1500);
         Navigation.NavigateTo("/", replace: true);
     }
 
