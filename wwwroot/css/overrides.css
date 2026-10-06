@@ -3821,16 +3821,15 @@ h1:focus { outline: none !important; }
     background: #fff;
 }
 .accent-letter-button {
-    position: relative;
-    width: 34px;
-    height: 42px;
-    padding: 3px 0 4px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: grid;
+    place-items: center;
     cursor: pointer;
-    line-height: 1;
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.2;
 }
 .accent-letter-button.is-open {
     border-color: #7a62f2;
@@ -3841,21 +3840,10 @@ h1:focus { outline: none !important; }
     background: #ece6ff;
     color: #5c48d7;
 }
-.accent-letter-accent {
-    min-height: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+.accent-letter-button.is-filled {
+    border-color: #7a62f2;
+    background: #ece6ff;
     color: #5c48d7;
-    font-size: 16px;
-    font-weight: 900;
-    line-height: 1;
-}
-.accent-letter-char {
-    font-size: 18px;
-    font-weight: 800;
-    line-height: 1;
 }
 .accent-drop-slot.is-correct,
 .accent-letter.is-correct {
