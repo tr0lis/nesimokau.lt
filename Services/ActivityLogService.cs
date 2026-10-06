@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using nesimokau.lt.Models;
 
@@ -103,25 +104,64 @@ public sealed class ActivityLogService(HttpClient http, IConfiguration config, A
 
     private sealed class ActivityLogRow
     {
+        [JsonPropertyName("created_at")]
         public DateTime CreatedAt { get; set; }
+
+        [JsonPropertyName("user_id")]
         public string? UserId { get; set; }
+
+        [JsonPropertyName("username")]
         public string? Username { get; set; }
+
+        [JsonPropertyName("event_type")]
         public string EventType { get; set; } = string.Empty;
+
+        [JsonPropertyName("subject")]
         public string? Subject { get; set; }
+
+        [JsonPropertyName("game_id")]
         public string? GameId { get; set; }
+
+        [JsonPropertyName("game_title")]
         public string? GameTitle { get; set; }
+
+        [JsonPropertyName("class_group")]
         public string? ClassGroup { get; set; }
+
+        [JsonPropertyName("score")]
         public int? Score { get; set; }
+
+        [JsonPropertyName("accuracy")]
         public int? Accuracy { get; set; }
+
+        [JsonPropertyName("correct_answers")]
         public int? CorrectAnswers { get; set; }
+
+        [JsonPropertyName("incorrect_answers")]
         public int? IncorrectAnswers { get; set; }
+
+        [JsonPropertyName("xp_earned")]
         public int? XpEarned { get; set; }
+
+        [JsonPropertyName("coins_earned")]
         public int? CoinsEarned { get; set; }
+
+        [JsonPropertyName("coins_spent")]
         public int? CoinsSpent { get; set; }
+
+        [JsonPropertyName("hint_cost")]
         public int? HintCost { get; set; }
+
+        [JsonPropertyName("is_correct")]
         public bool? IsCorrect { get; set; }
+
+        [JsonPropertyName("question_id")]
         public string? QuestionId { get; set; }
+
+        [JsonPropertyName("mistake_type")]
         public string? MistakeType { get; set; }
+
+        [JsonPropertyName("payload")]
         public Dictionary<string, object?> Payload { get; set; } = [];
     }
 }
