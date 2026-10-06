@@ -1,5 +1,6 @@
 @page "/zaidimai/praleistos-raides"
 @page "/lietuviu-kalba/{ClassSlug}/praleistos-raides"
+@using Microsoft.AspNetCore.Components
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject HttpClient Http
@@ -19,16 +20,16 @@ else if (!started)
 {
     <section class="difficulty-screen">
         <button class="button button-ghost prestart-back" @onclick="GoBackToSubject">← Atgal</button>
-        <p class="eyebrow">PASIRINK UŽDUOČIŲ KIEKĮ</p>
+        <p class="eyebrow">PASIRINK SUNKUMĄ</p>
         <h1>Praleistos raidės</h1>
-        <p class="subtitle">Prieš pradėdamas pasirink, kiek užduočių nori atlikti.</p>
+        <p class="subtitle">Pasirink sudėtingumą ir spręsk visas to lygio užduotis.</p>
         <div class="difficulty-options">
-            @foreach (var option in taskCountOptions)
+            @foreach (var option in difficultyOptions)
             {
-                <button class="difficulty-option @(selectedTaskCount == option.Count ? "selected" : "")" @onclick="() => selectedTaskCount = option.Count"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
+                <button class="difficulty-option @(selectedDifficulty == option.Key ? "selected" : "")" @onclick="() => selectedDifficulty = option.Key"><span>@option.Icon</span><strong>@option.Title</strong><small>@option.Hint</small></button>
             }
         </div>
-        <button class="button button-primary" @onclick="StartGame" disabled="@(selectedTaskCount is null)">Pradėti <span>→</span></button>
+        <button class="button button-primary" @onclick="StartGame">Pradėti <span>→</span></button>
     </section>
 }
 else if (finished)
@@ -72,11 +73,11 @@ else if (current is not null)
 }
 
 @code {
-    private readonly (int Count, string Title, string Hint, string Icon)[] taskCountOptions =
+    private readonly (string Key, string Title, string Hint, string Icon)[] difficultyOptions =
     [
-        (5, "5 užduotys", "Trumpa treniruotė", "★"),
-        (10, "10 užduočių", "Subalansuotas tempas", "★★"),
-        (15, "15 užduočių", "Ilgesnis iššūkis", "★★★")
+        ("Lengvas", "Lengvas", "A1-A2 pagrindai", "★"),
+        ("Vidutinis", "Vidutinis", "B1-B2 praktika", "★★"),
+        ("Sudėtingas", "Sudėtingas", "C1-C2 iššūkis", "★★★")
     ];
 
     private List<MissingLettersQuestion> allQuestions = [];
@@ -95,7 +96,7 @@ else if (current is not null)
     private int earnedXp;
     private int earnedCoins;
     private LevelDefinition? levelUp;
-    private int? selectedTaskCount;
+    private string selectedDifficulty = "Lengvas";
     private HashSet<int> sessionSolvedQuestionIds = [];
     private bool showHintConfirm;
     private bool hintUsed;
@@ -104,6 +105,7 @@ else if (current is not null)
     private const int HintCost = 100;
     private const int DailyHintLimit = 5;
     [Parameter] public string? ClassSlug { get; set; }
+    [SupplyParameterFromQuery(Name = "level")] public string? LevelSlug { get; set; }
     private bool isLast => index == questions.Count - 1;
     private int ProgressPercent => questions.Count == 0 ? 0 : (index + 1) * 100 / questions.Count;
     private int Accuracy => questions.Count == 0 ? 0 : Math.Max(0, (questions.Count - wrongAnswers) * 100 / questions.Count);
@@ -111,6 +113,7 @@ else if (current is not null)
     protected override async Task OnInitializedAsync()
     {
         allQuestions = await Http.GetFromJsonAsync<List<MissingLettersQuestion>>("data/missing-letters.json") ?? [];
+        selectedDifficulty = ResolveDifficultyFromLevel(LevelSlug);
         playerProgress = await Progress.GetAsync();
         remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
         loading = false;
@@ -120,32 +123,26 @@ else if (current is not null)
 
     private async Task StartGame()
     {
-        if (selectedTaskCount is null) return;
         sessionSolvedQuestionIds = [];
         showHintConfirm = false;
         hintUsed = false;
         playerProgress = await Progress.GetAsync();
         remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
         var solvedQuestionIds = (await Progress.GetSolvedQuestionIdsAsync("missing-letters")).ToHashSet();
-        var selectedCount = selectedTaskCount.Value;
 
-        var unsolved = allQuestions
+        var pool = allQuestions
+            .Where(question => string.Equals(question.Difficulty, selectedDifficulty, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (pool.Count == 0) pool = allQuestions.ToList();
+
+        var unsolved = pool
             .Where(question => !solvedQuestionIds.Contains(question.Id))
             .OrderBy(_ => Random.Shared.Next())
             .ToList();
 
-        var selected = unsolved.Take(selectedCount).ToList();
-        if (selected.Count < selectedCount)
-        {
-            var repeats = allQuestions
-                .Where(question => selected.All(item => item.Id != question.Id))
-                .OrderBy(_ => Random.Shared.Next())
-                .Take(selectedCount - selected.Count)
-                .ToList();
-            selected.AddRange(repeats);
-        }
-
-        questions = selected.OrderBy(_ => Random.Shared.Next()).ToList();
+        questions = (unsolved.Count > 0 ? unsolved : pool)
+            .OrderBy(_ => Random.Shared.Next())
+            .ToList();
         current = questions.FirstOrDefault();
         started = current is not null;
 
@@ -158,6 +155,7 @@ else if (current is not null)
                 evt.GameTitle = "Įrašyk praleistas raides";
                 evt.ClassGroup = ParseClassGroup(playerProgress.ClassGroup);
                 evt.Payload["taskCount"] = questions.Count;
+                evt.Payload["difficulty"] = selectedDifficulty;
             });
         }
 
@@ -267,6 +265,15 @@ else if (current is not null)
     private int EnergyPerCorrect => 10;
     private int CoinsPerCorrect => 2;
     private string RouteBase() => ClassSlug is null ? "zaidimai/praleistos-raides" : $"lietuviu-kalba/{ClassSlug}/praleistos-raides";
+    private static string ResolveDifficultyFromLevel(string? level)
+        => level?.Trim().ToLowerInvariant() switch
+        {
+            "a1-a2" => "Lengvas",
+            "b1-b2" => "Vidutinis",
+            "c1-c2" => "Sudėtingas",
+            _ => "Lengvas"
+        };
+
     private string ParseClassGroup(string fallback)
     {
         if (string.IsNullOrWhiteSpace(ClassSlug)) return fallback;

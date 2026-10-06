@@ -1,4 +1,5 @@
 @page "/lietuviu-kalba"
+@page "/lietuviu-kalba/{LevelSlug}"
 @using System.Text.RegularExpressions
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
@@ -6,6 +7,7 @@
 @inject IJSRuntime JS
 @inject GameCatalogService Catalog
 @inject ProgressService Progress
+@inject NavigationManager Navigation
 @implements IDisposable
 
 <PageTitle>Lietuvių kalba | nesimokau.lt</PageTitle>
@@ -19,6 +21,14 @@
 
     <div class="subject-page-layout">
         <aside class="subject-filters" aria-label="Pratimų filtrai">
+            <div class="subject-filter-card">
+                <h3>Lygis</h3>
+                @foreach (var level in LevelOptions)
+                {
+                    <label class="filter-radio"><input type="radio" name="lt-level" checked="@(SelectedLevel == level.Slug)" @onchange="() => SetLevel(level.Slug)" /><span>@level.Label</span></label>
+                }
+            </div>
+
             <div class="subject-filter-card">
                 <h3>Klasės</h3>
                 @foreach (var grade in GradeOptions)
@@ -99,6 +109,7 @@
 @code {
     private StudentProgress progress = new();
     private string statusFilter = "all";
+    private string SelectedLevel { get; set; } = "a1-a2";
     private HashSet<string> SelectedGrades { get; set; } = [];
     private HashSet<string> SelectedTopics { get; set; } = [];
     private Dictionary<string, int> totalQuestionsByGame = [];
@@ -115,6 +126,15 @@
         ("11-12", "11–12 klasės")
     ];
 
+    [Parameter] public string? LevelSlug { get; set; }
+
+    private static IReadOnlyList<(string Slug, string Label, string[] Difficulties)> LevelOptions { get; } =
+    [
+        ("a1-a2", "A1-A2", ["Lengvas"]),
+        ("b1-b2", "B1-B2", ["Vidutinis"]),
+        ("c1-c2", "C1-C2", ["Sudėtingas"])
+    ];
+
     private static IReadOnlyDictionary<string, string[]> TopicByExerciseId { get; } = new Dictionary<string, string[]>
     {
         ["dictation"] = ["Diktantas", "Žodynas"],
@@ -129,6 +149,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        SelectedLevel = ResolveLevel(LevelSlug);
         progress = await Progress.GetAsync();
         await LoadQuestionTotalsAsync();
         previousPercentByGame = SubjectExercises.ToDictionary(exercise => exercise.Id, exercise => GetCompletion(exercise.Id).Percent);
@@ -136,8 +157,14 @@
         Progress.Changed += HandleProgressChanged;
     }
 
+    protected override void OnParametersSet()
+    {
+        SelectedLevel = ResolveLevel(LevelSlug);
+    }
+
     private bool PassesFilters(GameDefinition exercise)
     {
+        if (!PassesLevelFilter(exercise)) return false;
         if (!PassesGradeFilter(exercise)) return false;
 
         if (SelectedTopics.Count > 0 && !ExerciseTopics(exercise.Id).Any(topic => SelectedTopics.Contains(topic)))
@@ -157,6 +184,13 @@
             "pending" => !completed,
             _ => true
         };
+    }
+
+    private bool PassesLevelFilter(GameDefinition exercise)
+    {
+        var level = LevelOptions.FirstOrDefault(option => option.Slug == SelectedLevel);
+        if (string.IsNullOrWhiteSpace(level.Slug)) return true;
+        return level.Difficulties.Any(difficulty => string.Equals(difficulty, exercise.Difficulty, StringComparison.OrdinalIgnoreCase));
     }
 
     private bool PassesGradeFilter(GameDefinition exercise)
@@ -208,10 +242,11 @@
     {
         var selectedGrade = SelectedGrades.FirstOrDefault() ?? progress.ClassGroup;
         var slug = selectedGrade.Replace('-', '-');
+        var levelQuery = $"?level={SelectedLevel}";
         return exercise.Id switch
         {
-            "dictation" => $"/lietuviu-kalba/{slug}-klases/zodziu-diktantas",
-            "missing-letters" => $"/lietuviu-kalba/{slug}-klases/praleistos-raides",
+            "dictation" => $"/lietuviu-kalba/{slug}-klases/zodziu-diktantas{levelQuery}",
+            "missing-letters" => $"/lietuviu-kalba/{slug}-klases/praleistos-raides{levelQuery}",
             _ => "/lietuviu-kalba"
         };
     }
@@ -232,6 +267,18 @@
     private void SetStatusDone(ChangeEventArgs _) => statusFilter = "done";
     private void SetStatusPending(ChangeEventArgs _) => statusFilter = "pending";
     private void ToggleOnlyNewQuestions(ChangeEventArgs args) => OnlyNewQuestions = args.Value as bool? == true;
+
+    private void SetLevel(string slug)
+    {
+        SelectedLevel = ResolveLevel(slug);
+        Navigation.NavigateTo($"/lietuviu-kalba/{SelectedLevel}", false);
+    }
+
+    private static string ResolveLevel(string? slug)
+    {
+        var normalized = slug?.Trim().ToLowerInvariant();
+        return LevelOptions.Any(option => option.Slug == normalized) ? normalized! : "a1-a2";
+    }
 
     private void HandleProgressChanged() => _ = InvokeAsync(async () =>
     {

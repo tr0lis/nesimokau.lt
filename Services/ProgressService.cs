@@ -1,10 +1,13 @@
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using Microsoft.JSInterop;
+using Microsoft.Extensions.Configuration;
 using nesimokau.lt.Models;
 
 namespace nesimokau.lt.Services;
 
-public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLog)
+public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLog, AuthService auth, HttpClient http, IConfiguration config)
 {
     public enum HintPurchaseResult
     {
@@ -14,32 +17,38 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     }
 
     private const string StorageKey = "nesimokau-progress";
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly string? supabaseUrl = config["Supabase:Url"];
+    private readonly string? supabaseKey = config["Supabase:PublishableKey"];
     private StudentProgress? cached;
     public event Action? Changed;
 
     public async Task<StudentProgress> GetAsync()
     {
         if (cached is not null) return cached;
-        var json = await js.InvokeAsync<string?>(
-            "localStorage.getItem",
-            StorageKey
-        );
-        cached = string.IsNullOrWhiteSpace(json)
-            ? new StudentProgress()
-            : JsonSerializer.Deserialize<StudentProgress>(json) ?? new StudentProgress();
+        var local = await LoadLocalAsync();
+        var userId = await GetCurrentUserIdAsync();
 
-        if (cached.UnlockedAvatarIds is null || cached.UnlockedAvatarIds.Count == 0)
+        if (!string.IsNullOrWhiteSpace(userId) && IsDbReady())
         {
-            cached.UnlockedAvatarIds = ["a1", "a2"];
+            var remote = await LoadFromDbAsync(userId);
+            if (remote is not null)
+            {
+                cached = remote;
+            }
+            else
+            {
+                cached = local;
+                await UpsertToDbAsync(userId, cached);
+            }
+        }
+        else
+        {
+            cached = local;
         }
 
-        cached.UnlockedAchievementIds ??= [];
-        cached.BookmarkedGameIds ??= [];
-        cached.PracticeMistakeCounts ??= [];
-        cached.SolvedQuestionIdsByGame ??= [];
-        cached.DiagnosticAttempts ??= [];
-        EnsureHintCounterForToday(cached);
-
+        Normalize(cached);
+        await PersistLocalAsync(cached);
         return cached;
     }
 
@@ -79,9 +88,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         var currentLevel = LevelCatalog.All.Last(level => level.RequiredXp <= progress.Xp);
         progress.Level = currentLevel.Number;
 
-        var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
-        Changed?.Invoke();
+        await SaveAsync(progress);
 
         await activityLog.LogAsync("game_result_saved", evt =>
         {
@@ -107,9 +114,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     {
         var progress = await GetAsync();
         progress.Name = name.Trim();
-        var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
-        Changed?.Invoke();
+        await SaveAsync(progress);
     }
 
     public async Task<IReadOnlyList<string>> UnlockAchievementsAsync(IEnumerable<string> achievementIds)
@@ -119,8 +124,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         if (newIds.Count == 0) return [];
 
         progress.UnlockedAchievementIds.AddRange(newIds);
-        var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
+        await SaveAsync(progress);
         return newIds;
     }
 
@@ -236,8 +240,14 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
 
     private async Task SaveAsync(StudentProgress progress)
     {
-        var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
+        Normalize(progress);
+        await PersistLocalAsync(progress);
+        var userId = await GetCurrentUserIdAsync();
+        if (!string.IsNullOrWhiteSpace(userId) && IsDbReady())
+        {
+            await UpsertToDbAsync(userId, progress);
+        }
+
         Changed?.Invoke();
     }
 
@@ -252,10 +262,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
 
         progress.Coins -= avatar.Cost;
         progress.UnlockedAvatarIds.Add(avatarId);
-
-        var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
-        Changed?.Invoke();
+        await SaveAsync(progress);
         return true;
     }
 
@@ -263,36 +270,28 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     {
         var progress = await GetAsync();
         progress.Theme = theme;
-        var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
-        Changed?.Invoke();
+        await SaveAsync(progress);
     }
 
     public async Task SaveClassGroupAsync(string classGroup)
     {
         var progress = await GetAsync();
         progress.ClassGroup = classGroup;
-        var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
-        Changed?.Invoke();
+        await SaveAsync(progress);
     }
 
     public async Task SaveAvatarAsync(string avatarId)
     {
         var progress = await GetAsync();
         progress.AvatarId = avatarId;
-        var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
-        Changed?.Invoke();
+        await SaveAsync(progress);
     }
 
     public async Task SaveAvatarBackgroundAsync(string avatarBackground)
     {
         var progress = await GetAsync();
         progress.AvatarBackground = avatarBackground;
-        var json = JsonSerializer.Serialize(progress);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
-        Changed?.Invoke();
+        await SaveAsync(progress);
     }
 
     public async Task ApplyAccountProfileAsync(string username, string avatarId, string classGroup)
@@ -321,9 +320,7 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     public async Task ResetAsync()
     {
         cached = new StudentProgress();
-        var json = JsonSerializer.Serialize(cached);
-        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
-        Changed?.Invoke();
+        await SaveAsync(cached);
 
         await activityLog.LogAsync("progress_reset", evt =>
         {
@@ -363,5 +360,147 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
             progress.HintPurchaseDateUtc = today;
             progress.HintPurchasesToday = 0;
         }
+    }
+
+    private async Task<StudentProgress> LoadLocalAsync()
+    {
+        var json = await js.InvokeAsync<string?>("localStorage.getItem", StorageKey);
+        return string.IsNullOrWhiteSpace(json)
+            ? new StudentProgress()
+            : JsonSerializer.Deserialize<StudentProgress>(json) ?? new StudentProgress();
+    }
+
+    private async Task PersistLocalAsync(StudentProgress progress)
+    {
+        var json = JsonSerializer.Serialize(progress);
+        await js.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
+    }
+
+    private async Task<string?> GetCurrentUserIdAsync()
+    {
+        var session = await auth.GetSessionAsync();
+        return string.IsNullOrWhiteSpace(session?.UserId) ? null : session.UserId;
+    }
+
+    private bool IsDbReady() => !string.IsNullOrWhiteSpace(supabaseUrl) && !string.IsNullOrWhiteSpace(supabaseKey);
+
+    private HttpRequestMessage CreateRequest(HttpMethod method, string path)
+    {
+        var baseUrl = supabaseUrl?.TrimEnd('/') ?? string.Empty;
+        var request = new HttpRequestMessage(method, $"{baseUrl}/{path}");
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        request.Headers.TryAddWithoutValidation("apikey", supabaseKey);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", supabaseKey);
+        return request;
+    }
+
+    private async Task<StudentProgress?> LoadFromDbAsync(string userId)
+    {
+        try
+        {
+            using var request = CreateRequest(HttpMethod.Get, $"rest/v1/user_progress?select=*&user_id=eq.{Uri.EscapeDataString(userId)}&limit=1");
+            using var response = await http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return null;
+
+            var json = await response.Content.ReadAsStringAsync();
+            var rows = JsonSerializer.Deserialize<List<UserProgressRow>>(json, JsonOptions) ?? [];
+            var row = rows.FirstOrDefault();
+            return row is null ? null : ToStudentProgress(row);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task UpsertToDbAsync(string userId, StudentProgress progress)
+    {
+        try
+        {
+            var payload = new[] { ToRow(userId, progress) };
+            using var request = CreateRequest(HttpMethod.Post, "rest/v1/user_progress?on_conflict=user_id");
+            request.Headers.TryAddWithoutValidation("Prefer", "resolution=merge-duplicates,return=minimal");
+            request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
+            _ = await http.SendAsync(request);
+        }
+        catch
+        {
+            // fallback remains local persistence
+        }
+    }
+
+    private static UserProgressRow ToRow(string userId, StudentProgress progress)
+        => new()
+        {
+            UserId = userId,
+            UpdatedAt = DateTime.UtcNow,
+            Name = progress.Name,
+            AvatarId = progress.AvatarId,
+            AvatarBackground = progress.AvatarBackground,
+            ClassGroup = progress.ClassGroup,
+            Theme = progress.Theme,
+            Level = progress.Level,
+            Xp = progress.Xp,
+            Coins = progress.Coins,
+            Streak = progress.Streak,
+            BestScore = progress.BestScore,
+            GamesCompleted = progress.GamesCompleted,
+            UnlockedAvatarIds = progress.UnlockedAvatarIds,
+            UnlockedAchievementIds = progress.UnlockedAchievementIds,
+            BookmarkedGameIds = progress.BookmarkedGameIds,
+            PracticeMistakeCounts = progress.PracticeMistakeCounts,
+            SolvedQuestionIdsByGame = progress.SolvedQuestionIdsByGame,
+            HintPurchaseDateUtc = progress.HintPurchaseDateUtc,
+            HintPurchasesToday = progress.HintPurchasesToday,
+            CustomAvatarDataUrl = progress.CustomAvatarDataUrl,
+            DiagnosticAttempts = progress.DiagnosticAttempts,
+            RecentResults = progress.RecentResults
+        };
+
+    private static StudentProgress ToStudentProgress(UserProgressRow row)
+    {
+        var progress = new StudentProgress
+        {
+            Name = row.Name ?? string.Empty,
+            AvatarId = row.AvatarId ?? "a1",
+            AvatarBackground = row.AvatarBackground ?? "bg-violet",
+            ClassGroup = row.ClassGroup ?? "5-6",
+            Theme = row.Theme ?? "light",
+            Level = row.Level ?? 1,
+            Xp = row.Xp ?? 0,
+            Coins = row.Coins ?? 0,
+            Streak = row.Streak ?? 0,
+            BestScore = row.BestScore ?? 0,
+            GamesCompleted = row.GamesCompleted ?? 0,
+            UnlockedAvatarIds = row.UnlockedAvatarIds ?? ["a1", "a2"],
+            UnlockedAchievementIds = row.UnlockedAchievementIds ?? [],
+            BookmarkedGameIds = row.BookmarkedGameIds ?? [],
+            PracticeMistakeCounts = row.PracticeMistakeCounts ?? [],
+            SolvedQuestionIdsByGame = row.SolvedQuestionIdsByGame ?? [],
+            HintPurchaseDateUtc = row.HintPurchaseDateUtc,
+            HintPurchasesToday = row.HintPurchasesToday ?? 0,
+            CustomAvatarDataUrl = row.CustomAvatarDataUrl,
+            DiagnosticAttempts = row.DiagnosticAttempts ?? [],
+            RecentResults = row.RecentResults ?? []
+        };
+
+        Normalize(progress);
+        return progress;
+    }
+
+    private static void Normalize(StudentProgress progress)
+    {
+        if (progress.UnlockedAvatarIds is null || progress.UnlockedAvatarIds.Count == 0)
+        {
+            progress.UnlockedAvatarIds = ["a1", "a2"];
+        }
+
+        progress.UnlockedAchievementIds ??= [];
+        progress.BookmarkedGameIds ??= [];
+        progress.PracticeMistakeCounts ??= [];
+        progress.SolvedQuestionIdsByGame ??= [];
+        progress.DiagnosticAttempts ??= [];
+        progress.RecentResults ??= [];
+        EnsureHintCounterForToday(progress);
     }
 }

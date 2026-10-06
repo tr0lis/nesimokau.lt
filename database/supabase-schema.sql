@@ -23,6 +23,38 @@ create index if not exists idx_player_accounts_updated_at
   on public.player_accounts (updated_at desc);
 
 -- =========================
+-- User progress (DB-first persistence)
+-- =========================
+create table if not exists public.user_progress (
+  user_id text primary key,
+  updated_at timestamptz not null default now(),
+  name text not null default '',
+  avatar_id text not null default 'a1',
+  avatar_background text not null default 'bg-violet',
+  class_group text not null default '5-6',
+  theme text not null default 'light',
+  level int not null default 1,
+  xp int not null default 0,
+  coins int not null default 0,
+  streak int not null default 0,
+  best_score int not null default 0,
+  games_completed int not null default 0,
+  unlocked_avatar_ids jsonb not null default '["a1","a2"]'::jsonb,
+  unlocked_achievement_ids jsonb not null default '[]'::jsonb,
+  bookmarked_game_ids jsonb not null default '[]'::jsonb,
+  practice_mistake_counts jsonb not null default '{}'::jsonb,
+  solved_question_ids_by_game jsonb not null default '{}'::jsonb,
+  hint_purchase_date_utc text,
+  hint_purchases_today int not null default 0,
+  custom_avatar_data_url text,
+  diagnostic_attempts jsonb not null default '[]'::jsonb,
+  recent_results jsonb not null default '[]'::jsonb
+);
+
+create index if not exists idx_user_progress_updated_at
+  on public.user_progress (updated_at desc);
+
+-- =========================
 -- Leaderboard
 -- =========================
 create table if not exists public.leaderboard (
@@ -110,12 +142,19 @@ before update on public.leaderboard
 for each row
 execute procedure public.set_updated_at();
 
+drop trigger if exists trg_user_progress_set_updated_at on public.user_progress;
+create trigger trg_user_progress_set_updated_at
+before update on public.user_progress
+for each row
+execute procedure public.set_updated_at();
+
 -- =========================
 -- RLS
 -- =========================
 alter table public.player_accounts enable row level security;
 alter table public.leaderboard enable row level security;
 alter table public.user_activity_log enable row level security;
+alter table public.user_progress enable row level security;
 
 -- Drop old policies if rerun
 
@@ -129,6 +168,10 @@ drop policy if exists "public update leaderboard" on public.leaderboard;
 
 drop policy if exists "anon read user_activity_log" on public.user_activity_log;
 drop policy if exists "anon insert user_activity_log" on public.user_activity_log;
+
+drop policy if exists "anon read user_progress" on public.user_progress;
+drop policy if exists "anon insert user_progress" on public.user_progress;
+drop policy if exists "anon update user_progress" on public.user_progress;
 
 -- NOTE: These anon policies are for current WASM/testing architecture.
 -- For production security, move auth/updates to server-side API and tighten policies.
@@ -181,6 +224,25 @@ create policy "anon insert user_activity_log"
 on public.user_activity_log
 for insert
 to anon
+with check (true);
+
+create policy "anon read user_progress"
+on public.user_progress
+for select
+to anon
+using (true);
+
+create policy "anon insert user_progress"
+on public.user_progress
+for insert
+to anon
+with check (true);
+
+create policy "anon update user_progress"
+on public.user_progress
+for update
+to anon
+using (true)
 with check (true);
 
 -- =========================
