@@ -1,0 +1,239 @@
+@page "/lietuviu-kalba/1-2-klases/pamokos"
+@using nesimokau.lt.Models
+@using nesimokau.lt.Services
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Pamokos 1–2 klasei | Lietuvių kalba | nesimokau.lt</PageTitle>
+
+<section class="subject-page">
+    <header class="subject-page-header">
+        <p class="eyebrow">PAMOKOS · 1–2 KLASĖ</p>
+        <h1>Mokomoji medžiaga</h1>
+        <p class="subtitle">A1 lygio pamokos pagal suderintą lietuvių kalbos programą. Pasirink temą ir mokykis!</p>
+    </header>
+
+    @if (loading)
+    {
+        <div class="loading-state"><span class="loader"></span><p>Kraunamos pamokos...</p></div>
+    }
+    else if (lessons is null || lessons.Count == 0)
+    {
+        <div class="practice-empty"><span>📚</span><strong>Pamokų nerasta</strong><small>Pabandyk vėliau.</small></div>
+    }
+    else
+    {
+        @if (selectedLesson is not null)
+        {
+            var topic = GetVocabularyTopic(selectedLesson.VocabularyTopicId);
+            <div class="lesson-detail">
+                <button class="button button-ghost" @onclick="BackToList">← Atgal į pamokas</button>
+                <article class="lesson-card-full">
+                    <div class="lesson-card-header">
+                        <span class="lesson-icon">@selectedLesson.Icon</span>
+                        <div>
+                            <h2>@selectedLesson.Title</h2>
+                            <p class="subtitle">@selectedLesson.Description</p>
+                        </div>
+                    </div>
+
+                    @if (topic is not null)
+                    {
+                        <div class="lesson-section">
+                            <h3>Žodynas</h3>
+                            @foreach (var sub in topic.Subtopics)
+                            {
+                                <div class="vocab-subtopic">
+                                    <h4>@sub.Title</h4>
+                                    @if (sub.Nouns is { Count: > 0 })
+                                    {
+                                        <div class="vocab-group">
+                                            <span class="vocab-label">Daiktavardžiai:</span>
+                                            <span class="vocab-words">@string.Join(", ", sub.Nouns)</span>
+                                        </div>
+                                    }
+                                    @if (sub.Adjectives is { Count: > 0 })
+                                    {
+                                        <div class="vocab-group">
+                                            <span class="vocab-label">Būdvardžiai:</span>
+                                            <span class="vocab-words">@string.Join(", ", sub.Adjectives)</span>
+                                        </div>
+                                    }
+                                    @if (sub.Verbs is { Count: > 0 })
+                                    {
+                                        <div class="vocab-group">
+                                            <span class="vocab-label">Veiksmažodžiai:</span>
+                                            <span class="vocab-words">@string.Join(", ", sub.Verbs)</span>
+                                        </div>
+                                    }
+                                    @if (sub.Phrases is { Count: > 0 })
+                                    {
+                                        <div class="vocab-group">
+                                            <span class="vocab-label">Frazės:</span>
+                                            <ul class="vocab-phrases">
+                                                @foreach (var phrase in sub.Phrases)
+                                                {
+                                                    <li>@phrase</li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (selectedLesson.Grammar is { Count: > 0 })
+                    {
+                        <div class="lesson-section">
+                            <h3>Gramatika</h3>
+                            <div class="grammar-cards">
+                                @foreach (var rule in selectedLesson.Grammar)
+                                {
+                                    <div class="grammar-card">
+                                        <h4>@rule.Title</h4>
+                                        <p>@rule.Rule</p>
+                                        @if (rule.Examples is { Count: > 0 })
+                                        {
+                                            <div class="grammar-examples">
+                                                @foreach (var ex in rule.Examples)
+                                                {
+                                                    <span class="grammar-example">@ex</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (selectedLesson.Exercises is { Count: > 0 })
+                    {
+                        <div class="lesson-section">
+                            <h3>Pratimai</h3>
+                            <div class="lesson-exercises">
+                                @foreach (var ex in selectedLesson.Exercises)
+                                {
+                                    <NavLink class="lesson-exercise-link" href="@ex.Href">
+                                        <span class="exercise-icon">@(ex.Type == "dictation" ? "Aa" : ex.Type == "missing-letters" ? "_" : "✓")</span>
+                                        <span>@ex.Title</span>
+                                        <span class="exercise-arrow">→</span>
+                                    </NavLink>
+                                }
+                            </div>
+                        </div>
+                    }
+                </article>
+            </div>
+        }
+        else
+        {
+            <div class="lessons-grid">
+                @foreach (var lesson in lessons.OrderBy(l => l.Order))
+                {
+                    <button class="lesson-card" @onclick="() => SelectLesson(lesson.Id)">
+                        <span class="lesson-icon">@lesson.Icon</span>
+                        <strong>@lesson.Title</strong>
+                        <small>@lesson.Description</small>
+                        <span class="lesson-order">Pamoka @lesson.Order</span>
+                    </button>
+                }
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private List<LessonItem>? lessons;
+    private List<VocabTopic>? vocabTopics;
+    private LessonItem? selectedLesson;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var lessonsTask = Http.GetFromJsonAsync<LessonsData>("data/lithuanian-1-2/lessons.json");
+            var vocabTask = Http.GetFromJsonAsync<VocabularyData>("data/lithuanian-1-2/vocabulary-a1.json");
+            await Task.WhenAll(lessonsTask, vocabTask);
+            lessons = lessonsTask.Result?.Lessons ?? [];
+            vocabTopics = vocabTask.Result?.Topics ?? [];
+        }
+        catch
+        {
+            lessons = [];
+            vocabTopics = [];
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void SelectLesson(string id)
+    {
+        selectedLesson = lessons?.FirstOrDefault(l => l.Id == id);
+    }
+
+    private void BackToList()
+    {
+        selectedLesson = null;
+    }
+
+    private VocabTopic? GetVocabularyTopic(string topicId)
+        => vocabTopics?.FirstOrDefault(t => t.Id == topicId);
+
+    private sealed class LessonsData
+    {
+        public List<LessonItem> Lessons { get; set; } = [];
+    }
+
+    private sealed class LessonItem
+    {
+        public string Id { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public int Order { get; set; }
+        public string VocabularyTopicId { get; set; } = "";
+        public List<GrammarRule> Grammar { get; set; } = [];
+        public List<ExerciseLink> Exercises { get; set; } = [];
+    }
+
+    private sealed class GrammarRule
+    {
+        public string Title { get; set; } = "";
+        public string Rule { get; set; } = "";
+        public List<string> Examples { get; set; } = [];
+    }
+
+    private sealed class ExerciseLink
+    {
+        public string Type { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Href { get; set; } = "";
+    }
+
+    private sealed class VocabularyData
+    {
+        public List<VocabTopic> Topics { get; set; } = [];
+    }
+
+    private sealed class VocabTopic
+    {
+        public string Id { get; set; } = "";
+        public string Title { get; set; } = "";
+        public List<VocabSubtopic> Subtopics { get; set; } = [];
+    }
+
+    private sealed class VocabSubtopic
+    {
+        public string Title { get; set; } = "";
+        public List<string> Nouns { get; set; } = [];
+        public List<string> Adjectives { get; set; } = [];
+        public List<string> Adverbs { get; set; } = [];
+        public List<string> Verbs { get; set; } = [];
+        public List<string> Phrases { get; set; } = [];
+    }
+}
