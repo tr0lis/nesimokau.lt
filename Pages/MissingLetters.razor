@@ -153,10 +153,13 @@ else if (current is not null)
         remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
         var solvedQuestionIds = (await Progress.GetSolvedQuestionIdsAsync("missing-letters")).ToHashSet();
 
-        var pool = allQuestions.ToList();
+        var gradeFromSlug = ParseGradeFromClassSlug();
+        var pool = allQuestions
+            .Where(question => gradeFromSlug == 0 || question.Grade == 0 || question.Grade == gradeFromSlug)
+            .ToList();
         if (simpleMode)
         {
-            pool = allQuestions
+            pool = pool
                 .Where(question => string.Equals(question.Difficulty, selectedDifficulty, StringComparison.OrdinalIgnoreCase))
                 .ToList();
             if (pool.Count == 0) pool = allQuestions.ToList();
@@ -313,7 +316,10 @@ else if (current is not null)
     private async Task RefreshRemainingAsync()
     {
         var solved = (await Progress.GetSolvedQuestionIdsAsync("missing-letters")).ToHashSet();
-        remainingAllQuestions = allQuestions.Count(question => !solved.Contains(question.Id));
+        var gradeFromSlug = ParseGradeFromClassSlug();
+        remainingAllQuestions = allQuestions
+            .Where(question => gradeFromSlug == 0 || question.Grade == 0 || question.Grade == gradeFromSlug)
+            .Count(question => !solved.Contains(question.Id));
     }
 
     private void GoHome() => Navigation.NavigateTo(ClassSlug is null ? "/" : "/lietuviu-kalba");
@@ -345,6 +351,13 @@ else if (current is not null)
         if (string.IsNullOrWhiteSpace(ClassSlug)) return fallback;
         var match = System.Text.RegularExpressions.Regex.Match(ClassSlug, @"^(\d+)-(\d+)-klases$");
         return match.Success ? $"{match.Groups[1].Value}-{match.Groups[2].Value}" : fallback;
+    }
+
+    private int ParseGradeFromClassSlug()
+    {
+        if (string.IsNullOrWhiteSpace(ClassSlug)) return 0;
+        var match = System.Text.RegularExpressions.Regex.Match(ClassSlug, @"^(\d+)-");
+        return match.Success ? int.Parse(match.Groups[1].Value) : 0;
     }
     private void DismissLevelUp() => levelUp = null;
     private async Task ConfirmLeave(LocationChangingContext context) { if (!finished && !await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti.")) context.PreventNavigation(); }

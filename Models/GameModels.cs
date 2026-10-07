@@ -24,7 +24,8 @@ public sealed record DictationQuestion(
     string Answer,
     string Explanation,
     string Difficulty,
-    string Category);
+    string Category,
+    int Grade = 0);
 
 public sealed record MissingLettersQuestion(
     int Id,
@@ -32,7 +33,8 @@ public sealed record MissingLettersQuestion(
     string Answer,
     string Explanation,
     string Difficulty,
-    string MissingLetters);
+    string MissingLetters,
+    int Grade = 0);
 
 public sealed record MathQuestion(
     int Id,

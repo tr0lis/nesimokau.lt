@@ -155,8 +155,10 @@ else if (current is not null)
         remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
         var solvedQuestionIds = (await Progress.GetSolvedQuestionIdsAsync("dictation")).ToHashSet();
 
+        var gradeFromSlug = ParseGradeFromClassSlug();
         var pool = allQuestions
             .Where(question => string.Equals(question.Difficulty, selectedDifficulty, StringComparison.OrdinalIgnoreCase))
+            .Where(question => gradeFromSlug == 0 || question.Grade == 0 || question.Grade == gradeFromSlug)
             .ToList();
         if (pool.Count == 0) pool = allQuestions.ToList();
 
@@ -322,6 +324,13 @@ else if (current is not null)
         if (string.IsNullOrWhiteSpace(ClassSlug)) return fallback;
         var match = System.Text.RegularExpressions.Regex.Match(ClassSlug, @"^(\d+)-(\d+)-klases$");
         return match.Success ? $"{match.Groups[1].Value}-{match.Groups[2].Value}" : fallback;
+    }
+
+    private int ParseGradeFromClassSlug()
+    {
+        if (string.IsNullOrWhiteSpace(ClassSlug)) return 0;
+        var match = System.Text.RegularExpressions.Regex.Match(ClassSlug, @"^(\d+)-");
+        return match.Success ? int.Parse(match.Groups[1].Value) : 0;
     }
     private async Task Speak()
     {

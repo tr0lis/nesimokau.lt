@@ -1,0 +1,199 @@
+{
+  "level": "A2",
+  "grade": 2,
+  "gradeLabel": "2 klasė",
+  "lessons": [
+    {
+      "id": "apie-save-a2",
+      "title": "Apie save ir šeima",
+      "description": "Gilinamės į asmeninę informaciją, šeimos ryšius ir bendravimą.",
+      "icon": "👋",
+      "order": 1,
+      "vocabularyTopicId": "apie-save-a2",
+      "grammar": [
+        { "title": "Būties veiksmažodis", "rule": "Aš esu, tu esi, jis/ji yra, mes esame, jūs esate, jie/jos yra.", "examples": ["Aš esu mokinys.", "Mes esame klasėje.", "Jie yra draugai."] },
+        { "title": "Klausiamieji žodžiai", "rule": "Kas? Koks? Kiek? Kodėl? Kada? Kur?", "examples": ["Koks tavo vardas?", "Kiek tau metų?", "Kada tu gimei?", "Kur tu gyveni?"] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "mokykla-a2",
+      "title": "Mokykla ir mokymasis",
+      "description": "Mokykla, pamokų tvarkaraštis ir mokymosi būdai.",
+      "icon": "🏫",
+      "order": 2,
+      "vocabularyTopicId": "mokykla-a2",
+      "grammar": [
+        { "title": "Daiktavardžio linksniai", "rule": "Vardininkas, kilmininkas, naudininkas, galininkas, įnagininkas, vietininkas.", "examples": ["Knyga yra ant stalo.", "Noriu pieno.", "Rašau laišką draugui.", "Einu į mokyklą."] },
+        { "title": "Veiksmažodžių laikai", "rule": "Esamasis, būtasis, būsimasis laikas.", "examples": ["Aš rašau (dabar).", "Aš rašiau (vakar).", "Aš rašysiu (rytoj)."] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "gyvenamoji-aplinka-a2",
+      "title": "Gyvenamoji aplinka ir miestas",
+      "description": "Miestas, kaimas, sodyba ir aplinkos aprašymas.",
+      "icon": "🏘️",
+      "order": 3,
+      "vocabularyTopicId": "gyvenamoji-aplinka-a2",
+      "grammar": [
+        { "title": "Būdvardžių laipsniavimas", "rule": "Geras → geresnis → geriausias; gražus → gražesnis → gražiausias.", "examples": ["geras → geresnis → geriausias", "gražus → gražesnis → gražiausias", "įdomus → įdomesnis → įdomiausias"] },
+        { "title": "Prielinksniai", "rule": "Ant, be, iki, nuo, po, prie, pro – vartojami su įvairiais linksniais.", "examples": ["Ant stalo.", "Be draugo.", "Iki mokyklos.", "Nuo ryto.", "Po pietų.", "Prie namų.", "Pro parką."] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "keliones-transportas-a2",
+      "title": "Kelionės, transportas",
+      "description": "Atostogos, kelionės ir transporto priemonės.",
+      "icon": "✈️",
+      "order": 4,
+      "vocabularyTopicId": "keliones-transportas-a2",
+      "grammar": [
+        { "title": "Veiksmažodžių asmenų formos", "rule": "Aš keliauju, tu keliauji, jis keliauja, mes keliaujame, jūs keliaujate, jie keliauja.", "examples": ["Aš keliauju į jūrą.", "Mes keliaujame kartu.", "Jie keliauja traukiniu."] },
+        { "title": "Būsimasis laikas", "rule": "Rytoj, ateityje – naudojamas būsimasis laikas.", "examples": ["Rytoj keliausiu.", "Ateityje tapsiu gydytoju.", "Mes aplankysime senelius."] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "profesijos-a2",
+      "title": "Profesijos ir darbas",
+      "description": "Profesijos, darbo vieta ir svajonių profesija.",
+      "icon": "💼",
+      "order": 5,
+      "vocabularyTopicId": "profesijos-a2",
+      "grammar": [
+        { "title": "Žodžių daryba: veiksmas → vykdytojas", "rule": "Dirbti → darbuotojas; mokyti → mokytojas; gydyti → gydytojas.", "examples": ["Dirbti → darbuotojas, darbuotoja.", "Mokyti → mokytojas, mokytoja.", "Vairuoti → vairuotojas, vairuotoja."] },
+        { "title": "Neigiamos formos", "rule": "Ne- prieš veiksmažodį: nebūti, nenorėti, nemokėti.", "examples": ["Aš nesu gydytojas.", "Jis nenori dirbti.", "Ji nemoka vairuoti."] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "laisvalaikis-a2",
+      "title": "Laisvalaikis ir pomėgiai",
+      "description": "Pramogos, sportas, menas ir pomėgiai.",
+      "icon": "🎨",
+      "order": 6,
+      "vocabularyTopicId": "laisvalaikis-a2",
+      "grammar": [
+        { "title": "Būdvardžių giminės", "rule": "Būdvardžiai turi vyriškąją ir moteriškąją giminę.", "examples": ["gražus (vyr.), graži (mot.)", "įdomus (vyr.), įdomi (mot.)", "linksmas (vyr.), linksma (mot.)"] },
+        { "title": "Prieveiksmių laipsniavimas", "rule": "Gerai → geriau → geriausiai; labai → labiau → labiausiai.", "examples": ["gerai → geriau → geriausiai", "greitai → greičiau → greičiausiai"] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "kasdienė-veikla-a2",
+      "title": "Kasdienė veikla ir laikas",
+      "description": "Dienotvarkė, laikas ir kasdieniai ritualai.",
+      "icon": "⏰",
+      "order": 7,
+      "vocabularyTopicId": "kasdienė-veikla-a2",
+      "grammar": [
+        { "title": "Laiko žodžiai", "rule": "Valanda, minutė, sekundė; rytas, diena, vakaras, naktis.", "examples": ["Vieną valandą.", "Kelintą valandą?", "Ryto valgau pusryčius."] },
+        { "title": "Laiko prielinksniai", "rule": "Iki, po, nuo, per – vartojami su laiko žodžiais.", "examples": ["Iki pietų.", "Po mokyklos.", "Nuo ryto.", "Per savaitę."] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "sveika-gyvensena-a2",
+      "title": "Sveika gyvensena ir sveikata",
+      "description": "Maistas, kūnas, sveikata ir sportas.",
+      "icon": "🏃",
+      "order": 8,
+      "vocabularyTopicId": "sveika-gyvensena-a2",
+      "grammar": [
+        { "title": "Sveikatos veiksmažodžiai", "rule": "Skaudėti, sirgti, pasveikti, gydytis, vartoti vaistus.", "examples": ["Skauda galvą.", "Aš sergu.", "Greitai pasveik!", "Vartoju vaistus."] },
+        { "title": "Kūno dalių žodžiai", "rule": "Kūno dalys: galva, ranka, koja, nugara, krūtinė, pilvas.", "examples": ["Mano galva.", "Skauda nugarą.", "Aš mankštinu rankas."] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "informacines-technologijos-a2",
+      "title": "Informacinės technologijos",
+      "description": "Kompiuteris, internetas ir technologijos.",
+      "icon": "💻",
+      "order": 9,
+      "vocabularyTopicId": "informacines-technologijos-a2",
+      "grammar": [
+        { "title": "Žodžių daryba: veiksmas → įrankis", "rule": "Spausdinti → spausdintuvas; skenuoti → skeneris; įkrauti → įkroviklis.", "examples": ["Spausdinti → spausdintuvas.", "Skenoti → skeneris.", "Įkrauti → įkroviklis."] },
+        { "title": "Klausiamieji ir prašomieji sakiniai", "rule": "Ar galiu...? Leisk...! – klausimo ir prašymo formos.", "examples": ["Ar galiu naudotis kompiuteriu?", "Leisk pasinaudoti tavo telefonu.", "Padėkite man!"] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "parduotuve-pirkiniai-a2",
+      "title": "Parduotuvė, pirkiniai ir kainos",
+      "description": "Apsipirkimas, pinigai ir prekių grąžinimas.",
+      "icon": "🛍️",
+      "order": 10,
+      "vocabularyTopicId": "parduotuve-pirkiniai-a2",
+      "grammar": [
+        { "title": "Klausimai apie kainas", "rule": "Kiek kainuoja? Kokia nuolaida? Ar yra nuolaida?", "examples": ["Kiek kainuoja ši prekė?", "Ar yra nuolaida?", "Mokėsiu kortele."] },
+        { "title": "Žodžių daryba: veiksmas → vykdytojas/vieta", "rule": "Pirkti → pirkėjas; parduoti → pardavėjas, parduotuvė.", "examples": ["Pirkti → pirkėjas, pirkėja.", "Parduoti → pardavėjas, pardavėja, parduotuvė."] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "gamta-ekologija-a2",
+      "title": "Gamta, ekologija ir aplinkosauga",
+      "description": "Žemynai, gamta, ekologija ir atsakingas vartojimas.",
+      "icon": "🌿",
+      "order": 11,
+      "vocabularyTopicId": "gamta-ekologija-a2",
+      "grammar": [
+        { "title": "Oras ir metų laikai", "rule": "Vasara, ruduo, žiema, pavasaris – metų laikai. Lyti, snigti, žaibuoti – oro veiksmažodžiai.", "examples": ["Šiandien lyja.", "Rytoj snigs.", "Vasara yra šilta.", "Žiema yra šalta."] },
+        { "title": "Gyvūnų ir augalų žodžiai", "rule": "Gyvūnai ir augalai: šuo, katė, pušis, eglė.", "examples": ["Aš auginu šunį.", "Katė miaukia.", "Pušis auga miške."] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    },
+    {
+      "id": "kulturinis-gyvenimas-a2",
+      "title": "Kultūrinis gyvenimas ir šventės",
+      "description": "Šventės, kultūra ir žymios asmenybės.",
+      "icon": "🎭",
+      "order": 12,
+      "vocabularyTopicId": "kulturinis-gyvenimas-a2",
+      "grammar": [
+        { "title": "Šventės ir gimtadieniai", "rule": "Švęsti, dovanoti, vaišinti – šventiniai veiksmažodžiai.", "examples": ["Švenčiame Kalėdas.", "Dovanoju dovaną.", "Vaišinu svečius."] },
+        { "title": "Muzika ir kinas", "rule": "Dainuoti, kurti, atlikti – meniniai veiksmažodžiai.", "examples": ["Aš dainuoju.", "Ji kuria dainas.", "Jis atlieka muziką."] }
+      ],
+      "exercises": [
+        { "type": "dictation", "title": "Žodžių diktantas", "href": "/lietuviu-kalba/2-klases/zodziu-diktantas?level=a1-a2" },
+        { "type": "missing-letters", "title": "Įrašyk praleistas raides", "href": "/lietuviu-kalba/2-klases/praleistos-raides?level=a1-a2" }
+      ]
+    }
+  ]
+}

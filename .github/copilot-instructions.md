@@ -7,3 +7,7 @@
 - User prefers mobile menu popup to have a solid colored background (not transparent) and the mobile profile page must be fully responsive.
 - Desktop subject cards should keep 2-word titles on one line with less compressed descriptions, and the 'Atidaryti' button should be replaced with a top-right arrow icon. 
 - Narrow the first profile avatar/level card width.
+- After every code change, create a Git commit and push it to the remote repository.
+
+## General Guidelines
+- Do not use PowerShell Get-Content or similar terminal file-reading commands in this workspace because they can stall or block work; use workspace file tools instead.

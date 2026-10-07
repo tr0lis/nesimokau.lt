@@ -1,0 +1,340 @@
+{
+  "level": "A2",
+  "grades": "2",
+  "topics": [
+    {
+      "id": "apie-save-a2",
+      "title": "Apie save ir šeima",
+      "description": "Gilinamės į asmeninę informaciją, šeimos ryšius ir bendravimą.",
+      "icon": "👋",
+      "subtopics": [
+        {
+          "title": "Apie save",
+          "nouns": ["asmuo", "asmens tapatybė", "gyvenamoji vieta", "gimimo data", "pilietybė"],
+          "adjectives": ["lietuviskas", "jaunas", "senas", "didelis", "mažas"],
+          "verbs": ["gimti", "gyventi", "būti", "vadinti", "vadintis"],
+          "phrases": ["Aš gimiau...", "Mano gimimo data...", "Aš esu lietuvis."]
+        },
+        {
+          "title": "Mano būdo bruožai",
+          "nouns": ["būdas", "charakteris", "savybė", "elgesys"],
+          "adjectives": ["draugiškas", "nedraugiškas", "mandagus", "nemalonus", "linksma", "liūdna", "rimtas", "juokingas"],
+          "verbs": ["elgtis", "jaustis", "būti", "rodytis"],
+          "phrases": ["Aš esu draugiškas.", "Ji yra mandagi.", "Jis elgiasi gerai."]
+        },
+        {
+          "title": "Mano draugai ir šeima",
+          "nouns": ["šeima", "draugas", "draugė", "pažįstamas", "pažįstama", "kaimynas", "kaimynė"],
+          "adjectives": ["artimas", "brangus", "mylimas", "gerbiamas"],
+          "verbs": ["pažinti", "bendravoti", "draugauti", "padėti", "palaikyti"],
+          "phrases": ["Mano geriausias draugas...", "Mes draugaujame.", "Aš padedu tėvams."]
+        }
+      ]
+    },
+    {
+      "id": "mokykla-a2",
+      "title": "Mokykla ir mokymasis",
+      "description": "Mokykla, pamokų tvarkaraštis ir mokymosi būdai.",
+      "icon": "🏫",
+      "subtopics": [
+        {
+          "title": "Mokykla, klasė, pamokų tvarkaraštis",
+          "nouns": ["mokykla", "klasė", "pamoka", "pertrauka", "pietų pertrauka", "kabinetas", "laboratorija", "sporto salė", "biblioteka", "tvarkaraštis", "dienynas", "pažymys", "vertinimas"],
+          "adjectives": ["įdomi", "nuobodi", "lengva", "sunki", "trumpa", "ilga"],
+          "verbs": ["mokytis", "mokėti", "suprasti", "paklausti", "atsakyti", "paaiškinti", "pakartoti"],
+          "phrases": ["Kokia tavo mėgstamiausia pamoka?", "Kada yra pertrauka?", "Kas tave moko?"]
+        },
+        {
+          "title": "Popamokinė veikla",
+          "nouns": ["būrelis", "sporto klubas", "muzikos mokykla", "meno mokykla", "šokis", "dainavimas", "piešimas", "fotografija", "robotika", "programavimas"],
+          "adjectives": ["popamokinis", "laisvalaikio", "savaitinis"],
+          "verbs": ["lankyti", "užsiimti", "dalyvauti", "mokytis"],
+          "phrases": ["Aš lankau šokių būrelį.", "Aš užsiimu fotografija.", "Po pamokų einu į sporto klubą."]
+        },
+        {
+          "title": "Mokymosi būdai",
+          "nouns": ["mokymasis", "skaitymas", "rašymas", "skaičiavimas", "atmintis", "dėmesys", "pastabos", "kontrolinis", "egzaminas", "projektas"],
+          "adjectives": ["efektyvus", "neefektyvus", "sunkus", "lengvas"],
+          "verbs": ["mokytis", "išmokti", "pasikartoti", "pasitikrinti", "išlaikyti", "nepavykti"],
+          "phrases": ["Aš mokausi rašyti.", "Mokausi skaityti.", "Man patinka skaičiuoti."]
+        }
+      ]
+    },
+    {
+      "id": "gyvenamoji-aplinka-a2",
+      "title": "Gyvenamoji aplinka ir miestas",
+      "description": "Miestas, kaimas, sodyba ir aplinkos aprašymas.",
+      "icon": "🏘️",
+      "subtopics": [
+        {
+          "title": "Kiemas, gatvė, miestas",
+          "nouns": ["miestas", "kaimas", "gatvė", "aikštė", "parkas", "tiltas", "pastatas", "daugiabutis", "vienbutis", "kotedžas", "kiemas", "kaimynas", "suoliukas", "žibintas", "tvora", "vartai", "sodas", "šiltnamis", "gėlynas", "gyvatvorė", "daržas"],
+          "adjectives": ["erdvus", "jaukus", "įspūdingas", "įdomus", "vėsus", "šiltas", "švarus", "purvinas"],
+          "verbs": ["gyventi", "statyti", "parkuoti", "lankyti", "vaikščioti", "pasivaikščioti"],
+          "phrases": ["Mano miestas yra didelis.", "Aš gyvenu name su sodu.", "Mano kieme yra medis."]
+        },
+        {
+          "title": "Sodyba",
+          "nouns": ["sodyba", "ūkininkas", "ūkininkė", "namas", "kiemas", "sodas", "daržas", "darželis", "tvenkinys", "pirtis", "tvartas", "karvė", "jautis", "kiaulė", "paršas", "ožka", "ožys", "avis", "avinas", "višta", "gaidys", "antis", "antinas", "žąsis", "žąsinas", "kalakutas", "traktorius", "kombainas"],
+          "adjectives": ["laukinis", "laukinė", "naminis", "naminė", "didelis", "mažas"],
+          "verbs": ["auginti", "prižiūrėti", "šerti", "melžti", "kirsti", "pjauti"],
+          "phrases": ["Mano močiutė turi sodybą.", "Mes turime karvę.", "Aš padedu prižiūrėti vištas."]
+        },
+        {
+          "title": "Lankytinos vietos, atstumai, maršrutai",
+          "nouns": ["atstumas", "kilometras", "metras", "maršrutas", "kelias", "kryptis", "ženklas", "kryžkelė", "posūkis", "greitkelis", "plentas", "kelkraštis"],
+          "adjectives": ["tolimas", "artimas", "tiesus", "vingiuotas", "lygus", "kalvotas"],
+          "verbs": ["keliauti", "važiuoti", "eiti", "nueiti", "pasiekti", "atsigauti"],
+          "phrases": ["Kiek kilometrų iki miesto?", "Kaip nueiti į parką?", "Kuri kryptis?"]
+        }
+      ]
+    },
+    {
+      "id": "keliones-transportas-a2",
+      "title": "Kelionės, transportas",
+      "description": "Atostogos, kelionės ir transporto priemonės.",
+      "icon": "✈️",
+      "subtopics": [
+        {
+          "title": "Kelionė, transportas",
+          "nouns": ["kelionė", "atostogos", "turistas", "turistė", "turizmas", "bilietas", "lagaminas", "kuprinė", "pasas", "vizas", "viza", "vairuotojas", "vairuotoja", "keleivis", "keleivė"],
+          "adjectives": ["pavargęs", "pailsėjęs", "patyręs", "naujas", "senas"],
+          "verbs": ["keliauti", "važiuoti", "skristi", "plaukti", "vairuoti", "atsisveikinti", "palydėti", "pasitikti"],
+          "phrases": ["Mes keliaujame į jūrą.", "Aš skrendu lėktuvu.", "Aš plaukiu laivu."]
+        },
+        {
+          "title": "Oro uostas, terminalas",
+          "nouns": ["oro uostas", "terminalas", "išvykimas", "atvykimas", "asmens dokumentas", "eilė", "įlaipinimo kortelė", "vartai", "saugumo patikra", "bagažas", "lėktuvo salonas", "atlenkiamas staliukas", "lakūnų kabina", "iliuminatorius", "skrydžio palydovas", "skrydžio palydovė", "lakūnas", "lakūnė", "pilotas", "pilotė", "dangus", "debesis"],
+          "adjectives": ["tarptautinis", "vietinis", "didis", "mažas"],
+          "verbs": ["užsiregistruoti", "sverti", "įlipti", "išlipti", "praskristi", "atsisveikinti"],
+          "phrases": ["Kada išvyksta lėktuvas?", "Kur yra mano vartai?", "Aš užsiregistravau internetu."]
+        },
+        {
+          "title": "Jūra, keltas, laivas",
+          "nouns": ["perkėla", "keltas", "kajutė", "denis", "krovinys", "kapitonas", "kapitonė", "jūreivis", "jūreivė", "gelbėjimosi liemenė", "gelbėjimosi valtis", "uostas", "prievartas", "bangos"],
+          "adjectives": ["greitas", "lėtas", "saugus", "nesaugus"],
+          "verbs": ["plaukti", "maudytis", "plaukti", "skęsti", "gelbėti", "gelbėtis"],
+          "phrases": ["Keltas plaukia į Švediją.", "Aš maudausi jūroje.", "Laivas yra didelis."]
+        }
+      ]
+    },
+    {
+      "id": "profesijos-a2",
+      "title": "Profesijos ir darbas",
+      "description": "Profesijos, darbo vieta ir svajonių profesija.",
+      "icon": "💼",
+      "subtopics": [
+        {
+          "title": "Profesijos, darbai ir veikla",
+          "nouns": ["profesija", "darbas", "darbuotojas", "darbuotoja", "pareigos", "atlyginimas", "algos", "vadovas", "vadovė", "pavaldinys", "pavaldinė", "kolega", "kolegė"],
+          "adjectives": ["atsakingas", "neatsakingas", "sėkmingas", "nesėkmingas", "patyręs", "naujas"],
+          "verbs": ["dirbti", "uždirbti", "mokėti", "gauti", "atsakyti", "organizuoti", "vadovauti"],
+          "phrases": ["Mano tėtis dirba gydytoju.", "Mano mama yra mokytoja.", "Aš noriu būti programuotojas."]
+        },
+        {
+          "title": "Gebėjimai",
+          "nouns": ["gebėjimas", "sugebėjimas", "talentas", "įgūdis", "patirtis", "žinios", "mokėjimas"],
+          "adjectives": ["gabūs", "gabi", "talentingas", "talentinga", "patyręs", "naujas"],
+          "verbs": ["mokėti", "gebėti", "sugebėti", "išmokti", "treniruoti"],
+          "phrases": ["Aš moku vairuoti.", "Ji geba dainuoti.", "Jis sugeba programuoti."]
+        },
+        {
+          "title": "Svajonių profesija",
+          "nouns": ["svajonė", "svajotojas", "svajotoja", "tikslas", "planas", "ateitis"],
+          "adjectives": ["svajonių", "įdomus", "įdomi", "prestižinis", "prestižinė"],
+          "verbs": ["svajoti", "tapti", "užaugti", "uždirbti", "mokėti", "gauti"],
+          "phrases": ["Aš svajoju tapti gydytoju.", "Mano svajonių profesija yra...", "Aš noriu uždirbti daug pinigų."]
+        }
+      ]
+    },
+    {
+      "id": "laisvalaikis-a2",
+      "title": "Laisvalaikis ir pomėgiai",
+      "description": "Pramogos, sportas, menas ir pomėgiai.",
+      "icon": "🎨",
+      "subtopics": [
+        {
+          "title": "Pramogos, pomėgiai",
+          "nouns": ["pramoga", "pomėgis", "hobis", "laisvalaikis", "pramogų parkas", "atrakcionas", "karuselė", "kino teatras", "koncertas", "festivalis", "paroda"],
+          "adjectives": ["smagus", "smagi", "nuobodus", "nuobodi", "įdomus", "įdomi", "linksma", "liūdna"],
+          "verbs": ["pramogauti", "būti", "eiti", "žiūrėti", "klausyti", "vaidinti", "šokti", "dainuoti"],
+          "phrases": ["Aš mėgstu pramogauti.", "Mano pomėgis yra fotografija.", "Eikime į kiną."]
+        },
+        {
+          "title": "Sportas ir sveikata",
+          "nouns": ["sportas", "sportininkas", "sportininkė", "treniruotė", "varžybos", "čempionatas", "medalis", "taurė", "rekordas", "stadionas", "baseinas", "treniruoklių salė"],
+          "adjectives": ["sportiškas", "sportiška", "sveikas", "sveika", "stiprus", "stipri", "greitas", "lėtas"],
+          "verbs": ["sportuoti", "treniruoti", "bėgti", "plaukti", "šokti", "žaisti", "laimėti", "pralaimėti"],
+          "phrases": ["Aš sportuoju kasdien.", "Mano mėgstamiausia sporto šaka yra futbolas.", "Mes laimėjome varžybas."]
+        },
+        {
+          "title": "Menas ir kūryba",
+          "nouns": ["menas", "kūryba", "paveikslas", "skulptūra", "daina", "dainininkas", "dainininkė", "muzika", "muzikantas", "muzikantė", "teatras", "aktorius", "aktorė", "vaidmuo", "spektaklis", "scena", "ekranas", "filmas"],
+          "adjectives": ["kūrybingas", "kūrybinga", "talentingas", "talentinga", "gražus", "grazi", "įdomus", "įdomi"],
+          "verbs": ["kurti", "tapyti", "piešti", "dainuoti", "vaidinti", "rašyti", "fotografuoti"],
+          "phrases": ["Aš tapyau paveikslą.", "Ji dainuoja chore.", "Jis vaidina teatre."]
+        }
+      ]
+    },
+    {
+      "id": "kasdienė-veikla-a2",
+      "title": "Kasdienė veikla ir laikas",
+      "description": "Dienotvarkė, laikas ir kasdieniai ritualai.",
+      "icon": "⏰",
+      "subtopics": [
+        {
+          "title": "Laikas ir dienotvarkė",
+          "nouns": ["laikas", "valanda", "minutė", "sekundė", "rytas", "diena", "vakaras", "naktis", "pusryčiai", "pietūs", "vakarienė", "darbo laikas", "laisvalaikis"],
+          "adjectives": ["ankstyvas", "vėlus", "ilgas", "trumpas", "užimtas", "laisvas"],
+          "verbs": ["keltis", "atsikelti", "pusryčiauti", "pietauti", "vakarieniauti", "miegoti", "ilsėtis", "dirbti", "mokytis"],
+          "phrases": ["Kelintą valandą tu keliesi?", "Aš pusryčiauju 7 valandą.", "Vakare einu miegoti."]
+        },
+        {
+          "title": "Poilsis ir miegas",
+          "nouns": ["poilsis", "miegas", "sapnas", "lova", "pagalvė", "antklodė", "šviesus", "tamsus", "ramus", "jaukus"],
+          "adjectives": ["pavargęs", "pailsėjęs", "žvalus", "mieguistas", "ramus", "neramus"],
+          "verbs": ["miegoti", "sapnuoti", "ilsėtis", "pailsėti", "atsipalaiduoti", "atsigulti", "atsikelti"],
+          "phrases": ["Aš miegoju 8 valandas.", "Ką tu sapnavai?", "Aš pailsiu po pietų."]
+        }
+      ]
+    },
+    {
+      "id": "sveika-gyvensena-a2",
+      "title": "Sveika gyvensena ir sveikata",
+      "description": "Maistas, kūnas, sveikata ir sportas.",
+      "icon": "🏃",
+      "subtopics": [
+        {
+          "title": "Ką aš valgau",
+          "nouns": ["maistas", "gėrimas", "pusryčiai", "pietūs", "vakarienė", "užkandis", "desertas", "sriuba", "antras patiekalas", "salotos", "daržovės", "vaisiai", "mėsa", "žuvis", "pieno produktai", "duona", "bandelė", "pyragas", "tortas", "sultys", "vanduo", "arbata", "kava"],
+          "adjectives": ["skanus", "skani", "sveikas", "sveika", "nesveikas", "nesveika", "saldus", "saldi", "rūgštus", "rūgšti", "sūrus", "sūri", "karštas", "šaltas", "šviežias", "šviežia"],
+          "verbs": ["valgyti", "gerti", "virti", "kepti", "ruošti", "skrudinti", "troškinti", "virti"],
+          "phrases": ["Aš valgau sveiką maistą.", "Ką tu valgai pietums?", "Aš geriu daug vandens."]
+        },
+        {
+          "title": "Mano kūnas ir sveikata",
+          "nouns": ["kūnas", "galva", "ranka", "koja", "akis", "ausis", "nosis", "burna", "dantis", "dantys", "plaukai", "nugara", "krūtinė", "pilvas", "širdis", "kraujas", "skausmas", "liga", "gripas", "sloga", "kosulys", "karščiavimas", "temperatūra"],
+          "adjectives": ["sveikas", "sveika", "nesveikas", "nesveika", "stiprus", "stipri", "silpnas", "silpna", "ligotas", "ligota"],
+          "verbs": ["skaudėti", "sirgti", "pasveikti", "gydytis", "vartoti vaistus", "matuoti temperatūrą", "skambinti", "registruotis"],
+          "phrases": ["Man skauda galvą.", "Aš peršalau.", "Aš vartoju vaistus.", "Greitai pasveik!"]
+        },
+        {
+          "title": "Sportas ir mankšta",
+          "nouns": ["sportas", "mankšta", "treniruotė", "pratimai", "bėgimas", "plaukimas", "dviratis", "paspirtukas", "riedlentė", "čiuožimas", "slidinėjimas"],
+          "adjectives": ["aktyvus", "aktyvi", "neaktyvus", "neaktyvi", "energingas", "energinga"],
+          "verbs": ["sportuoti", "mankštintis", "bėgti", "plaukti", "važinėti", "čiuožti", "slidinėti"],
+          "phrases": ["Aš sportuoju kasdien.", "Mankšta yra sveika.", "Aš bėgu ryte."]
+        }
+      ]
+    },
+    {
+      "id": "informacines-technologijos-a2",
+      "title": "Informacinės technologijos",
+      "description": "Kompiuteris, internetas ir technologijos.",
+      "icon": "💻",
+      "subtopics": [
+        {
+          "title": "Kompiuteris ir internetas",
+          "nouns": ["kompiuteris", "nešiojamasis kompiuteris", "planšetė", "mobilusis telefonas", "internetas", "tinklas", "wifi", "belaidis internetas", "programėlė", "programa", "svetainė", "tinklapis", "paieška", "socialinis tinklas", "profilis", "pranešimas", "el. laiškas"],
+          "adjectives": ["greitas", "lėtas", "saugus", "nesaugus", "patogus", "nepatogus"],
+          "verbs": ["naudoti", "naudotis", "ieškoti", "rasti", "parsisiųsti", "įkelti", "siųsti", "gauti", "atsisiųsti"],
+          "phrases": ["Aš naudoju kompiuterį.", "Ieškau informacijos internete.", "Aš siunčiu el. laišką."]
+        },
+        {
+          "title": "Kompiuteris neveikia",
+          "nouns": ["problema", "klaida", "virusas", "saugykla", "atmintis", "klaviatūra", "pelė", "monitorius", "ekranas", "spausdintuvas", "skeneris", "jungiklis", "laidas", "belaidis"],
+          "adjectives": ["sugedęs", "neveikiantis", "lėtas", "užstrigęs"],
+          "verbs": ["neveikti", "užstrigti", "įjungti", "išjungti", "pataisyti", "taisyti", "atnaujinti"],
+          "phrases": ["Kompiuteris neveikia.", "Internetas neveikia.", "Reikia išjungti ir vėl įjungti."]
+        }
+      ]
+    },
+    {
+      "id": "parduotuve-pirkiniai-a2",
+      "title": "Parduotuvė, pirkiniai ir kainos",
+      "description": "Apsipirkimas, pinigai ir prekių grąžinimas.",
+      "icon": "🛍️",
+      "subtopics": [
+        {
+          "title": "Parduotuvė ir prekės",
+          "nouns": ["parduotuvė", "prekybos centras", "mugė", "turgus", "baldų salonas", "knygynas", "vaistinė", "optika", "kirpykla", "siuvykla", "valykla", "taisykla"],
+          "adjectives": ["didelis", "mažas", "brangus", "pigus", "kokybiškas", "nekokybiškas", "stilingas", "nestilingas", "madingas", "senamadiškas"],
+          "verbs": ["pirkti", "parduoti", "mokėti", "užsisakyti", "aptarnauti", "patarti", "rekomenduoti"],
+          "phrases": ["Aš perkau knygą.", "Kur yra artimiausia vaistinė?", "Kiek tai kainuoja?"]
+        },
+        {
+          "title": "Kainos ir nuolaidos",
+          "nouns": ["kaina", "grąža", "nuolaida", "akcija", "išpardavimas", "kuponas", "kodas", "pinigai", "banko kortelė", "bankomatas", "kasa", "savitarnos kasa"],
+          "adjectives": ["pigus", "pigu", "brangus", "brangu", "nemokamas", "nemokama"],
+          "verbs": ["kainuoti", "grąžinti", "suskaičiuoti", "mokėti", "taupyti"],
+          "phrases": ["Kiek kainuoja?", "Ar yra nuolaida?", "Mokėsiu kortele.", "Suskaičiuokite grąžą."]
+        },
+        {
+          "title": "Prekių grąžinimas ir paslaugos",
+          "nouns": ["grąžinimas", "garantija", "kvitėlis", "čekis", "defektas", "gedimas", "remontas"],
+          "adjectives": ["garantinis", "negarantinis", "sugedęs", "neveikiantis", "kokybiškas", "nekokybiškas"],
+          "verbs": ["grąžinti", "pakeisti", "remontuoti", "tirti", "skųstis", "pretenduoti"],
+          "phrases": ["Noriu grąžinti prekę.", "Ar turi kvitėlį?", "Prekė sugedo.", "Prašau pakeisti."]
+        }
+      ]
+    },
+    {
+      "id": "gamta-ekologija-a2",
+      "title": "Gamta, ekologija ir aplinkosauga",
+      "description": "Žemynai, gamta, ekologija ir atsakingas vartojimas.",
+      "icon": "🌿",
+      "subtopics": [
+        {
+          "title": "Žemynai ir jų gamta",
+          "nouns": ["žemynas", "kontinentas", "Europa", "Azija", "Afrika", "Amerika", "Australija", "klimatas", "oras", "miškas", "džiunglės", "taiga", "kalnai", "uolos", "kopos", "ledynai", "sniegynas", "ledkalnis", "slėnis", "pelkė", "dykuma", "savana", "stepė", "tundra"],
+          "adjectives": ["karštasis", "šaltasis", "poliarinis", "žemyninis", "Viduržemio jūros", "stepių", "tundros"],
+          "verbs": ["vyrauoti", "kisti", "keistis", "šiltėti", "šaltėti"],
+          "phrases": ["Europoje yra kalnų.", "Afrikoje yra dykumų.", "Aš noriu pamatyti džiungles."]
+        },
+        {
+          "title": "Atsakingas vartojimas",
+          "nouns": ["atliekos", "šiukšlės", "plastikas", "metalas", "stiklas", "popierius", "maisto atliekos", "kartonas", "žurnalas", "butelys", "maišelis", "konservų dėžutė", "žievė", "lukštas"],
+          "adjectives": ["vienkartinis", "vienkartinė", "daugkartinis", "daugkartinė", "plastikinis", "plastikinė", "globalinis", "globalinė"],
+          "verbs": ["rūšiuoti", "perdirbti", "taupyti", "nešvaistyti", "atiduoti", "išmesti", "panaudoti"],
+          "phrases": ["Aš rūšiuoju šiukšles.", "Nešvaistyk popieriaus.", "Plastiką reikia perdirbti."]
+        },
+        {
+          "title": "Ekologinės akcijos, gyvūnai ir augalai",
+          "nouns": ["ekologija", "akcija", "savanoris", "savanorė", "gyvūnas", "paukštis", "žinduolis", "roplis", "žuvis", "medis", "gėlė", "augałas", "miškas", "parkas", "draustinis"],
+          "adjectives": ["laukinis", "laukinė", "naminis", "naminė", "retas", "retas", "nykstantis", "nykstanti"],
+          "verbs": ["saugoti", "prižiūrėti", "auginti", "sodinti", "medžioti", "žvejoti", "fotografuoti", "stebėti"],
+          "phrases": ["Reikia saugoti gamtą.", "Aš sodinu medį.", "Stebėkime paukščius."]
+        }
+      ]
+    },
+    {
+      "id": "kulturinis-gyvenimas-a2",
+      "title": "Kultūrinis gyvenimas ir šventės",
+      "description": "Šventės, kultūra ir žymios asmenybės.",
+      "icon": "🎭",
+      "subtopics": [
+        {
+          "title": "Bendruomenės, valstybinės ir kalendorinės šventės",
+          "nouns": ["šventė", "gimtadienis", "jubiliejus", "vestuvės", "krikštynos", "šventvagystė", "festivalis", "karnavalas", "paradas", "fejerverkas", "dovana", "sveikinimas"],
+          "adjectives": ["valstybinis", "valstybinė", "religinis", "religinė", "kalendorinis", "kalendorinė", "tradicinis", "tradicinė"],
+          "verbs": ["švęsti", "gimti", "puošti", "dovanoti", "vaišinti", "kviesti", "sveikinti", "linkėti"],
+          "phrases": ["Švenčiame Kalėdas.", "Su gimtadieniu!", "Linkiu sėkmės!", "Kviečiu į šventę."]
+        },
+        {
+          "title": "Kinas, teatras, muziejai, koncertai",
+          "nouns": ["kinas", "teatras", "muziejus", "koncertas", "paroda", "galerija", "spektaklis", "filmas", "aktorius", "aktorė", "režisierius", "režisierė", "scenarijus", "scenografija", "kostiumas", "grimas"],
+          "adjectives": ["įdomus", "įdomi", "nuobodus", "nuobodi", "gražus", "grazi", "emocionalus", "emocionali", "juokingas", "liūdnas"],
+          "verbs": ["žiūrėti", "lankyti", "vaidinti", "režisuoti", "rašyti", "kurti", "fotografuoti"],
+          "phrases": ["Aš žiūriu filmą.", "Eikime į teatrą.", "Koncertas buvo nuostabus."]
+        },
+        {
+          "title": "Žymios Lietuvos istorinės ir dabarties asmenybės",
+          "nouns": ["karalius", "karalienė", "kunigaikštis", "kunigaikštienė", "mokslininkas", "mokslininkė", "menininkas", "menininkė", "rašytojas", "rašytoja", "sportininkas", "sportininkė", "politikas", "politikė", "keliautojas", "keliautoja"],
+          "adjectives": ["žymus", "žymi", "žinomas", "žinoma", "talentingas", "talentinga", "didvyriškas", "herojiškas", "istorinis", "istorinė"],
+          "verbs": ["karūnuoti", "vadovauti", "kurti", "rašyti", "sportuoti", "keliauti", "atrasti", "išradinėti"],
+          "phrases": ["Mindaugas buvo Lietuvos karalius.", "Žymūs Lietuvos rašytojai...", "Mano mėgstamiausia asmenybė yra..."]
+        }
+      ]
+    }
+  ]
+}

@@ -59,5 +59,26 @@
   { "id": 57, "pattern": "Sakin_s", "answer": "Sakinys", "missingLetters": "y", "explanation": "Taisyklingas žodis: sakinys.", "difficulty": "Lengvas" },
   { "id": 58, "pattern": "Žmog_s", "answer": "Žmogus", "missingLetters": "u", "explanation": "Taisyklingas žodis: žmogus.", "difficulty": "Lengvas" },
   { "id": 59, "pattern": "Mok_tojas", "answer": "Mokytojas", "missingLetters": "y", "explanation": "Taisyklingas žodis: mokytojas.", "difficulty": "Lengvas" },
-  { "id": 60, "pattern": "Gyd_tojas", "answer": "Gydytojas", "missingLetters": "y", "explanation": "Taisyklingas žodis: gydytojas.", "difficulty": "Lengvas" }
+  { "id": 60, "pattern": "Gyd_tojas", "answer": "Gydytojas", "missingLetters": "y", "explanation": "Taisyklingas žodis: gydytojas.", "difficulty": "Lengvas" },
+
+  { "id": 61, "pattern": "Sod_ba", "answer": "Sodyba", "missingLetters": "y", "explanation": "Taisyklingas žodis: sodyba.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 62, "pattern": "Ūk_ninkas", "answer": "Ūkininkas", "missingLetters": "i", "explanation": "Taisyklingas žodis: ūkininkas.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 63, "pattern": "Karv_", "answer": "Karvė", "missingLetters": "ė", "explanation": "Taisyklingas žodis: karvė.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 64, "pattern": "V_šta", "answer": "Višta", "missingLetters": "i", "explanation": "Taisyklingas žodis: višta.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 65, "pattern": "Ž_sis", "answer": "Žąsis", "missingLetters": "ą", "explanation": "Taisyklingas žodis: žąsis.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 66, "pattern": "Trakt_rius", "answer": "Traktorius", "missingLetters": "o", "explanation": "Taisyklingas žodis: traktorius.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 67, "pattern": "Komb_nas", "answer": "Kombainas", "missingLetters": "ai", "explanation": "Taisyklingas žodis: kombainas.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 68, "pattern": "Atost_gos", "answer": "Atostogos", "missingLetters": "o", "explanation": "Taisyklingas žodis: atostogos.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 69, "pattern": "J_ra", "answer": "Jūra", "missingLetters": "ū", "explanation": "Taisyklingas žodis: jūra.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 70, "pattern": "Papl_dimys", "answer": "Paplūdimys", "missingLetters": "ū", "explanation": "Taisyklingas žodis: paplūdimys.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 71, "pattern": "Gelb_tojas", "answer": "Gelbėtojas", "missingLetters": "ė", "explanation": "Taisyklingas žodis: gelbėtojas.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 72, "pattern": "Šv_turys", "answer": "Švyturys", "missingLetters": "y", "explanation": "Taisyklingas žodis: švyturys.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 73, "pattern": "Stov_kla", "answer": "Stovykla", "missingLetters": "y", "explanation": "Taisyklingas žodis: stovykla.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 74, "pattern": "Palap_nė", "answer": "Palapinė", "missingLetters": "į", "explanation": "Taisyklingas žodis: palapinė.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 75, "pattern": "Miegma_šis", "answer": "Miegmaišis", "missingLetters": "i", "explanation": "Taisyklingas žodis: miegmaišis.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 76, "pattern": "Žem_lapis", "answer": "Žemėlapis", "missingLetters": "ė", "explanation": "Taisyklingas žodis: žemėlapis.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 77, "pattern": "Komp_sas", "answer": "Kompasas", "missingLetters": "a", "explanation": "Taisyklingas žodis: kompasas.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 78, "pattern": "Žibintuv_lis", "answer": "Žibintuvėlis", "missingLetters": "ė", "explanation": "Taisyklingas žodis: žibintuvėlis.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 79, "pattern": "Ži_ronai", "answer": "Žiūronai", "missingLetters": "ū", "explanation": "Taisyklingas žodis: žiūronai.", "difficulty": "Vidutinis", "grade": 2 },
+  { "id": 80, "pattern": "Lauž_s", "answer": "Laužas", "missingLetters": "a", "explanation": "Taisyklingas žodis: laužas.", "difficulty": "Vidutinis", "grade": 2 }
 ]

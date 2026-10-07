@@ -3961,6 +3961,68 @@ h1:focus { outline: none !important; }
     display: inline-flex;
 }
 
+.grade-tabs {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0 24px;
+}
+
+.grade-tab {
+    flex: 1;
+    max-width: 200px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-family: inherit;
+    transition: all .18s;
+    color: var(--ink);
+}
+
+.grade-tab span {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -.3px;
+}
+
+.grade-tab small {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.grade-tab:hover {
+    border-color: #d7ceff;
+    background: #faf8ff;
+}
+
+.grade-tab.active {
+    border-color: var(--purple);
+    background: #f0edff;
+}
+
+.grade-tab.active small {
+    color: var(--purple);
+}
+
+.lesson-grade-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--purple);
+    background: #f0edff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+
 .lessons-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -4242,4 +4304,33 @@ h1:focus { outline: none !important; }
 
 :root[data-theme="dark"] .lesson-exercise-link .exercise-icon {
     background: #211d30;
+}
+
+:root[data-theme="dark"] .grade-tab {
+    background: #211d30;
+    border-color: #3b3551;
+    color: #f0ebff;
+}
+
+:root[data-theme="dark"] .grade-tab:hover {
+    border-color: #4b406e;
+    background: #28223c;
+}
+
+:root[data-theme="dark"] .grade-tab.active {
+    border-color: #7c6cf0;
+    background: #28223c;
+}
+
+:root[data-theme="dark"] .grade-tab small {
+    color: #a09db0;
+}
+
+:root[data-theme="dark"] .grade-tab.active small {
+    color: #a89cff;
+}
+
+:root[data-theme="dark"] .lesson-grade-badge {
+    background: #28223c;
+    color: #a89cff;
 }

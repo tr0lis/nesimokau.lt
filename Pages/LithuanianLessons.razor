@@ -1,4 +1,5 @@
 @page "/lietuviu-kalba/1-2-klases/pamokos"
+@page "/lietuviu-kalba/1-2-klases/pamokos/{GradeSlug}"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject HttpClient Http
@@ -10,28 +11,36 @@
     <header class="subject-page-header">
         <p class="eyebrow">PAMOKOS · 1–2 KLASĖ</p>
         <h1>Mokomoji medžiaga</h1>
-        <p class="subtitle">A1 lygio pamokos pagal suderintą lietuvių kalbos programą. Pasirink temą ir mokykis!</p>
+        <p class="subtitle">A1 ir A2 lygio pamokos pagal suderintą lietuvių kalbos programą. Pasirink klasę ir temą!</p>
     </header>
 
     @if (loading)
     {
         <div class="loading-state"><span class="loader"></span><p>Kraunamos pamokos...</p></div>
     }
-    else if (lessons is null || lessons.Count == 0)
-    {
-        <div class="practice-empty"><span>📚</span><strong>Pamokų nerasta</strong><small>Pabandyk vėliau.</small></div>
-    }
     else
     {
+        <div class="grade-tabs">
+            <button class="grade-tab @(selectedGrade == 1 ? "active" : "")" @onclick="() => SelectGrade(1)">
+                <span>1 klasė</span>
+                <small>A1 lygis</small>
+            </button>
+            <button class="grade-tab @(selectedGrade == 2 ? "active" : "")" @onclick="() => SelectGrade(2)">
+                <span>2 klasė</span>
+                <small>A2 lygis</small>
+            </button>
+        </div>
+
         @if (selectedLesson is not null)
         {
-            var topic = GetVocabularyTopic(selectedLesson.VocabularyTopicId);
+            var topic = GetVocabularyTopic(selectedLesson.VocabularyTopicId, selectedGrade);
             <div class="lesson-detail">
                 <button class="button button-ghost" @onclick="BackToList">← Atgal į pamokas</button>
                 <article class="lesson-card-full">
                     <div class="lesson-card-header">
                         <span class="lesson-icon">@selectedLesson.Icon</span>
                         <div>
+                            <span class="lesson-grade-badge">@(selectedGrade == 1 ? "1 klasė" : "2 klasė")</span>
                             <h2>@selectedLesson.Title</h2>
                             <p class="subtitle">@selectedLesson.Description</p>
                         </div>
@@ -57,6 +66,13 @@
                                         <div class="vocab-group">
                                             <span class="vocab-label">Būdvardžiai:</span>
                                             <span class="vocab-words">@string.Join(", ", sub.Adjectives)</span>
+                                        </div>
+                                    }
+                                    @if (sub.Adverbs is { Count: > 0 })
+                                    {
+                                        <div class="vocab-group">
+                                            <span class="vocab-label">Prieveiksmiai:</span>
+                                            <span class="vocab-words">@string.Join(", ", sub.Adverbs)</span>
                                         </div>
                                     }
                                     @if (sub.Verbs is { Count: > 0 })
@@ -130,7 +146,7 @@
         else
         {
             <div class="lessons-grid">
-                @foreach (var lesson in lessons.OrderBy(l => l.Order))
+                @foreach (var lesson in GetLessonsForGrade().OrderBy(l => l.Order))
                 {
                     <button class="lesson-card" @onclick="() => SelectLesson(lesson.Id)">
                         <span class="lesson-icon">@lesson.Icon</span>
@@ -145,25 +161,37 @@
 </section>
 
 @code {
-    private List<LessonItem>? lessons;
-    private List<VocabTopic>? vocabTopics;
+    private List<LessonItem> lessons1 = [];
+    private List<LessonItem> lessons2 = [];
+    private List<VocabTopic> vocabTopics1 = [];
+    private List<VocabTopic> vocabTopics2 = [];
     private LessonItem? selectedLesson;
     private bool loading = true;
+    private int selectedGrade = 1;
+
+    [Parameter] public string? GradeSlug { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        selectedGrade = ParseGradeFromSlug() ?? 1;
         try
         {
-            var lessonsTask = Http.GetFromJsonAsync<LessonsData>("data/lithuanian-1-2/lessons.json");
-            var vocabTask = Http.GetFromJsonAsync<VocabularyData>("data/lithuanian-1-2/vocabulary-a1.json");
-            await Task.WhenAll(lessonsTask, vocabTask);
-            lessons = lessonsTask.Result?.Lessons ?? [];
-            vocabTopics = vocabTask.Result?.Topics ?? [];
+            var lessons1Task = Http.GetFromJsonAsync<LessonsData>("data/lithuanian-1-2/lessons-1.json");
+            var lessons2Task = Http.GetFromJsonAsync<LessonsData>("data/lithuanian-1-2/lessons-2.json");
+            var vocab1Task = Http.GetFromJsonAsync<VocabularyData>("data/lithuanian-1-2/vocabulary-a1.json");
+            var vocab2Task = Http.GetFromJsonAsync<VocabularyData>("data/lithuanian-1-2/vocabulary-a2.json");
+            await Task.WhenAll(lessons1Task, lessons2Task, vocab1Task, vocab2Task);
+            lessons1 = lessons1Task.Result?.Lessons ?? [];
+            lessons2 = lessons2Task.Result?.Lessons ?? [];
+            vocabTopics1 = vocab1Task.Result?.Topics ?? [];
+            vocabTopics2 = vocab2Task.Result?.Topics ?? [];
         }
         catch
         {
-            lessons = [];
-            vocabTopics = [];
+            lessons1 = [];
+            lessons2 = [];
+            vocabTopics1 = [];
+            vocabTopics2 = [];
         }
         finally
         {
@@ -171,9 +199,23 @@
         }
     }
 
+    private int? ParseGradeFromSlug()
+    {
+        if (string.IsNullOrWhiteSpace(GradeSlug)) return null;
+        if (int.TryParse(GradeSlug, out var grade) && (grade == 1 || grade == 2)) return grade;
+        return null;
+    }
+
+    private void SelectGrade(int grade)
+    {
+        selectedGrade = grade;
+        selectedLesson = null;
+        Navigation.NavigateTo($"/lietuviu-kalba/1-2-klases/pamokos/{grade}", false);
+    }
+
     private void SelectLesson(string id)
     {
-        selectedLesson = lessons?.FirstOrDefault(l => l.Id == id);
+        selectedLesson = GetLessonsForGrade().FirstOrDefault(l => l.Id == id);
     }
 
     private void BackToList()
@@ -181,8 +223,10 @@
         selectedLesson = null;
     }
 
-    private VocabTopic? GetVocabularyTopic(string topicId)
-        => vocabTopics?.FirstOrDefault(t => t.Id == topicId);
+    private IEnumerable<LessonItem> GetLessonsForGrade() => selectedGrade == 1 ? lessons1 : lessons2;
+
+    private VocabTopic? GetVocabularyTopic(string topicId, int grade)
+        => (grade == 1 ? vocabTopics1 : vocabTopics2).FirstOrDefault(t => t.Id == topicId);
 
     private sealed class LessonsData
     {
