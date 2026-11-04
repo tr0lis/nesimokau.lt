@@ -237,7 +237,9 @@ for (const page of sitemapPages) {
 }
 const urls = sitemapPages.map((page) => `  <url><loc>${origin}${page.path}</loc></url>`).join('\n');
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
-const robots = `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /pasiekimai\nDisallow: /rezultatai\nDisallow: /turnyrine-lentele\nDisallow: /mediateka\nDisallow: /pasitaisyti\nDisallow: /diagnostika\nDisallow: /skaiciuokle\nDisallow: /prisijungimas\nDisallow: /registracija\nSitemap: ${origin}/sitemap.xml\n`;
+const aiBots = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-Web', 'anthropic-ai', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'CCBot', 'Bingbot'];
+const aiRules = aiBots.map((bot) => `User-agent: ${bot}\nAllow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /prisijungimas\nDisallow: /registracija\n`).join('\n') + '\n';
+const robots = aiRules + `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /pasiekimai\nDisallow: /rezultatai\nDisallow: /turnyrine-lentele\nDisallow: /mediateka\nDisallow: /pasitaisyti\nDisallow: /diagnostika\nDisallow: /skaiciuokle\nDisallow: /prisijungimas\nDisallow: /registracija\nSitemap: ${origin}/sitemap.xml\n`;
 await fs.writeFile(path.join(outputRoot, 'sitemap.xml'), sitemap);
 await fs.writeFile(path.join(outputRoot, 'robots.txt'), robots);
 await fs.writeFile(path.join(sourceRoot, 'sitemap.xml'), sitemap);
