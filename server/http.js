@@ -1,5 +1,5 @@
 import { getConfig, isOriginAllowed } from './config.js';
-import { pb, q } from './pb.js';
+import { db } from './supabase.js';
 import { hmac } from './crypto.js';
 
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
@@ -88,33 +88,29 @@ export function setSessionCookie(res, token, maxAgeSeconds) {
 export const clearSessionCookie = (res) => setSessionCookie(res, '', 0);
 
 /**
- * Persistent fixed-window rate limiter backed by PocketBase (serverless functions have no shared memory).
+ * Persistent fixed-window rate limiter backed by Supabase (serverless functions have no shared memory).
  * Throws HTTP 429 when the limit is exceeded.
  */
 export async function rateLimit(key, max, windowSeconds) {
   const hashed = hmac(key, 'rl');
   const now = Date.now();
-  const row = await pb.first('rate_limits', `key = ${q(hashed)}`);
-
-  if (!row || row.reset_ms <= now) {
-    const body = { key: hashed, count: 1, reset_ms: now + windowSeconds * 1000 };
-    if (row) await pb.update('rate_limits', row.id, body);
-    else await pb.create('rate_limits', body).catch(() => null);
-    return;
-  }
-
-  if (row.count >= max) {
-    const retry = Math.ceil((row.reset_ms - now) / 1000);
+  const result = await db.rpc('consume_rate_limit', {
+    p_key: hashed,
+    p_now_ms: now,
+    p_window_ms: windowSeconds * 1000,
+  });
+  const row = Array.isArray(result) ? result[0] : result;
+  const count = Number(row?.hit_count);
+  if (count > max) {
+    const retry = Math.max(1, Math.ceil((Number(row.reset_at_ms) - now) / 1000));
     throw new HttpError(429, `Per daug bandymų. Pabandyk po ${Math.ceil(retry / 60)} min.`, { retryAfter: retry });
   }
-
-  await pb.update('rate_limits', row.id, { count: row.count + 1 });
 }
 
 export async function audit(req, uid, type, detail = '') {
   try {
-    await pb.create('auth_events', { uid: uid ?? '', type, ip_hash: ipHash(req), detail: String(detail).slice(0, 200), at_ms: Date.now() });
-  } catch {
-    // auditing must never break the request
+    await db.create('auth_events', { uid: uid ?? '', type, ip_hash: ipHash(req), detail: String(detail).slice(0, 200), at_ms: Date.now() });
+  } catch (error) {
+    console.error('Failed to write auth audit event:', error instanceof Error ? error.message : 'Unknown error');
   }
 }

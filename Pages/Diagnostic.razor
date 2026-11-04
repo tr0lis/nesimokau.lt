@@ -5,7 +5,7 @@
 @inject nesimokau.lt.Services.ProgressService Progress
 @implements IDisposable
 
-<PageTitle>Diagnostinis testas | nesimokau.lt</PageTitle>
+<SeoHead Title="Diagnostinis testas | nesimokau.lt" Description="Asmeninis diagnostinis mokymosi testas." Indexable="false" />
 
 @if (Subject is not "Lietuvių kalba")
 {
@@ -53,7 +53,7 @@ else
     private Task Speak() => JS.InvokeVoidAsync("nesimokau.speak", Current.Prompt).AsTask();
     private string Elapsed => (DateTime.Now - startedAt).ToString(@"mm\:ss");
     private async Task HandleKeyDown(KeyboardEventArgs eventArgs) { if (eventArgs.Key == "Enter" && !string.IsNullOrWhiteSpace(answer)) await Next(); }
-    private async Task ConfirmLeave(LocationChangingContext context) { if (!await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti.")) context.PreventNavigation(); }
+    private async Task ConfirmLeave(LocationChangingContext context) { if (!await JS.InvokeAsync<bool>("nesimokau.confirmLeave")) context.PreventNavigation(); }
     public void Dispose() => clock?.Dispose();
     private sealed record DiagnosticQuestion(string Kind, string Prompt, string Answer);
 }

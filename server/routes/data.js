@@ -1,4 +1,4 @@
-import { pb, q } from '../pb.js';
+import { db, q } from '../supabase.js';
 import { HttpError, rateLimit, sendJson, readJson } from '../http.js';
 import { requirePlayer } from '../sessions.js';
 
@@ -74,7 +74,7 @@ function toClient(row) {
 export const dataRoutes = {
   async 'GET /progress'(req, res) {
     const { player } = await requirePlayer(req, res);
-    const row = await pb.first('user_progress', `uid = ${q(player.uid)}`);
+    const row = await db.first('user_progress', `uid = ${q(player.uid)}`);
     sendJson(res, 200, row ? toClient(row) : null);
   },
 
@@ -112,12 +112,12 @@ export const dataRoutes = {
       score: computeScore(recent, bestScore),
     };
 
-    const existing = await pb.first('user_progress', `uid = ${q(player.uid)}`);
-    if (existing) await pb.update('user_progress', existing.id, data);
-    else await pb.create('user_progress', data);
+    const existing = await db.first('user_progress', `uid = ${q(player.uid)}`);
+    if (existing) await db.update('user_progress', existing.id, data);
+    else await db.create('user_progress', data);
 
     if (data.avatar_id !== player.avatar_id || data.class_group !== player.class_group) {
-      await pb.update('players', player.id, { avatar_id: data.avatar_id, class_group: data.class_group });
+      await db.update('players', player.id, { avatar_id: data.avatar_id, class_group: data.class_group });
     }
 
     sendJson(res, 200, { ok: true });
@@ -125,7 +125,7 @@ export const dataRoutes = {
 
   async 'GET /leaderboard'(req, res) {
     await requirePlayer(req, res);
-    const rows = await pb.list('user_progress', {
+    const rows = await db.list('user_progress', {
       sort: '-score,updated',
       perPage: 200,
       fields: 'uid,name,score,avatar_id,avatar_background',
@@ -141,8 +141,8 @@ export const dataRoutes = {
 
   async 'POST /leaderboard/reset'(req, res) {
     const { player } = await requirePlayer(req, res);
-    const row = await pb.first('user_progress', `uid = ${q(player.uid)}`);
-    if (row) await pb.update('user_progress', row.id, { score: 0 });
+    const row = await db.first('user_progress', `uid = ${q(player.uid)}`);
+    if (row) await db.update('user_progress', row.id, { score: 0 });
     sendJson(res, 200, { ok: true });
   },
 
@@ -159,7 +159,7 @@ export const dataRoutes = {
       if (json.length <= 4000) payload = JSON.parse(json);
     } catch { /* ignore */ }
 
-    await pb.create('activity_log', {
+    await db.create('activity_log', {
       uid: player.uid,
       username: player.username,
       event_type: eventType,

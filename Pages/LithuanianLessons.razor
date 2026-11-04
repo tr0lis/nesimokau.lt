@@ -5,7 +5,7 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
-<PageTitle>Pamokos 1–2 klasei | Lietuvių kalba | nesimokau.lt</PageTitle>
+<SeoHead Title="@SeoTitle" Description="@SeoDescription" CanonicalPath="@SeoPath" />
 
 <section class="subject-page">
     <header class="subject-page-header">
@@ -170,6 +170,18 @@
     private int selectedGrade = 1;
 
     [Parameter] public string? GradeSlug { get; set; }
+
+    private string SeoPath => string.IsNullOrWhiteSpace(GradeSlug) ? "/lietuviu-kalba/1-2-klases/pamokos" : $"/lietuviu-kalba/1-2-klases/pamokos/{GradeSlug}";
+    private string SeoTitle => GradeSlug == "2"
+        ? "Lietuvių kalbos užduotys 2 klasei – pamokos | nesimokau.lt"
+        : GradeSlug == "1"
+            ? "Lietuvių kalbos užduotys 1 klasei – pamokos | nesimokau.lt"
+            : "Lietuvių kalbos pamokos 1–2 klasei | nesimokau.lt";
+    private string SeoDescription => GradeSlug == "2"
+        ? "Mokomoji medžiaga ir lietuvių kalbos užduotys 2 klasei: žodynas, gramatika ir interaktyvūs pratimai."
+        : GradeSlug == "1"
+            ? "Mokomoji medžiaga ir užduotys 1 klasei: lietuvių kalbos žodynas, paprastos taisyklės ir mokymasis žaidžiant."
+            : "A1 ir A2 lygio lietuvių kalbos pamokos, žodynas ir užduotys 1 bei 2 klasei. Pasirink klasę ir mokykis savo tempu.";
 
     protected override async Task OnInitializedAsync()
     {

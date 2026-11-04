@@ -7,7 +7,9 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<PageTitle>Skaičių arena | nesimokau.lt</PageTitle>
+<SeoHead Title="Skaičių arena – matematikos žaidimas vaikams | nesimokau.lt"
+         Description="Žaisk skaičių areną: spręsk sudėties, atimties, daugybos ir dalybos užduotis bei lavink skaičiavimo įgūdžius."
+         CanonicalPath="/matematika/zaidimai/skaiciu-arena" />
 
 @if (loading)
 {
@@ -398,5 +400,5 @@ else if (current is not null)
     private void GoHome() => Navigation.NavigateTo("/matematika");
     private void GoBackToSubject() => Navigation.NavigateTo("/matematika");
     private void DismissLevelUp() => levelUp = null;
-    private async Task ConfirmLeave(LocationChangingContext context) { if (!finished && !await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti.")) context.PreventNavigation(); }
+    private async Task ConfirmLeave(LocationChangingContext context) { if (!finished && !await JS.InvokeAsync<bool>("nesimokau.confirmLeave")) context.PreventNavigation(); }
 }

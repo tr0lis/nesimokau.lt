@@ -23,6 +23,43 @@ create index if not exists idx_player_accounts_username
 create index if not exists idx_player_accounts_updated_at
   on public.player_accounts (updated_at desc);
 
+alter table public.player_accounts
+  add column if not exists username_lower text;
+
+update public.player_accounts
+set username_lower = lower(username)
+where username_lower is distinct from lower(username);
+
+alter table public.player_accounts
+  alter column username_lower set not null,
+  add column if not exists totp_secret_enc text not null default '',
+  add column if not exists totp_pending_enc text not null default '',
+  add column if not exists totp_enabled boolean not null default false,
+  add column if not exists totp_last_step bigint not null default 0,
+  add column if not exists backup_codes jsonb not null default '[]'::jsonb,
+  add column if not exists failed_logins int not null default 0,
+  add column if not exists locked_until_ms bigint not null default 0,
+  add column if not exists last_login_ms bigint not null default 0;
+
+create unique index if not exists idx_player_accounts_username_lower
+  on public.player_accounts (username_lower);
+
+create or replace function public.set_player_username_lower()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.username_lower = lower(new.username);
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_player_accounts_username_lower on public.player_accounts;
+create trigger trg_player_accounts_username_lower
+before insert or update of username on public.player_accounts
+for each row
+execute procedure public.set_player_username_lower();
+
 -- =========================
 -- User progress (DB-first persistence)
 -- =========================
@@ -124,6 +161,69 @@ create index if not exists idx_user_activity_game
 create index if not exists idx_user_activity_payload_gin
   on public.user_activity_log using gin (payload);
 
+-- Private application sessions and security telemetry. These tables are accessed
+-- only by the Vercel API through the Supabase service-role key.
+create table if not exists public.auth_sessions (
+  id uuid primary key default gen_random_uuid(),
+  token_hash text not null unique,
+  uid uuid not null references public.player_accounts(id) on delete cascade,
+  created_ms bigint not null,
+  last_seen_ms bigint not null,
+  expires_ms bigint not null,
+  ip_hash text not null default '',
+  user_agent text not null default ''
+);
+
+create index if not exists idx_auth_sessions_uid on public.auth_sessions (uid);
+
+create table if not exists public.rate_limits (
+  key text primary key,
+  count int not null,
+  reset_ms bigint not null
+);
+
+create table if not exists public.auth_events (
+  id uuid primary key default gen_random_uuid(),
+  uid text not null default '',
+  type text not null,
+  ip_hash text not null default '',
+  detail text not null default '',
+  at_ms bigint not null
+);
+
+create index if not exists idx_auth_events_uid_time on public.auth_events (uid, at_ms desc);
+
+create or replace function public.consume_rate_limit(p_key text, p_now_ms bigint, p_window_ms bigint)
+returns table (hit_count int, reset_at_ms bigint)
+language sql
+security definer
+set search_path = public
+as $$
+  insert into public.rate_limits as limits (key, count, reset_ms)
+  values (p_key, 1, p_now_ms + p_window_ms)
+  on conflict (key) do update
+  set count = case when limits.reset_ms <= p_now_ms then 1 else limits.count + 1 end,
+      reset_ms = case when limits.reset_ms <= p_now_ms then p_now_ms + p_window_ms else limits.reset_ms end
+  returning limits.count, limits.reset_ms;
+$$;
+
+revoke all on function public.consume_rate_limit(text, bigint, bigint) from public, anon, authenticated;
+grant execute on function public.consume_rate_limit(text, bigint, bigint) to service_role;
+
+do $$
+declare table_name text;
+begin
+  foreach table_name in array array[
+    'player_accounts', 'user_progress', 'leaderboard', 'user_activity_log',
+    'auth_sessions', 'rate_limits', 'auth_events'
+  ] loop
+    execute format('alter table public.%I enable row level security', table_name);
+    execute format('revoke all on public.%I from public, anon, authenticated', table_name);
+    execute format('grant all on public.%I to service_role', table_name);
+  end loop;
+end;
+$$;
+
 -- Backfill/migration safety for older DBs
 alter table if exists public.player_accounts
   add column if not exists created_at timestamptz not null default now();
@@ -183,99 +283,27 @@ execute procedure public.set_updated_at();
 -- =========================
 -- RLS
 -- =========================
-alter table public.player_accounts enable row level security;
-alter table public.leaderboard enable row level security;
-alter table public.user_activity_log enable row level security;
-alter table public.user_progress enable row level security;
-
--- Drop old policies if rerun
-
-drop policy if exists "anon read player_accounts" on public.player_accounts;
-drop policy if exists "anon insert player_accounts" on public.player_accounts;
-drop policy if exists "anon update player_accounts" on public.player_accounts;
-
-drop policy if exists "public read leaderboard" on public.leaderboard;
-drop policy if exists "public insert leaderboard" on public.leaderboard;
-drop policy if exists "public update leaderboard" on public.leaderboard;
-
-drop policy if exists "anon read user_activity_log" on public.user_activity_log;
-drop policy if exists "anon insert user_activity_log" on public.user_activity_log;
-
-drop policy if exists "anon read user_progress" on public.user_progress;
-drop policy if exists "anon insert user_progress" on public.user_progress;
-drop policy if exists "anon update user_progress" on public.user_progress;
-
--- NOTE: These anon policies are for current WASM/testing architecture.
--- For production security, move auth/updates to server-side API and tighten policies.
-
-create policy "anon read player_accounts"
-on public.player_accounts
-for select
-to anon
-using (true);
-
-create policy "anon insert player_accounts"
-on public.player_accounts
-for insert
-to anon
-with check (true);
-
-create policy "anon update player_accounts"
-on public.player_accounts
-for update
-to anon
-using (true)
-with check (true);
-
-create policy "public read leaderboard"
-on public.leaderboard
-for select
-to anon
-using (true);
-
-create policy "public insert leaderboard"
-on public.leaderboard
-for insert
-to anon
-with check (true);
-
-create policy "public update leaderboard"
-on public.leaderboard
-for update
-to anon
-using (true)
-with check (true);
-
-create policy "anon read user_activity_log"
-on public.user_activity_log
-for select
-to anon
-using (true);
-
-create policy "anon insert user_activity_log"
-on public.user_activity_log
-for insert
-to anon
-with check (true);
-
-create policy "anon read user_progress"
-on public.user_progress
-for select
-to anon
-using (true);
-
-create policy "anon insert user_progress"
-on public.user_progress
-for insert
-to anon
-with check (true);
-
-create policy "anon update user_progress"
-on public.user_progress
-for update
-to anon
-using (true)
-with check (true);
+do $$
+declare existing_policy record;
+begin
+  for existing_policy in
+    select schemaname, tablename, policyname
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = any(array[
+        'player_accounts', 'user_progress', 'leaderboard', 'user_activity_log',
+        'auth_sessions', 'rate_limits', 'auth_events'
+      ])
+  loop
+    execute format(
+      'drop policy if exists %I on %I.%I',
+      existing_policy.policyname,
+      existing_policy.schemaname,
+      existing_policy.tablename
+    );
+  end loop;
+end;
+$$;
 
 -- =========================
 -- Convenience views
@@ -350,6 +378,18 @@ select
 from public.user_activity_log
 group by 1
 order by day desc;
+
+do $$
+declare view_name text;
+begin
+  foreach view_name in array array[
+    'v_user_timeline', 'v_user_progress_lt', 'v_user_error_summary', 'v_daily_activity'
+  ] loop
+    execute format('revoke all on public.%I from public, anon, authenticated', view_name);
+    execute format('grant select on public.%I to service_role', view_name);
+  end loop;
+end;
+$$;
 
 -- =========================
 -- Example useful queries

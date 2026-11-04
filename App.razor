@@ -44,8 +44,8 @@
     private async Task EnforceAuthAsync(string absoluteUri)
     {
         var relativePath = NavigationManager.ToBaseRelativePath(absoluteUri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
-        var isAuthRoute = relativePath is "registracija" or "prisijungimas";
-        if (isAuthRoute) return;
+        var privateRoots = new[] { "profilis", "pasiekimai", "rezultatai", "turnyrine-lentele", "mediateka", "pasitaisyti", "diagnostika", "skaiciuokle" };
+        if (!privateRoots.Any(root => relativePath == root || relativePath.StartsWith(root + "/", StringComparison.Ordinal))) return;
 
         var authenticated = await Auth.IsAuthenticatedAsync();
         if (!authenticated)

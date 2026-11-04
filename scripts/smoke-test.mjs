@@ -1,4 +1,4 @@
-// Smoke test: node scripts/smoke-test.mjs  (needs PocketBase + `npm run dev:api` running)
+// Smoke test: node scripts/smoke-test.mjs (needs Supabase env vars + `npm run dev:api`)
 import crypto from 'node:crypto';
 
 const base = process.env.API ?? 'http://localhost:3011';

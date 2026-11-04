@@ -3,13 +3,11 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Vercel serverless API (auth, 2FA, progress, leaderboard) for nesimokau.lt on top of PocketBase",
+  "description": "Vercel serverless API (auth, 2FA, progress, leaderboard) for nesimokau.lt on Supabase",
   "engines": { "node": ">=20" },
   "scripts": {
     "dev:api": "node dev/server.mjs",
-    "pb:setup": "powershell -ExecutionPolicy Bypass -File scripts/setup-pocketbase.ps1",
-    "pb:start": "powershell -ExecutionPolicy Bypass -File scripts/start-pocketbase.ps1",
-    "migrate:supabase": "node scripts/migrate-supabase-to-pocketbase.mjs"
+    "test:api": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "qrcode": "^1.5.4"

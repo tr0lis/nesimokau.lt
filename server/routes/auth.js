@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import QRCode from 'qrcode';
-import { pb, q } from '../pb.js';
+import { db, q } from '../supabase.js';
 import {
   hashPassword, verifyPassword, burnPasswordCheck, encrypt, decrypt, signTicket, verifyTicket,
   generateTotpSecret, verifyTotp, buildOtpAuthUri, generateBackupCodes, hashBackupCode, normalizeBackupCode, safeEqual,
@@ -50,7 +50,7 @@ async function verifySecondFactor(player, rawCode) {
   if (/^\d{6}$/.test(code)) {
     const step = verifyTotp(decrypt(player.totp_secret_enc), code, Number(player.totp_last_step || 0));
     if (step === null) return false;
-    await pb.update('players', player.id, { totp_last_step: step });
+    await db.update('players', player.id, { totp_last_step: step });
     return true;
   }
 
@@ -62,7 +62,7 @@ async function verifySecondFactor(player, rawCode) {
   const match = codes.find((c) => safeEqual(c, hash));
   if (!match) return false;
 
-  await pb.update('players', player.id, { backup_codes: codes.filter((c) => c !== match) });
+  await db.update('players', player.id, { backup_codes: codes.filter((c) => c !== match) });
   return true;
 }
 
@@ -92,13 +92,13 @@ export const authRoutes = {
     const weak = validatePassword(password, username);
     if (weak) throw new HttpError(400, weak);
 
-    if (await pb.first('players', `username_lower = ${q(username.toLowerCase())}`)) {
+    if (await db.first('players', `username_lower = ${q(username.toLowerCase())}`)) {
       throw new HttpError(409, 'Toks slapyvardis jau užimtas.');
     }
 
     const uid = crypto.randomUUID();
     try {
-      await pb.create('players', {
+      await db.create('players', {
         uid,
         username,
         username_lower: username.toLowerCase(),
@@ -134,7 +134,7 @@ export const authRoutes = {
       throw generic;
     }
 
-    const player = await pb.first('players', `username_lower = ${q(username.toLowerCase())}`);
+    const player = await db.first('players', `username_lower = ${q(username.toLowerCase())}`);
     if (!player) {
       await burnPasswordCheck(password);
       throw generic;
@@ -148,7 +148,7 @@ export const authRoutes = {
     const result = await verifyPassword(password, player.password_hash);
     if (!result.ok) {
       const failed = Number(player.failed_logins || 0) + 1;
-      await pb.update('players', player.id, {
+      await db.update('players', player.id, {
         failed_logins: failed,
         locked_until_ms: failed >= LOCK_THRESHOLD ? Date.now() + LOCK_MS : 0,
       });
@@ -157,7 +157,7 @@ export const authRoutes = {
     }
 
     if (result.needsRehash) {
-      await pb.update('players', player.id, { password_hash: await hashPassword(password) });
+      await db.update('players', player.id, { password_hash: await hashPassword(password) });
     }
 
     if (player.totp_enabled) {
@@ -165,7 +165,7 @@ export const authRoutes = {
       return sendJson(res, 200, { mfaRequired: true, ticket: signTicket({ uid: player.uid }, 5 * 60 * 1000) });
     }
 
-    await pb.update('players', player.id, { failed_logins: 0, locked_until_ms: 0, last_login_ms: Date.now() });
+    await db.update('players', player.id, { failed_logins: 0, locked_until_ms: 0, last_login_ms: Date.now() });
     await createSession(req, res, player.uid);
     await audit(req, player.uid, 'login');
     sendJson(res, 200, { user: publicUser(player) });
@@ -179,7 +179,7 @@ export const authRoutes = {
     await rateLimit(`mfa-ticket:${ticket.jti}`, 5, 300);
     await rateLimit(`mfa-user:${ticket.uid}`, 15, 900);
 
-    const player = await pb.first('players', `uid = ${q(ticket.uid)}`);
+    const player = await db.first('players', `uid = ${q(ticket.uid)}`);
     if (!player || !player.totp_enabled) throw new HttpError(401, 'Prisijungti nepavyko.');
 
     if (!(await verifySecondFactor(player, body.code))) {
@@ -187,7 +187,7 @@ export const authRoutes = {
       throw new HttpError(401, 'Neteisingas kodas.');
     }
 
-    await pb.update('players', player.id, { failed_logins: 0, locked_until_ms: 0, last_login_ms: Date.now() });
+    await db.update('players', player.id, { failed_logins: 0, locked_until_ms: 0, last_login_ms: Date.now() });
     await createSession(req, res, player.uid);
     await audit(req, player.uid, 'login_mfa');
     sendJson(res, 200, { user: publicUser(player) });
@@ -195,7 +195,7 @@ export const authRoutes = {
 
   async 'GET /auth/me'(req, res) {
     const session = await getSession(req, res);
-    const player = session ? await pb.first('players', `uid = ${q(session.uid)}`) : null;
+    const player = session ? await db.first('players', `uid = ${q(session.uid)}`) : null;
     sendJson(res, 200, player ? { authenticated: true, user: publicUser(player) } : { authenticated: false });
   },
 
@@ -208,7 +208,7 @@ export const authRoutes = {
     await rateLimit(`uname:${clientIp(req)}`, 60, 600);
     const username = str(new URL(req.url, 'http://x').searchParams.get('u'), 40).trim();
     if (!USERNAME.test(username)) return sendJson(res, 200, { available: false, valid: false });
-    const existing = await pb.first('players', `username_lower = ${q(username.toLowerCase())}`);
+    const existing = await db.first('players', `username_lower = ${q(username.toLowerCase())}`);
     sendJson(res, 200, { available: !existing, valid: true });
   },
 
@@ -217,7 +217,7 @@ export const authRoutes = {
     const body = await readJson(req);
     const avatarId = str(body.avatarId, 40);
     if (!AVATAR.test(avatarId)) throw new HttpError(400, 'Neteisingas avataras.');
-    await pb.update('players', player.id, { avatar_id: avatarId });
+    await db.update('players', player.id, { avatar_id: avatarId });
     sendJson(res, 200, { ok: true });
   },
 
@@ -228,7 +228,7 @@ export const authRoutes = {
     await reauthenticate(player, body.password);
 
     const secret = generateTotpSecret();
-    await pb.update('players', player.id, { totp_pending_enc: encrypt(secret) });
+    await db.update('players', player.id, { totp_pending_enc: encrypt(secret) });
 
     const uri = buildOtpAuthUri(secret, player.username);
     sendJson(res, 200, { secret, otpauthUri: uri, qr: qrFor(uri) });
@@ -246,7 +246,7 @@ export const authRoutes = {
     if (step === null) throw new HttpError(400, 'Neteisingas kodas. Patikrink programėlę ir bandyk dar kartą.');
 
     const backupCodes = generateBackupCodes();
-    await pb.update('players', player.id, {
+    await db.update('players', player.id, {
       totp_secret_enc: encrypt(secret),
       totp_pending_enc: '',
       totp_enabled: true,
@@ -264,7 +264,7 @@ export const authRoutes = {
     await reauthenticate(player, body.password);
     if (!(await verifySecondFactor(player, body.code))) throw new HttpError(403, 'Neteisingas kodas.');
 
-    await pb.update('players', player.id, { totp_enabled: false, totp_secret_enc: '', totp_pending_enc: '', totp_last_step: 0, backup_codes: [] });
+    await db.update('players', player.id, { totp_enabled: false, totp_secret_enc: '', totp_pending_enc: '', totp_last_step: 0, backup_codes: [] });
     await audit(req, player.uid, '2fa_disabled');
     sendJson(res, 200, { ok: true });
   },
@@ -277,7 +277,7 @@ export const authRoutes = {
     if (!(await verifySecondFactor(player, body.code))) throw new HttpError(403, 'Neteisingas kodas.');
 
     const backupCodes = generateBackupCodes();
-    await pb.update('players', player.id, { backup_codes: backupCodes.map(hashBackupCode) });
+    await db.update('players', player.id, { backup_codes: backupCodes.map(hashBackupCode) });
     await audit(req, player.uid, '2fa_codes_regenerated');
     sendJson(res, 200, { backupCodes });
   },
@@ -292,7 +292,7 @@ export const authRoutes = {
     const weak = validatePassword(newPassword, player.username);
     if (weak) throw new HttpError(400, weak);
 
-    await pb.update('players', player.id, { password_hash: await hashPassword(newPassword) });
+    await db.update('players', player.id, { password_hash: await hashPassword(newPassword) });
     await revokeAllSessions(player.uid, session.id);
     await audit(req, player.uid, 'password_changed');
     sendJson(res, 200, { ok: true });

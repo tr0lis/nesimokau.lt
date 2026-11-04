@@ -4,14 +4,16 @@
 @inject ProgressService Progress
 @implements IDisposable
 
-<PageTitle>Nemokami mokomieji žaidimai vaikams | nesimokau.lt</PageTitle>
+<SeoHead Title="Nemokami mokomieji žaidimai vaikams | nesimokau.lt"
+         Description="Atrask nemokamus mokomuosius žaidimus ir interaktyvias užduotis vaikams. Lietuvių kalba, matematika ir mokymasis žaidžiant pagal klases."
+         CanonicalPath="/" />
 
 <section class="subjects-home">
     <div class="dashboard-head">
         <div>
             <p class="eyebrow">Mokymasis žaidžiant <span class="spark">✦</span></p>
-            <h1>Pasirink dalyką</h1>
-            <p class="subtitle">Pagrindiniame puslapyje rodomi tik dalykai. Pratimai atsidaro pasirinkto dalyko lange.</p>
+            <h1>Nemokami mokomieji žaidimai vaikams</h1>
+            <p class="subtitle">Edukaciniai žaidimai vaikams, lietuvių kalbos ir matematikos užduotys. Mokykis žaidžiant, atrask naujų temų ir mokykis savo tempu.</p>
         </div>
         <button class="level-card level-card-@CurrentLevel.Color" @onclick="() => showLevels = true" title="Peržiūrėti lygius">
             <div class="level-top"><span class="level-label">LYGIS @CurrentLevel.Number</span><strong>⚡ @progress.Xp Energija</strong></div>

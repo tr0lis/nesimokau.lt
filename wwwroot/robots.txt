@@ -1,4 +1,13 @@
 User-agent: *
 Allow: /
-
+Disallow: /profilis
+Disallow: /pasiekimai
+Disallow: /rezultatai
+Disallow: /turnyrine-lentele
+Disallow: /mediateka
+Disallow: /pasitaisyti
+Disallow: /diagnostika
+Disallow: /skaiciuokle
+Disallow: /prisijungimas
+Disallow: /registracija
 Sitemap: https://nesimokau.lt/sitemap.xml

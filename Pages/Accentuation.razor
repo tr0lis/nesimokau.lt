@@ -12,7 +12,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<PageTitle>Kirčiavimo pratimas | nesimokau.lt</PageTitle>
+<SeoHead Title="@SeoTitle" Description="@SeoDescription" CanonicalPath="@SeoPath" Indexable="@SeoIndexable" />
 
 @if (loading)
 {
@@ -138,6 +138,17 @@ else if (current is not null)
     private int Accuracy => questions.Count == 0 ? 0 : Math.Max(0, (questions.Count - wrongAnswers) * 100 / questions.Count);
 
     [Parameter] public string? ClassSlug { get; set; }
+
+    private bool SeoIndexable => ClassSlug is null || SupportedClassSlugs.Contains(ClassSlug);
+    private string SeoPath => SeoIndexable && ClassSlug is not null ? $"lietuviu-kalba/{ClassSlug}/kirciavimas" : "zaidimai/kirciavimas";
+    private string SeoGrade => ClassSlug is null ? string.Empty : $" {ClassSlug.Replace("-klases", string.Empty).Replace("-", "–")} klasei";
+    private string SeoTitle => ClassSlug is null
+        ? "Kirčiavimo užduotys ir žaidimas vaikams | nesimokau.lt"
+        : $"Kirčiavimo užduotys{SeoGrade} | nesimokau.lt";
+    private string SeoDescription => ClassSlug is null
+        ? "Mokykis lietuviškų žodžių kirčiavimo interaktyviame žaidime. Klausykis tarimo ir lavink kalbos pojūtį."
+        : $"Kirčiavimo užduotys{SeoGrade}: klausykis žodžių, nustatyk kirčio vietą ir stiprink lietuvių kalbos įgūdžius.";
+    private static readonly HashSet<string> SupportedClassSlugs = ["1-2-klases", "3-4-klases", "5-6-klases", "7-8-klases", "9-10-klases", "11-12-klases"];
     [SupplyParameterFromQuery(Name = "level")] public string? LevelSlug { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -444,7 +455,7 @@ else if (current is not null)
 
     private async Task ConfirmLeave(LocationChangingContext context)
     {
-        if (!finished && !await JS.InvokeAsync<bool>("confirm", "Ar tikrai nori išeiti? Rezultatai nebus įskaityti."))
+        if (!finished && !await JS.InvokeAsync<bool>("nesimokau.confirmLeave"))
         {
             context.PreventNavigation();
         }

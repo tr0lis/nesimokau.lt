@@ -1,0 +1,40 @@
+@using System.Text.Json
+
+<PageTitle>@Title</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Description" />
+    <meta name="robots" content="@(Indexable ? "index,follow,max-image-preview:large" : "noindex,nofollow")" />
+    <link rel="canonical" href="@CanonicalUrl" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="lt_LT" />
+    <meta property="og:site_name" content="nesimokau.lt" />
+    <meta property="og:title" content="@Title" />
+    <meta property="og:description" content="@Description" />
+    <meta property="og:url" content="@CanonicalUrl" />
+    <meta property="og:image" content="https://nesimokau.lt/images/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@Title" />
+    <meta name="twitter:description" content="@Description" />
+    <meta name="twitter:image" content="https://nesimokau.lt/images/og-image.png" />
+    <script type="application/ld+json">@((MarkupString)StructuredData)</script>
+</HeadContent>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
+    [Parameter] public string CanonicalPath { get; set; } = "/";
+    [Parameter] public bool Indexable { get; set; } = true;
+
+    private string CanonicalUrl => $"https://nesimokau.lt/{CanonicalPath.TrimStart('/')}";
+    private string StructuredData => JsonSerializer.Serialize(new
+    {
+        @context = "https://schema.org",
+        @type = "WebPage",
+        name = Title,
+        description = Description,
+        url = CanonicalUrl,
+        inLanguage = "lt-LT",
+        isPartOf = new { @type = "WebSite", name = "nesimokau.lt", url = "https://nesimokau.lt/" },
+        primaryImageOfPage = "https://nesimokau.lt/images/og-image.png"
+    }).Replace("<", "\\u003C", StringComparison.Ordinal);
+}

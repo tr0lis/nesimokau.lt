@@ -8,9 +8,5 @@ node_modules/
 .vercel/
 public/
 out/
-pocketbase/pb_data/
-pocketbase/pocketbase.exe
-pocketbase/pocketbase
-pocketbase/*.zip
-pocketbase/CHANGELOG.md
-pocketbase/LICENSE.md
+/publish/
+/pocketbase/pb_data/

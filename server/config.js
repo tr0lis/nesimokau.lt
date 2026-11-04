@@ -16,12 +16,13 @@ export function getConfig() {
 
   const encKey = Buffer.from(required('TOTP_ENC_KEY'), 'base64');
   if (encKey.length !== 32) throw new Error('TOTP_ENC_KEY must be 32 random bytes encoded as base64');
+  const supabaseUrl = required('SUPABASE_URL').replace(/\/+$/, '');
+  if (isProd && new URL(supabaseUrl).protocol !== 'https:') throw new Error('SUPABASE_URL must use HTTPS in production');
 
   cached = {
     isProd,
-    pbUrl: required('POCKETBASE_URL').replace(/\/+$/, ''),
-    pbEmail: required('PB_ADMIN_EMAIL'),
-    pbPassword: required('PB_ADMIN_PASSWORD'),
+    supabaseUrl,
+    supabaseServiceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY'),
     sessionSecret,
     encKey,
     allowedOrigins: (process.env.ALLOWED_ORIGINS ?? '')

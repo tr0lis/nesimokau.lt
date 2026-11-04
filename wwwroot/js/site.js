@@ -37,6 +37,36 @@ window.nesimokau.speak = function (text) {
     window.speechSynthesis.speak(utterance);
 };
 
+window.nesimokau.confirmLeave = function () {
+    return new Promise(resolve => {
+        const dialog = document.createElement('dialog');
+        dialog.className = 'exit-confirm-dialog';
+        dialog.setAttribute('aria-labelledby', 'exit-confirm-title');
+        dialog.innerHTML = `
+            <div class="exit-confirm-icon" aria-hidden="true">↗</div>
+            <p class="eyebrow">IŠEITI IŠ UŽDUOTIES?</p>
+            <h2 id="exit-confirm-title">Dar nebaigei šio pratimo</h2>
+            <p class="exit-confirm-copy">Jei išeisi dabar, šio bandymo rezultatas nebus išsaugotas.</p>
+            <div class="exit-confirm-actions">
+                <button type="button" class="button button-ghost" data-action="stay">Tęsti užduotį</button>
+                <button type="button" class="button button-primary" data-action="leave">Išeiti vis tiek</button>
+            </div>`;
+        document.body.appendChild(dialog);
+        dialog.addEventListener('click', event => {
+            if (event.target === dialog) dialog.close('stay');
+        });
+        dialog.querySelector('[data-action="stay"]').addEventListener('click', () => dialog.close('stay'));
+        dialog.querySelector('[data-action="leave"]').addEventListener('click', () => dialog.close('leave'));
+        dialog.addEventListener('close', () => {
+            const shouldLeave = dialog.returnValue === 'leave';
+            dialog.remove();
+            resolve(shouldLeave);
+        }, { once: true });
+        dialog.showModal();
+        dialog.querySelector('[data-action="stay"]').focus();
+    });
+};
+
 window.nesimokau.celebrateLevelUp = function () {
     const root = document.createElement('div');
     root.className = 'confetti-root';
