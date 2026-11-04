@@ -1,3 +1,21 @@
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: anthropic-ai
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /profilis
+Disallow: /prisijungimas
+Disallow: /registracija
+
 User-agent: *
 Allow: /
 Disallow: /api/
@@ -11,4 +29,5 @@ Disallow: /diagnostika
 Disallow: /skaiciuokle
 Disallow: /prisijungimas
 Disallow: /registracija
+
 Sitemap: https://nesimokau.lt/sitemap.xml
