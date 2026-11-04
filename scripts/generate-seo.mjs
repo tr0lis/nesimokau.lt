@@ -61,17 +61,6 @@ const pages = [
     ],
     links: [['Lietuvių kalbos pratimai', '/lietuviu-kalba'], ['/ 1 klasės pamokos', '/lietuviu-kalba/1-2-klases/pamokos/1'], ['2 klasės pamokos', '/lietuviu-kalba/1-2-klases/pamokos/2']],
   },
-  {
-    path: '/dienos-issukis',
-    title: 'Dienos mokomasis iššūkis vaikams | nesimokau.lt',
-    description: 'Kasdienė mokomoji užduotis vaikams – trumpas iššūkis žinioms pasitikrinti ir mokytis žaidžiant.',
-    sitemap: true,
-    h1: 'Dienos iššūkis',
-    sections: [
-      ['Mažas žingsnis kiekvieną dieną', 'Išbandyk trumpą užduotį ir skirk kelias minutes naujų žinių kartojimui. Dienos iššūkis papildo lietuvių kalbos bei matematikos pratimus.'],
-    ],
-    links: [['Visi mokomieji žaidimai', '/'], ['Lietuvių kalba', '/lietuviu-kalba'], ['Matematika', '/matematika']],
-  },
 ];
 
 const games = [

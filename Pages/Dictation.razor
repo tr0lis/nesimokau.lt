@@ -118,7 +118,6 @@ else if (current is not null)
     private int earnedXp;
     private int earnedCoins;
     private LevelDefinition? levelUp;
-    private bool dailyMode;
     private string selectedDifficulty = "Lengvas";
     private HashSet<int> sessionSolvedQuestionIds = [];
     private bool showHintConfirm;
@@ -146,9 +145,8 @@ else if (current is not null)
 
     protected override async Task OnInitializedAsync()
     {
-        dailyMode = Navigation.Uri.Contains("mode=daily", StringComparison.OrdinalIgnoreCase);
         var source = await Http.GetFromJsonAsync<List<DictationQuestion>>("data/dictation.json") ?? [];
-        allQuestions = source.Where(question => !dailyMode || question.Category == "Žodžiai").ToList();
+        allQuestions = source;
         selectedDifficulty = ResolveDifficultyFromLevel(LevelSlug);
         playerProgress = await Progress.GetAsync();
         remainingHints = await Progress.GetRemainingHintsTodayAsync(DailyHintLimit);
@@ -194,7 +192,6 @@ else if (current is not null)
                 evt.ClassGroup = ParseClassGroup(playerProgress.ClassGroup);
                 evt.Payload["taskCount"] = questions.Count;
                 evt.Payload["difficulty"] = selectedDifficulty;
-                evt.Payload["dailyMode"] = dailyMode;
             });
         }
 

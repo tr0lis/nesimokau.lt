@@ -23,12 +23,9 @@
         <a class="nav-action nav-subjects" href="/#subjects" @onclick="CloseMobileNavigation">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5h6a3 3 0 0 1 3 3v12a3 3 0 0 0-3-3H4zM20 4.5h-4a3 3 0 0 0-3 3v12a3 3 0 0 1 3-3h4z" /></svg><span>Dalykai ir žaidimai</span>
         </a>
-        <NavLink class="nav-action" href="/dienos-issukis" @onclick="CloseMobileNavigation">
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m13.5 2.8-8 10.1a1 1 0 0 0 .8 1.6h5l-.8 6.7 8-10.1a1 1 0 0 0-.8-1.6h-5z" /></svg><span>Dienos iššūkis</span>
-        </NavLink>
-        <button class="nav-action nav-achievements" type="button" @onclick="OpenAchievements">
+        <NavLink class="nav-action nav-achievements" href="/pasiekimai" @onclick="CloseMobileNavigation">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v4a4 4 0 0 1-8 0zM8 6H5v2a4 4 0 0 0 4 4m7-6h3v2a4 4 0 0 1-4 4m-3 0v5m-4 4h8m-7-4h6v4H9z" /></svg><span>Pasiekimai</span>
-        </button>
+        </NavLink>
 
         <span class="nav-section-label nav-section-secondary">MANO ERDVĖ</span>
         <NavLink class="nav-action nav-leaderboard" href="/turnyrine-lentele" @onclick="CloseMobileNavigation">
@@ -74,11 +71,6 @@
                 <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5.5a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20H10m4-4 4-4-4-4m4 4H9" /></svg><span>Atsijungti</span>
             </button>
         </div>
-        <div class="sidebar-note">
-            <span class="sidebar-note-mark" aria-hidden="true">01</span>
-            <strong>Pažanga prasideda nuo mažo žingsnio.</strong>
-            <a href="/#subjects" @onclick="CloseMobileNavigation">Pradėti mokytis <span aria-hidden="true">→</span></a>
-        </div>
     </nav>
 </header>
 
@@ -89,44 +81,6 @@
         <div><small>NAUJAS PASIEKIMAS</small><strong>@achievementToast.Title</strong><p>@achievementToast.Description</p></div>
         <button @onclick="DismissAchievementToast" aria-label="Uždaryti pranešimą">×</button>
     </aside>
-}
-
-@if (achievementsOpen)
-{
-    <div class="level-modal-backdrop" @onclick="CloseAchievements">
-        <section class="levels-modal achievements-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="achievements-title">
-            <button class="modal-close" @onclick="CloseAchievements" aria-label="Uždaryti">×</button>
-            <p class="eyebrow">TAVO RITMAS</p>
-            <h2 id="achievements-title">Pasiekimai ir serija</h2>
-            <div class="streak-summary"><span>🔥</span><div><strong>@progress.Streak dienų serija</strong><small>Žaisk bent vieną pratimą kasdien.</small></div></div>
-            <div class="streak-calendar" aria-label="Einamo mėnesio aktyvumas">
-                @foreach (var day in CurrentMonthDays)
-                {
-                    <div class="calendar-day @(GamesOn(day) > 0 ? "is-active" : IsMissedDay(day) ? "is-missed" : "")" title="@day.ToString("yyyy-MM-dd"): @GamesOn(day) žaidimų"><small>@day.Day</small><span>🔥</span></div>
-                }
-
-            </div>
-            <div class="section-heading streak-chart-heading"><div><p class="eyebrow">Paskutinės 10 dienų</p><h3>Atliktų pratimų kreivė</h3></div></div>
-            <div class="streak-chart" aria-label="Paskutinių dešimties dienų žaidimų grafikas">
-                @foreach (var day in LastTenDays)
-                {
-                    var count = GamesOn(day);
-                    <div class="streak-chart-day"><span style="height:@(Math.Max(8, count * 24))px"></span><small>@day.ToString("dd")</small><b>@count</b></div>
-                }
-            </div>
-            <div class="achievement-grid">
-                <div class="achievement-card @(progress.GamesCompleted >= 1 ? "is-earned" : "")"><span>🌱</span><div><strong>Pirmas žingsnis</strong><small>Užbaik pirmą žaidimą</small></div></div>
-                <div class="achievement-card @(HasMistake ? "is-earned" : "")"><span>🧩</span><div><strong>Pirma klaida</strong><small>Padaryk pirmą klaidą ir mokykis toliau</small></div></div>
-                <div class="achievement-card @(HasPerfectRun(5) ? "is-earned" : "")"><span>✨</span><div><strong>Švarus penketas</strong><small>5 pamokos iš eilės be klaidų</small></div></div>
-                <div class="achievement-card @(HasPerfectRun(10) ? "is-earned" : "")"><span>🌟</span><div><strong>Dešimtukas</strong><small>10 pamokų iš eilės be klaidų</small></div></div>
-                <div class="achievement-card @(HasPerfectRun(20) ? "is-earned" : "")"><span>💫</span><div><strong>Spindintis kelias</strong><small>20 pamokų iš eilės be klaidų</small></div></div>
-                <div class="achievement-card @(HasPerfectRun(50) ? "is-earned" : "")"><span>👑</span><div><strong>Nepralenkiamas</strong><small>50 pamokų iš eilės be klaidų</small></div></div>
-                <div class="achievement-card @(progress.Streak >= 7 ? "is-earned" : "")"><span>🔥</span><div><strong>Savaitės ugnelė</strong><small>Išlaikyk 7 dienų seriją</small></div></div>
-                <div class="achievement-card @(progress.BestScore >= 500 ? "is-earned" : "")"><span>⭐</span><div><strong>Taškų žvaigždė</strong><small>Surink 500 taškų viename žaidime</small></div></div>
-                <div class="achievement-card @(progress.GamesCompleted >= 25 ? "is-earned" : "")"><span>🏅</span><div><strong>Atkaklus mokinys</strong><small>Užbaik 25 žaidimus</small></div></div>
-            </div>
-        </section>
-    </div>
 }
 
 @if (practiceOpen)
@@ -186,7 +140,6 @@
 
 @code {
     private StudentProgress progress = new();
-    private bool achievementsOpen;
     private bool practiceOpen;
     private bool mediaLibraryOpen;
     private bool mobileNavOpen;
@@ -212,8 +165,6 @@
     }
 
     private void CloseMobileNavigation() => mobileNavOpen = false;
-    private IEnumerable<DateTime> CurrentMonthDays => Enumerable.Range(1, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month)).Select(day => new DateTime(DateTime.Today.Year, DateTime.Today.Month, day));
-    private IEnumerable<DateTime> LastTenDays => Enumerable.Range(0, 10).Select(day => DateTime.Today.AddDays(-9 + day));
     private IEnumerable<string> PracticeSubjects => ["Visi", .. Catalog.Games.Where(game => game.Status == GameStatus.Ready).Select(game => game.Subject).Distinct()];
     private IEnumerable<string> MediaSubjects => ["Visi", .. Catalog.Games.Select(game => game.Subject).Distinct()];
     private IEnumerable<PracticeTarget> PracticeTargets => Catalog.Games
@@ -221,8 +172,6 @@
         .Select(game => new { Game = game, Result = progress.RecentResults.Where(result => result.GameId == game.Id).OrderBy(result => result.Accuracy).FirstOrDefault() })
         .Where(item => item.Result is not null && item.Result.Accuracy < 100)
         .Select(item => new PracticeTarget(item.Game, item.Result!.Accuracy));
-    private int GamesOn(DateTime day) => progress.RecentResults.Count(result => result.PlayedAt.ToLocalTime().Date == day.Date);
-    private bool IsMissedDay(DateTime day) => day.Date < DateTime.Today && GamesOn(day) == 0 && progress.RecentResults.Any(result => result.PlayedAt.ToLocalTime().Date < day.Date);
     private bool HasMistake => progress.RecentResults.Any(result => result.Accuracy < 100);
     private bool HasPerfectRun(int required)
     {
@@ -256,12 +205,6 @@
         "missing-letters" => "zaidimai/praleistos-raides",
         _ => "/"
     };
-    private void OpenAchievements()
-    {
-        CloseMobileNavigation();
-        achievementsOpen = true;
-    }
-    private void CloseAchievements() => achievementsOpen = false;
     private void OpenPractice()
     {
         practiceSubject = "Visi";

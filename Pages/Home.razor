@@ -22,8 +22,8 @@
             <span class="hero-orbit hero-orbit-two"></span>
             <img src="/images/nesimokau-logo.png" alt="" />
         </div>
-        <button class="home-level-card" type="button" @onclick="() => showLevels = true" aria-label="Peržiūrėti lygius">
-            <span class="home-level-icon">@CurrentLevel.Badge</span>
+        <button class="home-level-card level-color-@CurrentLevel.Color" type="button" @onclick="() => showLevels = true" aria-label="Peržiūrėti lygius">
+            <span class="home-level-icon badge-@CurrentLevel.Color">@CurrentLevel.Badge</span>
             <span class="home-level-copy">
                 <strong>@CurrentLevel.Number lygis</strong>
                 <small>@(NextLevel is null ? "Pasiektas aukščiausias lygis!" : $"Dar {NextLevel.RequiredXp - progress.Xp} XP iki kito lygio")</small>
@@ -44,7 +44,7 @@
                 <div class="levels-list">
                     @foreach (var level in LevelCatalog.All)
                     {
-                        <div class="level-row @(level.Number == CurrentLevel.Number ? "current" : "")"><span class="level-badge badge-@level.Color">@level.Badge</span><div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp Energija</small></div>@if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }</div>
+                        <div class="level-row level-color-@level.Color @(level.Number == CurrentLevel.Number ? "current" : "")"><span class="level-badge badge-@level.Color">@level.Badge</span><div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp XP</small></div>@if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }</div>
                     }
                 </div>
             </section>

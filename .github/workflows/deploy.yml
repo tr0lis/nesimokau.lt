@@ -49,4 +49,14 @@ jobs:
         run: |
           npx vercel@latest pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
           npx vercel@latest build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          if [ ! -d .vercel/output/functions/api/index.func ]; then
+            echo "Vercel build did not produce the API function at api/index.js."
+            find .vercel/output/functions -maxdepth 3 -type f -print 2>/dev/null || true
+            exit 1
+          fi
           npx vercel@latest deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Verify production API
+        run: |
+          response=$(curl --fail --silent --show-error --retry 5 --retry-delay 2 https://www.nesimokau.lt/api/auth/me)
+          echo "$response" | node -e "let body=''; process.stdin.on('data', chunk => body += chunk); process.stdin.on('end', () => { const result = JSON.parse(body); if (result.authenticated !== false) process.exit(1); });"

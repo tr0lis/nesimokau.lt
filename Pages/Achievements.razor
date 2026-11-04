@@ -5,25 +5,109 @@
 
 <SeoHead Title="Pasiekimai | nesimokau.lt" Description="Asmeniniai mokymosi pasiekimai." Indexable="false" />
 
-<section class="tool-page">
-    <p class="eyebrow">TAVO RITMAS</p><h1>Pasiekimai ir serija</h1>
-    <div class="streak-summary"><span>🔥</span><div><strong>@progress.Streak dienų serija</strong><small>Žaisk bent vieną pratimą kasdien.</small></div></div>
-    <div class="achievement-grid full-page-achievements">
-        @foreach (var achievement in AchievementDefinitions)
-        {
-            <div class="achievement-card @(progress.UnlockedAchievementIds.Contains(achievement.Id) ? "is-earned" : "")"><span>@achievement.Icon</span><div><strong>@achievement.Title</strong><small>@achievement.Description</small></div></div>
-        }
+<section class="tool-page achievement-page">
+    <header class="achievement-page-header">
+        <div>
+            <p class="eyebrow">TAVO PAŽANGOS KELIAS</p>
+            <h1>Pasiekimai</h1>
+            <p class="subtitle">Kiekvienas atliktas pratimas priartina prie kito tikslo. Rink ženklelius ir stebėk, kaip auga tavo įgūdžiai.</p>
+        </div>
+        <div class="achievement-header-art" aria-hidden="true"><span>✦</span><strong>🏆</strong><i>✧</i></div>
+    </header>
+
+    <div class="achievement-overview">
+        <article class="achievement-overview-card achievement-overview-primary">
+            <span class="achievement-overview-icon">🏅</span>
+            <div><small>ATRAKINTI PASIEKIMAI</small><strong>@EarnedCount <span>/ @AchievementDefinitions.Length</span></strong></div>
+            <div class="achievement-overview-meter" role="progressbar" aria-label="Atrakinti pasiekimai" aria-valuenow="@EarnedCount" aria-valuemin="0" aria-valuemax="@AchievementDefinitions.Length">
+                <i style="width:@EarnedPercent%"></i>
+            </div>
+        </article>
+        <article class="achievement-overview-card">
+            <span class="achievement-overview-icon streak-icon">🔥</span>
+            <div><small>DABARTINĖ SERIJA</small><strong>@progress.Streak <span>dienų</span></strong></div>
+            <small class="achievement-overview-note">Nuoseklumas kuria įprotį</small>
+        </article>
+        <article class="achievement-overview-card">
+            <span class="achievement-overview-icon xp-icon">⚡</span>
+            <div><small>ATLIKTI ŽAIDIMAI</small><strong>@progress.GamesCompleted</strong></div>
+            <small class="achievement-overview-note">Tavo mokymosi žingsniai</small>
+        </article>
     </div>
+
+    <section class="achievement-collection" aria-labelledby="achievement-collection-title">
+        <div class="achievement-collection-heading">
+            <div><p class="eyebrow">KO SIEKSI TOLIAU?</p><h2 id="achievement-collection-title">Tavo ženklelių kolekcija</h2></div>
+            <span>@EarnedCount iš @AchievementDefinitions.Length atrakinta</span>
+        </div>
+        <div class="achievement-tiles">
+            @foreach (var achievement in AchievementDefinitions)
+            {
+                var current = CurrentValue(achievement);
+                var earned = IsEarned(achievement, current);
+                var percent = Math.Min(100, (int)Math.Round(current * 100d / achievement.Target));
+                <article class="achievement-tile @(earned ? "is-earned" : "is-locked")">
+                    <span class="achievement-tile-icon">@achievement.Icon</span>
+                    <div class="achievement-tile-copy">
+                        <div class="achievement-tile-title"><h3>@achievement.Title</h3><span>@(earned ? "ATRAKINTA" : "UŽRAKINTA")</span></div>
+                        <p>@achievement.Description</p>
+                        <div class="achievement-tile-progress"><i style="width:@(earned ? 100 : percent)%"></i></div>
+                        <small class="achievement-tile-count">@(earned ? "Tikslas pasiektas" : $"{Math.Min(current, achievement.Target)} / {achievement.Target}")</small>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
 </section>
 
 @code {
     private StudentProgress progress = new();
-    private static readonly (string Id, string Icon, string Title, string Description)[] AchievementDefinitions =
+    private static readonly AchievementDefinition[] AchievementDefinitions =
     [
-        ("first-step", "🌱", "Pirmas žingsnis", "Užbaik pirmą žaidimą"), ("first-mistake", "🧩", "Pirma klaida", "Mokykis iš klaidų"),
-        ("perfect-5", "✨", "Švarus penketas", "5 pamokos be klaidų"), ("perfect-10", "🌟", "Dešimtukas", "10 pamokų be klaidų"),
-        ("perfect-20", "💫", "Spindintis kelias", "20 pamokų be klaidų"), ("perfect-50", "👑", "Nepralenkiamas", "50 pamokų be klaidų"),
-        ("streak-7", "🔥", "Savaitės ugnelė", "7 dienų serija"), ("score-500", "⭐", "Taškų žvaigždė", "500 taškų viename žaidime"), ("games-25", "🏅", "Atkaklus mokinys", "25 užbaigti žaidimai")
+        new("first-step", "🌱", "Pirmas žingsnis", "Užbaik pirmą žaidimą", "games", 1),
+        new("first-mistake", "🧩", "Smalsus protas", "Išbandyk, pasimokyk ir bandyk dar kartą", "mistakes", 1),
+        new("perfect-5", "✨", "Švarus penketas", "5 žaidimai iš eilės be klaidų", "perfect", 5),
+        new("perfect-10", "🌟", "Dešimtukas", "10 žaidimų iš eilės be klaidų", "perfect", 10),
+        new("perfect-20", "💫", "Spindintis kelias", "20 žaidimų iš eilės be klaidų", "perfect", 20),
+        new("perfect-50", "👑", "Nepralenkiamas", "50 žaidimų iš eilės be klaidų", "perfect", 50),
+        new("streak-7", "🔥", "Savaitės ugnelė", "Mokykis 7 dienas iš eilės", "streak", 7),
+        new("score-500", "⭐", "Taškų žvaigždė", "Surink 500 taškų viename žaidime", "score", 500),
+        new("games-25", "🏅", "Atkaklus mokinys", "Užbaik 25 žaidimus", "games", 25)
     ];
+
+    private int EarnedCount => AchievementDefinitions.Count(achievement => IsEarned(achievement, CurrentValue(achievement)));
+    private int EarnedPercent => (int)Math.Round(EarnedCount * 100d / AchievementDefinitions.Length);
+
+    private int CurrentValue(AchievementDefinition achievement) => achievement.Metric switch
+    {
+        "games" => progress.GamesCompleted,
+        "mistakes" => progress.RecentResults.Any(result => result.Accuracy < 100) ? 1 : 0,
+        "perfect" => CurrentPerfectRun,
+        "streak" => progress.Streak,
+        "score" => progress.BestScore,
+        _ => 0
+    };
+
+    private int CurrentPerfectRun
+    {
+        get
+        {
+            var run = 0;
+            var best = 0;
+            foreach (var result in progress.RecentResults.OrderBy(result => result.PlayedAt))
+            {
+                run = result.Accuracy == 100 ? run + 1 : 0;
+                best = Math.Max(best, run);
+            }
+
+            return best;
+        }
+    }
+
+    private bool IsEarned(AchievementDefinition achievement, int current) =>
+        progress.UnlockedAchievementIds.Contains(achievement.Id) || current >= achievement.Target;
+
     protected override async Task OnInitializedAsync() => progress = await Progress.GetAsync();
+
+    private sealed record AchievementDefinition(string Id, string Icon, string Title, string Description, string Metric, int Target);
 }
