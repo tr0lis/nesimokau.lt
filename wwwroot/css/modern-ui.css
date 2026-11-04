@@ -2578,7 +2578,7 @@ textarea,
     scrollbar-gutter: stable;
 }
 
-.sidebar-account-link {
+.sidebar-account-link[class*="avatar-"] {
     min-height: 56px;
     padding: 7px;
     border: 1px solid rgba(112, 72, 232, .13);
@@ -3156,7 +3156,7 @@ textarea,
 
 .main-nav::-webkit-scrollbar { display: none; }
 
-.sidebar-account-link {
+.sidebar-account-link[class*="avatar-"] {
     display: grid;
     grid-template-columns: 36px minmax(0, 1fr);
     gap: 3px 9px;
@@ -3165,18 +3165,18 @@ textarea,
     border-color: rgba(120, 84, 224, .34);
     background:
         radial-gradient(ellipse at 0% 50%, rgba(255, 255, 255, .26), transparent 55%),
-        linear-gradient(115deg, #8261e8, #a277ef);
+        linear-gradient(115deg, #6347bc, #7957c6) !important;
     box-shadow: 0 8px 20px rgba(98, 68, 183, .2), inset 0 1px 0 rgba(255, 255, 255, .25);
-    color: #fff;
+    color: #fff !important;
 }
 
-.sidebar-account-link:hover,
-.sidebar-account-link.active {
+.sidebar-account-link[class*="avatar-"]:hover,
+.sidebar-account-link[class*="avatar-"].active {
     border-color: #8768e8;
     background:
         radial-gradient(ellipse at 0% 50%, rgba(255, 255, 255, .32), transparent 55%),
-        linear-gradient(115deg, #7454dc, #956ce8);
-    color: #fff;
+        linear-gradient(115deg, #583ba9, #704fc0) !important;
+    color: #fff !important;
 }
 
 .sidebar-account-link > .custom-avatar-image,
@@ -3193,14 +3193,14 @@ textarea,
 .sidebar-account-coins { grid-column: 2; justify-self: start; margin: 0; color: #fff; font-size: 9px; line-height: 1; }
 .sidebar-account-coins small { display: inline; color: rgba(255, 255, 255, .9); }
 
-:root[data-theme="dark"] .sidebar-account-link,
-:root[data-theme="dark"] .sidebar-account-link:hover,
-:root[data-theme="dark"] .sidebar-account-link.active {
+:root[data-theme="dark"] .sidebar-account-link[class*="avatar-"],
+:root[data-theme="dark"] .sidebar-account-link[class*="avatar-"]:hover,
+:root[data-theme="dark"] .sidebar-account-link[class*="avatar-"].active {
     border-color: #886be4;
     background:
         radial-gradient(ellipse at 0% 50%, rgba(222, 207, 255, .22), transparent 55%),
-        linear-gradient(115deg, #6347bc, #7957c6);
-    color: #fff;
+        linear-gradient(115deg, #503691, #6849a7) !important;
+    color: #fff !important;
 }
 
 :root[data-theme="dark"] .sidebar-account-link > .custom-avatar-image,
