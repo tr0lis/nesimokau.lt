@@ -15,9 +15,10 @@ const groupedClasses = [
 const pages = [
   {
     path: '/',
-    title: 'Nemokami mokomieji žaidimai vaikams | nesimokau.lt',
-    description: 'Atrask nemokamus mokomuosius žaidimus vaikams: lietuvių kalba, matematika ir interaktyvios užduotys. Mokymasis žaidžiant pagal klases.',
-    h1: 'Mokomieji žaidimai, kurie paverčia mokymąsi nuotykiu',
+    title: 'nesimokau.lt – Mokykis žaisdamas!',
+    description: 'Mokomieji žaidimai 1–12 klasių mokiniams. Tobulėk lengviau!',
+    sitemap: true,
+    h1: 'Mokykis žaisdamas!',
     sections: [
       ['Edukaciniai žaidimai vaikams pagal mokomuosius dalykus', 'Rinkis lietuvių kalbos užduotis arba matematikos žaidimus. Aiškios taisyklės, trumpi iššūkiai ir draugiškas grįžtamasis ryšys padeda mokytis savo tempu.'],
       ['Mokymasis žaidžiant', 'Interaktyvūs mokomieji žaidimai leidžia iškart pritaikyti žinias: rašyti žodžius, spręsti uždavinius ir pastebėti, kas jau pavyksta. Pagrindiniai pratimai pasiekiami nemokamai.'],
@@ -28,6 +29,7 @@ const pages = [
     path: '/lietuviu-kalba',
     title: 'Lietuvių kalbos užduotys ir žaidimai vaikams | nesimokau.lt',
     description: 'Lietuvių kalbos užduotys vaikams: žodžių diktantas, praleistos raidės, kirčiavimas ir pamokos 1–2 klasei.',
+    sitemap: true,
     h1: 'Lietuvių kalbos žaidimai ir užduotys',
     sections: [
       ['Rašyba ir žodynas praktikoje', 'Žaisk žodžių diktantą, įrašyk praleistas raides ir pasitikrink, kaip sekasi rašyti lietuviškus žodžius. Kiekvieną veiklą galima atlikti trumpais, aiškiais etapais.'],
@@ -39,6 +41,7 @@ const pages = [
     path: '/matematika',
     title: 'Matematikos užduotys ir žaidimai vaikams | nesimokau.lt',
     description: 'Matematikos žaidimai vaikams: skaičiavimas, tekstiniai uždaviniai, geometrija, matavimai ir loginiai dėsningumai.',
+    sitemap: true,
     h1: 'Matematikos žaidimai ir užduotys',
     sections: [
       ['Skaičiavimas ir loginis mąstymas', 'Atlik sudėties, atimties, daugybos ar dalybos užduotis skaičių arenoje. Užduotys padeda lavinti skaičiavimo tikslumą ir pasitikėjimą.'],
@@ -50,6 +53,7 @@ const pages = [
     path: '/lietuviu-kalba/1-2-klases/pamokos',
     title: 'Lietuvių kalbos pamokos ir užduotys 1–2 klasei | nesimokau.lt',
     description: 'Mokomoji medžiaga pirmokams ir antrokams: lietuvių kalbos žodynas, gramatika, A1–A2 pamokos ir interaktyvios užduotys.',
+    sitemap: true,
     h1: 'Lietuvių kalbos pamokos 1–2 klasei',
     sections: [
       ['Pasirink klasę ir temą', 'Pirmokai gali pradėti nuo kasdienių žodžių ir paprastų sakinių, o antrokai – plėsti žodyną ir taikyti gramatikos taisykles. Pamokose derinama mokomoji medžiaga ir praktika.'],
@@ -61,6 +65,7 @@ const pages = [
     path: '/dienos-issukis',
     title: 'Dienos mokomasis iššūkis vaikams | nesimokau.lt',
     description: 'Kasdienė mokomoji užduotis vaikams – trumpas iššūkis žinioms pasitikrinti ir mokytis žaidžiant.',
+    sitemap: true,
     h1: 'Dienos iššūkis',
     sections: [
       ['Mažas žingsnis kiekvieną dieną', 'Išbandyk trumpą užduotį ir skirk kelias minutes naujų žinių kartojimui. Dienos iššūkis papildo lietuvių kalbos bei matematikos pratimus.'],
@@ -119,6 +124,7 @@ for (const game of games) {
     path: game.base,
     title: `${game.title} | nesimokau.lt`,
     description: game.description,
+    sitemap: true,
     h1: game.name,
     category: game.category,
     sections: [[game.keywords, game.description], ['Mokykis žaisdamas', 'Užduotis suskirstyta į trumpus žingsnius, todėl gali iškart pasitikrinti atsakymą, pastebėti klaidą ir bandyti dar kartą.']],
@@ -219,12 +225,30 @@ for (const page of pages) {
   await fs.writeFile(target, renderDocument(indexHtml, page), 'utf8');
 }
 
-const urls = pages.map((page) => `  <url><loc>${origin}${page.path}</loc><changefreq>${page.path === '/' ? 'weekly' : 'monthly'}</changefreq><priority>${page.path === '/' ? '1.0' : page.category ? '0.7' : '0.8'}</priority></url>`).join('\n');
+const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'wwwroot');
+const pagesRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'Pages');
+const sourcePages = await fs.readdir(pagesRoot, { withFileTypes: true });
+const declaredRoutes = new Set();
+for (const entry of sourcePages) {
+  if (!entry.isFile() || !entry.name.endsWith('.razor')) continue;
+  const source = await fs.readFile(path.join(pagesRoot, entry.name), 'utf8');
+  for (const match of source.matchAll(/^\s*@page\s+"([^"]+)"/gm)) {
+    if (!match[1].includes('{')) declaredRoutes.add(match[1]);
+  }
+}
+
+const sitemapPages = pages.filter((page) => page.sitemap);
+const sitemapPaths = new Set();
+for (const page of sitemapPages) {
+  if (sitemapPaths.has(page.path)) throw new Error(`Duplicate sitemap route: ${page.path}`);
+  if (!declaredRoutes.has(page.path)) throw new Error(`Sitemap route is not declared by a Razor page: ${page.path}`);
+  sitemapPaths.add(page.path);
+}
+const urls = sitemapPages.map((page) => `  <url><loc>${origin}${page.path}</loc></url>`).join('\n');
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
-const robots = `User-agent: *\nAllow: /\nDisallow: /profilis\nDisallow: /pasiekimai\nDisallow: /rezultatai\nDisallow: /turnyrine-lentele\nDisallow: /mediateka\nDisallow: /pasitaisyti\nDisallow: /diagnostika\nDisallow: /skaiciuokle\nDisallow: /prisijungimas\nDisallow: /registracija\nSitemap: ${origin}/sitemap.xml\n`;
+const robots = `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /pasiekimai\nDisallow: /rezultatai\nDisallow: /turnyrine-lentele\nDisallow: /mediateka\nDisallow: /pasitaisyti\nDisallow: /diagnostika\nDisallow: /skaiciuokle\nDisallow: /prisijungimas\nDisallow: /registracija\nSitemap: ${origin}/sitemap.xml\n`;
 await fs.writeFile(path.join(outputRoot, 'sitemap.xml'), sitemap);
 await fs.writeFile(path.join(outputRoot, 'robots.txt'), robots);
-const sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'wwwroot');
 await fs.writeFile(path.join(sourceRoot, 'sitemap.xml'), sitemap);
 await fs.writeFile(path.join(sourceRoot, 'robots.txt'), robots);
-console.log(`Generated ${pages.length} SEO-rendered routes, sitemap.xml, and robots.txt.`);
+console.log(`Generated ${pages.length} SEO-rendered routes and a sitemap with ${sitemapPages.length} verified public routes.`);

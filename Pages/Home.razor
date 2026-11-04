@@ -5,29 +5,21 @@
 @inject GameCatalogService Catalog
 @implements IDisposable
 
-<SeoHead Title="Nemokami mokomieji žaidimai vaikams | nesimokau.lt"
-         Description="Atrask nemokamus mokomuosius žaidimus ir interaktyvias užduotis vaikams. Lietuvių kalba, matematika ir mokymasis žaidžiant pagal klases."
+<SeoHead Title="nesimokau.lt – Mokykis žaisdamas!"
+         Description="Mokomieji žaidimai 1–12 klasių mokiniams. Tobulėk lengviau!"
          CanonicalPath="/" />
 
 <section class="subjects-home dashboard-home">
-    <header class="home-topline">
-        <div class="home-breadcrumb"><span>⌂</span> Tavo mokymosi erdvė</div>
-        <div class="home-date">@TodayLabel</div>
-    </header>
-
     <section class="home-hero">
         <div class="home-hero-copy">
-            <span class="home-greeting">👋 Sveikas, Mokslievi!</span>
+            <span class="home-greeting">MOKYKIS SAVO TEMPU</span>
             <h1>Mokykis <span>žaisdamas!</span></h1>
-            <p>Interaktyvios užduotys visoms klasėms ir įvairiems dalykams. Rinkis mėgstamą temą ir pirmyn!</p>
+            <p>Mokomieji žaidimai ir aiškios užduotys 1–12 klasių mokiniams. Rinkis dalyką, lavink įgūdžius ir stebėk savo pažangą.</p>
             <a class="button button-primary home-hero-cta" href="#subjects"><span aria-hidden="true">▶</span> Pradėti mokytis <span aria-hidden="true">→</span></a>
         </div>
         <div class="home-hero-art" aria-hidden="true">
             <span class="hero-orbit hero-orbit-one"></span>
             <span class="hero-orbit hero-orbit-two"></span>
-            <span class="hero-spark hero-spark-one">✦</span>
-            <span class="hero-spark hero-spark-two">✧</span>
-            <span class="hero-spark hero-spark-three">✦</span>
             <img src="/images/nesimokau-logo.png" alt="" />
         </div>
         <button class="home-level-card" type="button" @onclick="() => showLevels = true" aria-label="Peržiūrėti lygius">
@@ -70,27 +62,69 @@
             @if (subject.IsReady)
             {
                 <NavLink class="@($"subject-card home-subject-card accent-{subject.Accent}")" href="@subject.Href">
-                    <span class="subject-card-icon icon-@subject.Accent">@subject.Icon</span>
+                    <span class="subject-card-icon icon-@subject.Accent" aria-hidden="true">
+                        @switch (subject.Accent)
+                        {
+                            case "violet":
+                                <svg viewBox="0 0 24 24"><path d="M4 5h5a3 3 0 0 1 3 3v12a3 3 0 0 0-3-3H4zM20 5h-5a3 3 0 0 0-3 3v12a3 3 0 0 1 3-3h5z" /></svg>
+                                break;
+                            case "blue":
+                                <svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16M6.5 6.5l11 11m0-11-11 11" /></svg>
+                                break;
+                            case "mint":
+                                <svg viewBox="0 0 24 24"><path d="M5 19 19 5M8 5h11v11M5 9v10h10" /></svg>
+                                break;
+                            case "orange":
+                                <svg viewBox="0 0 24 24"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9zM12 3v18m8-13.5-8 4.5-8-4.5" /></svg>
+                                break;
+                            case "green":
+                                <svg viewBox="0 0 24 24"><path d="M20 4c-8 0-14 3-14 10a6 6 0 0 0 6 6c7 0 8-8 8-16ZM4 21c2-5 5-8 10-11" /></svg>
+                                break;
+                            default:
+                                <svg viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-2-12-4 14" /></svg>
+                                break;
+                        }
+                    </span>
                     <span class="subject-card-copy">
                         <strong>@subject.Title</strong>
                         <small>@subject.Description</small>
                         <span class="home-subject-count">▮ @subject.ActivityCount @ActivityLabel(subject.ActivityCount)</span>
                     </span>
                     <span class="subject-card-corner" aria-hidden="true">→</span>
-                    <span class="subject-card-art" aria-hidden="true">@subject.Art</span>
                 </NavLink>
             }
             else
             {
                 <article class="subject-card home-subject-card is-disabled accent-@subject.Accent" aria-label="@subject.Title — netrukus">
-                <span class="subject-card-icon icon-@subject.Accent">@subject.Icon</span>
+                <span class="subject-card-icon icon-@subject.Accent" aria-hidden="true">
+                    @switch (subject.Accent)
+                    {
+                        case "violet":
+                            <svg viewBox="0 0 24 24"><path d="M4 5h5a3 3 0 0 1 3 3v12a3 3 0 0 0-3-3H4zM20 5h-5a3 3 0 0 0-3 3v12a3 3 0 0 1 3-3h5z" /></svg>
+                            break;
+                        case "blue":
+                            <svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16M6.5 6.5l11 11m0-11-11 11" /></svg>
+                            break;
+                        case "mint":
+                            <svg viewBox="0 0 24 24"><path d="M5 19 19 5M8 5h11v11M5 9v10h10" /></svg>
+                            break;
+                        case "orange":
+                            <svg viewBox="0 0 24 24"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9zM12 3v18m8-13.5-8 4.5-8-4.5" /></svg>
+                            break;
+                        case "green":
+                            <svg viewBox="0 0 24 24"><path d="M20 4c-8 0-14 3-14 10a6 6 0 0 0 6 6c7 0 8-8 8-16ZM4 21c2-5 5-8 10-11" /></svg>
+                            break;
+                        default:
+                            <svg viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-2-12-4 14" /></svg>
+                            break;
+                    }
+                </span>
                 <span class="subject-card-copy">
                     <strong>@subject.Title</strong>
                     <small>@subject.Description</small>
                     <span class="home-subject-count">@subject.ActivityCount @ActivityLabel(subject.ActivityCount)</span>
                 </span>
-                    <span class="subject-card-corner subject-card-corner-disabled">Netrukus</span>
-                    <span class="subject-card-art" aria-hidden="true">@subject.Art</span>
+                <span class="subject-card-corner subject-card-corner-disabled">Netrukus</span>
                 </article>
             }
         }
@@ -147,26 +181,24 @@
     private int ProgressPercent => Math.Clamp(progress.GamesCompleted * 4, 0, 100);
     private GameResult? LatestResult => progress.RecentResults.OrderByDescending(result => result.PlayedAt).FirstOrDefault();
     private DateTime WeekStart => DateTime.Today.AddDays(-(((int)DateTime.Today.DayOfWeek + 6) % 7));
-    private string TodayLabel => $"{DateTime.Today.Year} m. {LithuanianMonths[DateTime.Today.Month - 1]} {DateTime.Today.Day} d.";
-    private static string[] LithuanianMonths { get; } = ["sausio", "vasario", "kovo", "balandžio", "gegužės", "birželio", "liepos", "rugpjūčio", "rugsėjo", "spalio", "lapkričio", "gruodžio"];
     private static string[] WeekdayLabels { get; } = ["Pr", "An", "Tr", "Kt", "Pn", "Št", "Sk"];
     private int GamesOn(DateTime day) => progress.RecentResults.Count(result => result.PlayedAt.ToLocalTime().Date == day.Date);
     private static string ActivityLabel(int count) => count switch { 1 => "pratimas", 0 => "pratimų", _ => "pratimai" };
     private IReadOnlyList<SubjectCard> SubjectCards =>
     [
-        Subject("Lietuvių kalba", "Aa", "violet", "Lavink kalbos žinias!", "/lietuviu-kalba", "✎"),
-        Subject("Matematika", "∑", "blue", "Skaičiuok ir tobulėk!", "/matematika", "＋ ×"),
-        Subject("Anglų kalba", "EN", "mint", "Mokykis anglų kalbos lengvai!", "/", "A"),
-        Subject("Istorija", "▤", "orange", "Atrask praeitį!", "/", "⌂"),
-        Subject("Gamtos mokslai", "⚗", "green", "Pažink pasaulį!", "/", "✿"),
-        Subject("Informatika", "</>", "cyan", "Programuok ir kurk!", "/", "▦")
+        Subject("Lietuvių kalba", "violet", "Lavink kalbos žinias!", "/lietuviu-kalba"),
+        Subject("Matematika", "blue", "Skaičiuok ir tobulėk!", "/matematika"),
+        Subject("Anglų kalba", "mint", "Mokykis anglų kalbos lengvai!", "/"),
+        Subject("Istorija", "orange", "Atrask praeitį!", "/"),
+        Subject("Gamtos mokslai", "green", "Pažink pasaulį!", "/"),
+        Subject("Informatika", "cyan", "Programuok ir kurk!", "/")
     ];
 
-    private SubjectCard Subject(string title, string icon, string accent, string description, string href, string art)
+    private SubjectCard Subject(string title, string accent, string description, string href)
     {
         var matches = Catalog.Games.Where(game => game.Subject == title).ToList();
         var readyCount = matches.Count(game => game.Status == GameStatus.Ready);
-        return new SubjectCard(title, icon, accent, description, href, art, readyCount > 0, readyCount);
+        return new SubjectCard(title, accent, description, href, readyCount > 0, readyCount);
     }
 
     protected override async Task OnInitializedAsync()
@@ -186,5 +218,5 @@
         Progress.Changed -= HandleProgressChanged;
     }
 
-    private sealed record SubjectCard(string Title, string Icon, string Accent, string Description, string Href, string Art, bool IsReady, int ActivityCount);
+    private sealed record SubjectCard(string Title, string Accent, string Description, string Href, bool IsReady, int ActivityCount);
 }

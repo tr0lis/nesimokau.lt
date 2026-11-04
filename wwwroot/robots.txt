@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 Disallow: /profilis
 Disallow: /pasiekimai
 Disallow: /rezultatai

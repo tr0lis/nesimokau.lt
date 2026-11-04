@@ -12,48 +12,74 @@
         <img class="brand-logo" src="images/nesimokau-logo.png" alt="nesimokau.lt" />
         <span class="brand-wordmark">nesimokau<span>.lt</span></span>
     </a>
-    <button class="mobile-nav-toggle" type="button" aria-label="Atidaryti meniu" aria-expanded="@mobileNavOpen" @onclick="ToggleMobileNavigation">
-        <span></span>
-        <span></span>
-        <span></span>
+    <button class="mobile-nav-toggle" type="button" aria-label="@(mobileNavOpen ? "Uždaryti navigaciją" : "Atidaryti navigaciją")" aria-controls="primary-navigation" aria-expanded="@mobileNavOpen" @onclick="ToggleMobileNavigation">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
     </button>
-    <nav class="main-nav @(mobileNavOpen ? "mobile-open" : string.Empty)" aria-label="Pagrindinė navigacija">
-        <NavLink class="nav-action" href="/" Match="NavLinkMatch.All" @onclick="CloseMobileNavigation"><span>⌂</span> Pradinis</NavLink>
-        <a class="nav-action nav-subjects" href="/#subjects" @onclick="CloseMobileNavigation"><span>▦</span> Dalykai</a>
-        <button class="nav-action nav-achievements" type="button" @onclick="OpenAchievements"><span>🏆</span> Mano pasiekimai</button>
-        <NavLink class="nav-action nav-leaderboard" href="turnyrine-lentele" @onclick="CloseMobileNavigation"><span>▮</span> Reitingai</NavLink>
-        <NavLink class="nav-action nav-settings" href="profilis" @onclick="CloseMobileNavigation"><span>⚙</span> Nustatymai</NavLink>
+    <nav id="primary-navigation" class="main-nav @(mobileNavOpen ? "mobile-open" : string.Empty)" aria-label="Pagrindinė navigacija">
+        <span class="nav-section-label">MOKYKIS</span>
+        <NavLink class="nav-action" href="/" Match="NavLinkMatch.All" @onclick="CloseMobileNavigation">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3.5 10 8.5-7 8.5 7v10a1 1 0 0 1-1 1h-5.3v-6.5h-4.4V21H4.5a1 1 0 0 1-1-1z" /></svg><span>Pradžia</span>
+        </NavLink>
+        <a class="nav-action nav-subjects" href="/#subjects" @onclick="CloseMobileNavigation">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5h6a3 3 0 0 1 3 3v12a3 3 0 0 0-3-3H4zM20 4.5h-4a3 3 0 0 0-3 3v12a3 3 0 0 1 3-3h4z" /></svg><span>Dalykai ir žaidimai</span>
+        </a>
+        <NavLink class="nav-action" href="/dienos-issukis" @onclick="CloseMobileNavigation">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m13.5 2.8-8 10.1a1 1 0 0 0 .8 1.6h5l-.8 6.7 8-10.1a1 1 0 0 0-.8-1.6h-5z" /></svg><span>Dienos iššūkis</span>
+        </NavLink>
+        <button class="nav-action nav-achievements" type="button" @onclick="OpenAchievements">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v4a4 4 0 0 1-8 0zM8 6H5v2a4 4 0 0 0 4 4m7-6h3v2a4 4 0 0 1-4 4m-3 0v5m-4 4h8m-7-4h6v4H9z" /></svg><span>Pasiekimai</span>
+        </button>
+
+        <span class="nav-section-label nav-section-secondary">MANO ERDVĖ</span>
+        <NavLink class="nav-action nav-leaderboard" href="/turnyrine-lentele" @onclick="CloseMobileNavigation">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9m7 10V4m7 15v-7M3 21h18" /></svg><span>Turnyrinė lentelė</span>
+        </NavLink>
+        <NavLink class="nav-action" href="/rezultatai" @onclick="CloseMobileNavigation">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6" /></svg><span>Mano rezultatai</span>
+        </NavLink>
+        <NavLink class="nav-action" href="/mediateka" @onclick="CloseMobileNavigation">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2" /><path d="m10 9 5 3-5 3z" /></svg><span>Mediateka</span>
+        </NavLink>
+        <NavLink class="nav-action nav-settings" href="/profilis" @onclick="CloseMobileNavigation">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></svg><span>Profilis ir nustatymai</span>
+        </NavLink>
+
+        <div class="sidebar-account">
+            <NavLink class="@($"sidebar-account-link avatar-{AvatarBackgroundClass}")" href="/profilis" @onclick="CloseMobileNavigation" aria-label="Atidaryti profilį ir nustatymus">
+                @if (!string.IsNullOrWhiteSpace(progress.CustomAvatarDataUrl))
+                {
+                    <img class="custom-avatar-image" src="@progress.CustomAvatarDataUrl" alt="" />
+                }
+                else
+                {
+                    <span class="sidebar-avatar-symbol">@AvatarSymbol</span>
+                }
+                <span class="sidebar-account-copy"><strong>Mokinio paskyra</strong><small>@CurrentLevel.Number lygis · @progress.Xp XP</small></span>
+                <span class="sidebar-account-coins">@progress.Coins <small>mon.</small></span>
+            </NavLink>
+            <button class="sidebar-tool-button" type="button" @onclick="ToggleTheme" aria-label="Pakeisti temos išvaizdą">
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    @if (progress.Theme == "dark")
+                    {
+                        <path d="M20.5 15.2A8.5 8.5 0 0 1 8.8 3.5a8.6 8.6 0 1 0 11.7 11.7z" />
+                    }
+                    else
+                    {
+                        <circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m17.1-7.1-1.4 1.4M6.3 17.7l-1.4 1.4m14.2 0-1.4-1.4M6.3 6.3 4.9 4.9" />
+                    }
+                </svg>
+                <span>@(progress.Theme == "light" ? "Tamsi tema" : "Šviesi tema")</span>
+            </button>
+            <button class="sidebar-tool-button sidebar-logout" type="button" @onclick="LogoutAsync">
+                <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5.5a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 5.5 20H10m4-4 4-4-4-4m4 4H9" /></svg><span>Atsijungti</span>
+            </button>
+        </div>
+        <div class="sidebar-note">
+            <span class="sidebar-note-mark" aria-hidden="true">01</span>
+            <strong>Pažanga prasideda nuo mažo žingsnio.</strong>
+            <a href="/#subjects" @onclick="CloseMobileNavigation">Pradėti mokytis <span aria-hidden="true">→</span></a>
+        </div>
     </nav>
-    <div class="sidebar-note">
-        <span aria-hidden="true">⚡</span>
-        <strong>Mokykis. Žaisk. Tobulėk!</strong>
-        <small>Maži žingsniai veda į didelius atradimus.</small>
-        <a href="/#subjects" @onclick="CloseMobileNavigation">Pradėti mokytis <span aria-hidden="true">→</span></a>
-    </div>
-    <div class="header-actions">
-        <div class="header-energy" title="Energija"><span aria-hidden="true">⚡</span> @progress.Xp <small>energijos</small></div>
-        <button class="header-level" type="button" @onclick="() => achievementsOpen = true"><span aria-hidden="true">★</span> @CurrentLevel.Number lygis</button>
-        <button class="theme-toggle" @onclick="ToggleTheme" aria-label="Pakeisti temą" title="Pakeisti šviesią arba tamsią temą">@(progress.Theme == "light" ? "☀" : "☾")</button>
-        <button class="@($"profile-button avatar-{AvatarBackgroundClass}")" type="button" aria-label="Atidaryti profilio meniu" aria-expanded="@profileMenuOpen" @onclick="ToggleProfileMenu">@if (!string.IsNullOrWhiteSpace(progress.CustomAvatarDataUrl)) { <img class="custom-avatar-image" src="@progress.CustomAvatarDataUrl" alt="" /> } else { @AvatarSymbol }<span aria-hidden="true">⌄</span></button>
-        @if (profileMenuOpen)
-        {
-            <button class="profile-menu-backdrop" type="button" aria-label="Uždaryti profilio meniu" @onclick="CloseProfileMenu"></button>
-            <section class="profile-menu" aria-label="Profilio meniu">
-                <div class="profile-menu-resources">
-                    <div class="resource-pill energy-pill" title="Energija"><span>⚡</span><strong>@progress.Xp</strong><small>Energija</small></div>
-                    <div class="resource-pill coins-pill" title="Monetos"><span>🪙</span><strong>@progress.Coins</strong><small>Monetos</small></div>
-                </div>
-                <NavLink class="profile-menu-link profile-menu-primary" href="profilis" @onclick="CloseProfileMenu"><span>🙂</span> Mano profilis <b>→</b></NavLink>
-                <div class="profile-menu-links">
-                    <NavLink class="profile-menu-link" href="pasiekimai" @onclick="CloseProfileMenu"><span>🏆</span> Pasiekimai</NavLink>
-                    <NavLink class="profile-menu-link" href="rezultatai" @onclick="CloseProfileMenu"><span>📊</span> Rezultatai</NavLink>
-                    <NavLink class="profile-menu-link" href="turnyrine-lentele" @onclick="CloseProfileMenu"><span>🏅</span> Turnyrinė lentelė</NavLink>
-                    <NavLink class="profile-menu-link" href="mediateka" @onclick="CloseProfileMenu"><span>🎬</span> Mediateka</NavLink>
-                </div>
-                <button class="profile-menu-link profile-menu-logout" type="button" @onclick="LogoutAsync"><span>↪</span> Atsijungti</button>
-            </section>
-        }
-    </div>
 </header>
 
 @if (achievementToast is not null)
@@ -164,7 +190,6 @@
     private bool practiceOpen;
     private bool mediaLibraryOpen;
     private bool mobileNavOpen;
-    private bool profileMenuOpen;
     private string practiceSubject = "Visi";
     private string mediaSubject = "Visi";
     private string mediaSearch = string.Empty;
@@ -183,18 +208,10 @@
 
     private void ToggleMobileNavigation()
     {
-        if (profileMenuOpen) profileMenuOpen = false;
         mobileNavOpen = !mobileNavOpen;
     }
 
     private void CloseMobileNavigation() => mobileNavOpen = false;
-    private void ToggleProfileMenu()
-    {
-        if (mobileNavOpen) mobileNavOpen = false;
-        profileMenuOpen = !profileMenuOpen;
-    }
-
-    private void CloseProfileMenu() => profileMenuOpen = false;
     private IEnumerable<DateTime> CurrentMonthDays => Enumerable.Range(1, DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month)).Select(day => new DateTime(DateTime.Today.Year, DateTime.Today.Month, day));
     private IEnumerable<DateTime> LastTenDays => Enumerable.Range(0, 10).Select(day => DateTime.Today.AddDays(-9 + day));
     private IEnumerable<string> PracticeSubjects => ["Visi", .. Catalog.Games.Where(game => game.Status == GameStatus.Ready).Select(game => game.Subject).Distinct()];
@@ -263,7 +280,7 @@
     private async Task LogoutAsync()
     {
         await Auth.LogoutAsync();
-        CloseProfileMenu();
+        CloseMobileNavigation();
         Navigation.NavigateTo("/prisijungimas", replace: true);
     }
 
