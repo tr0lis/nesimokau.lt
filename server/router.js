@@ -36,6 +36,8 @@ async function health(res) {
     result.database = error.status === 401 || error.status === 403 || /permission denied/i.test(error.message)
       ? 'permission_denied (run database/supabase-schema.sql and use the service_role/sb_secret key)'
       : /relation|does not exist|schema cache/i.test(error.message) ? 'tables_missing (run database/supabase-schema.sql)' : `error_${error.status ?? 'network'}`;
+    result.detail = String(error.message).slice(0, 160);
+    try { result.supabaseHost = new URL(getConfig().supabaseUrl).host.replace(/^[^.]+/, '<project>'); result.urlPath = new URL(getConfig().supabaseUrl).pathname; } catch { /* ignore */ }
     return sendJson(res, 503, result);
   }
   return sendJson(res, 200, result);
