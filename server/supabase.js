@@ -34,6 +34,7 @@ function mapOut(collection, row) {
   for (const [key, value] of Object.entries(row ?? {})) result[reverse[key] ?? key] = value;
   if (collection === 'players') {
     result.uid = row.id;
+    result.id = row.id;
     result.username_lower = String(row.username ?? '').toLowerCase();
   }
   if (collection === 'user_progress') result.id = row.user_id;
