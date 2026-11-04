@@ -52,5 +52,5 @@ jobs:
 
       - name: Verify production API
         run: |
-          response=$(curl --fail --silent --show-error --retry 5 --retry-delay 2 https://www.nesimokau.lt/api/auth/me)
+          response=$(curl --fail --silent --show-error --retry 5 --retry-delay 2 --location https://nesimokau.lt/api/auth/me)
           echo "$response" | node -e "let body=''; process.stdin.on('data', chunk => body += chunk); process.stdin.on('end', () => { const result = JSON.parse(body); if (result.authenticated !== false) process.exit(1); });"
