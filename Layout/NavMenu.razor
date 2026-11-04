@@ -18,12 +18,23 @@
         <span></span>
     </button>
     <nav class="main-nav @(mobileNavOpen ? "mobile-open" : string.Empty)" aria-label="Pagrindinė navigacija">
-        <a class="nav-action nav-subjects" href="/" @onclick="CloseMobileNavigation"><span>📚</span> Dalykai</a>
-        <NavLink class="nav-action nav-practice" href="pasitaisyti" @onclick="CloseMobileNavigation"><span>✦</span> Noriu pasitaisyti</NavLink>
+        <NavLink class="nav-action" href="/" Match="NavLinkMatch.All" @onclick="CloseMobileNavigation"><span>⌂</span> Pradinis</NavLink>
+        <a class="nav-action nav-subjects" href="/#subjects" @onclick="CloseMobileNavigation"><span>▦</span> Dalykai</a>
+        <button class="nav-action nav-achievements" type="button" @onclick="OpenAchievements"><span>🏆</span> Mano pasiekimai</button>
+        <NavLink class="nav-action nav-leaderboard" href="turnyrine-lentele" @onclick="CloseMobileNavigation"><span>▮</span> Reitingai</NavLink>
+        <NavLink class="nav-action nav-settings" href="profilis" @onclick="CloseMobileNavigation"><span>⚙</span> Nustatymai</NavLink>
     </nav>
+    <div class="sidebar-note">
+        <span aria-hidden="true">⚡</span>
+        <strong>Mokykis. Žaisk. Tobulėk!</strong>
+        <small>Maži žingsniai veda į didelius atradimus.</small>
+        <a href="/#subjects" @onclick="CloseMobileNavigation">Pradėti mokytis <span aria-hidden="true">→</span></a>
+    </div>
     <div class="header-actions">
+        <div class="header-energy" title="Energija"><span aria-hidden="true">⚡</span> @progress.Xp <small>energijos</small></div>
+        <button class="header-level" type="button" @onclick="() => achievementsOpen = true"><span aria-hidden="true">★</span> @CurrentLevel.Number lygis</button>
         <button class="theme-toggle" @onclick="ToggleTheme" aria-label="Pakeisti temą" title="Pakeisti šviesią arba tamsią temą">@(progress.Theme == "light" ? "☀" : "☾")</button>
-        <button class="@($"profile-button avatar-{AvatarBackgroundClass}")" type="button" aria-label="Atidaryti profilio meniu" aria-expanded="@profileMenuOpen" @onclick="ToggleProfileMenu">@if (!string.IsNullOrWhiteSpace(progress.CustomAvatarDataUrl)) { <img class="custom-avatar-image" src="@progress.CustomAvatarDataUrl" alt="" /> } else { @AvatarSymbol }</button>
+        <button class="@($"profile-button avatar-{AvatarBackgroundClass}")" type="button" aria-label="Atidaryti profilio meniu" aria-expanded="@profileMenuOpen" @onclick="ToggleProfileMenu">@if (!string.IsNullOrWhiteSpace(progress.CustomAvatarDataUrl)) { <img class="custom-avatar-image" src="@progress.CustomAvatarDataUrl" alt="" /> } else { @AvatarSymbol }<span aria-hidden="true">⌄</span></button>
         @if (profileMenuOpen)
         {
             <button class="profile-menu-backdrop" type="button" aria-label="Uždaryti profilio meniu" @onclick="CloseProfileMenu"></button>
@@ -161,6 +172,7 @@
 
     private string AvatarSymbol => AvatarCatalog.All.FirstOrDefault(x => x.Id == progress.AvatarId)?.Symbol ?? "🙂";
     private string AvatarBackgroundClass => string.IsNullOrWhiteSpace(progress.AvatarBackground) ? "bg-violet" : progress.AvatarBackground;
+    private LevelDefinition CurrentLevel => LevelCatalog.All.Last(level => level.RequiredXp <= progress.Xp);
 
     protected override async Task OnInitializedAsync()
     {
@@ -227,7 +239,11 @@
         "missing-letters" => "zaidimai/praleistos-raides",
         _ => "/"
     };
-    private void OpenAchievements() => achievementsOpen = true;
+    private void OpenAchievements()
+    {
+        CloseMobileNavigation();
+        achievementsOpen = true;
+    }
     private void CloseAchievements() => achievementsOpen = false;
     private void OpenPractice()
     {
