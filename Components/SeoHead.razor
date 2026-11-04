@@ -1,9 +1,9 @@
-@using System.Text.Json
+﻿@using System.Text.Json
 
 <PageTitle>@Title</PageTitle>
 <HeadContent>
     <meta name="description" content="@Description" />
-    <meta name="robots" content="@(Indexable ? "index,follow,max-image-preview:large" : "noindex,nofollow")" />
+    <meta name="robots" content="@(Indexable ? "index,follow,max-image-preview:none" : "noindex,nofollow")" />
     <link rel="canonical" href="@CanonicalUrl" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="lt_LT" />

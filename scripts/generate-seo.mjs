@@ -191,7 +191,7 @@ function renderDocument(indexHtml, page) {
   const canonical = `${origin}${page.path}`;
   let html = indexHtml.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(page.title)}</title>`);
   html = injectMeta(html, 'description', page.description);
-  html = injectMeta(html, 'robots', 'index,follow,max-image-preview:large');
+  html = injectMeta(html, 'robots', 'index,follow,max-image-preview:none');
   html = injectMeta(html, 'og:title', page.title, true);
   html = injectMeta(html, 'og:description', page.description, true);
   html = injectMeta(html, 'og:url', canonical, true);
