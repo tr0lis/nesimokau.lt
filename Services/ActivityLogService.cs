@@ -7,77 +7,45 @@ using nesimokau.lt.Models;
 
 namespace nesimokau.lt.Services;
 
-public sealed class ActivityLogService(HttpClient http, IConfiguration config, AuthService auth)
+public sealed class ActivityLogService(ApiClient api, AuthService auth)
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly string? supabaseUrl = config["Supabase:Url"];
-    private readonly string? supabaseKey = config["Supabase:PublishableKey"];
-
     public async Task LogAsync(string eventType, Action<ActivityEventBuilder>? build = null)
     {
-        if (!IsReady() || string.IsNullOrWhiteSpace(eventType)) return;
+        if (string.IsNullOrWhiteSpace(eventType)) return;
 
         try
         {
-            var session = await auth.GetSessionAsync();
-            var builder = new ActivityEventBuilder
-            {
-                EventType = eventType,
-                UserId = session?.UserId,
-                Username = session?.Username
-            };
+            if (await auth.GetSessionAsync() is null) return;
 
+            var builder = new ActivityEventBuilder { EventType = eventType };
             build?.Invoke(builder);
 
-            var payload = new[]
+            _ = await api.PostAsync("/activity", new
             {
-                new ActivityLogRow
-                {
-                    EventType = builder.EventType,
-                    UserId = builder.UserId,
-                    Username = builder.Username,
-                    Subject = builder.Subject,
-                    GameId = builder.GameId,
-                    GameTitle = builder.GameTitle,
-                    ClassGroup = builder.ClassGroup,
-                    Score = builder.Score,
-                    Accuracy = builder.Accuracy,
-                    CorrectAnswers = builder.CorrectAnswers,
-                    IncorrectAnswers = builder.IncorrectAnswers,
-                    XpEarned = builder.XpEarned,
-                    CoinsEarned = builder.CoinsEarned,
-                    CoinsSpent = builder.CoinsSpent,
-                    HintCost = builder.HintCost,
-                    IsCorrect = builder.IsCorrect,
-                    QuestionId = builder.QuestionId,
-                    MistakeType = builder.MistakeType,
-                    Payload = builder.Payload,
-                    CreatedAt = DateTime.UtcNow
-                }
-            };
-
-            using var request = CreateRequest(HttpMethod.Post, "rest/v1/user_activity_log");
-            request.Headers.TryAddWithoutValidation("Prefer", "return=minimal");
-            request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
-            _ = await http.SendAsync(request);
+                event_type = builder.EventType,
+                subject = builder.Subject,
+                game_id = builder.GameId,
+                game_title = builder.GameTitle,
+                class_group = builder.ClassGroup,
+                score = builder.Score,
+                accuracy = builder.Accuracy,
+                correct_answers = builder.CorrectAnswers,
+                incorrect_answers = builder.IncorrectAnswers,
+                xp_earned = builder.XpEarned,
+                coins_earned = builder.CoinsEarned,
+                coins_spent = builder.CoinsSpent,
+                hint_cost = builder.HintCost,
+                is_correct = builder.IsCorrect,
+                question_id = builder.QuestionId,
+                mistake_type = builder.MistakeType,
+                payload = builder.Payload
+            });
         }
         catch
         {
             // logging must never block gameplay
         }
     }
-
-    private HttpRequestMessage CreateRequest(HttpMethod method, string path)
-    {
-        var baseUrl = supabaseUrl?.TrimEnd('/') ?? string.Empty;
-        var request = new HttpRequestMessage(method, $"{baseUrl}/{path}");
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Headers.TryAddWithoutValidation("apikey", supabaseKey);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", supabaseKey);
-        return request;
-    }
-
-    private bool IsReady() => !string.IsNullOrWhiteSpace(supabaseUrl) && !string.IsNullOrWhiteSpace(supabaseKey);
 
     public sealed class ActivityEventBuilder
     {

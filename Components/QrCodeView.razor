@@ -1,0 +1,44 @@
+@using nesimokau.lt.Models
+
+@if (Matrix is { Size: > 0 })
+{
+    var size = Matrix.Size;
+    var quiet = 2;
+    var total = size + quiet * 2;
+    var logoSpan = (int)Math.Ceiling(size * 0.22) | 1;
+    var logoStart = (size - logoSpan) / 2;
+
+    <div class="qr-frame">
+        <svg class="qr-svg" viewBox="0 0 @total @total" role="img" aria-label="2FA QR kodas" shape-rendering="geometricPrecision">
+            <defs>
+                <linearGradient id="qr-grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#4c1d95" />
+                    <stop offset="1" stop-color="#7c3aed" />
+                </linearGradient>
+            </defs>
+            <rect width="@total" height="@total" rx="2" fill="#ffffff" />
+            <g fill="url(#qr-grad)">
+                @for (var y = 0; y < size && y < Matrix.Rows.Count; y++)
+                {
+                    var row = Matrix.Rows[y];
+                    for (var x = 0; x < size && x < row.Length; x++)
+                    {
+                        if (row[x] != '1') continue;
+                        if (x >= logoStart && x < logoStart + logoSpan && y >= logoStart && y < logoStart + logoSpan) continue;
+                        <rect x="@(x + quiet)" y="@(y + quiet)" width="1.02" height="1.02" rx="0.38" />
+                    }
+                }
+            </g>
+            @{
+                var lx = quiet + logoStart - 0.4;
+                var ls = logoSpan + 0.8;
+            }
+            <rect x="@lx" y="@lx" width="@ls" height="@ls" rx="2.2" fill="#ffffff" />
+            <image href="images/nesimokau-logo.png" x="@(lx + 0.5)" y="@(lx + 0.5)" width="@(ls - 1)" height="@(ls - 1)" preserveAspectRatio="xMidYMid meet" />
+        </svg>
+    </div>
+}
+
+@code {
+    [Parameter] public QrMatrix? Matrix { get; set; }
+}

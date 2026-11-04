@@ -46,7 +46,7 @@ function computeScore(recent, bestScore) {
 function toClient(row) {
   return {
     user_id: row.uid,
-    updated_at: row.updated,
+    updated_at: row.updated ? String(row.updated).replace(' ', 'T') : null,
     name: row.name,
     avatar_id: row.avatar_id,
     avatar_background: row.avatar_background,

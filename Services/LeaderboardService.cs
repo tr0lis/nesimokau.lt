@@ -1,212 +1,46 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.Extensions.Configuration;
-using Microsoft.JSInterop;
 using nesimokau.lt.Models;
 
 namespace nesimokau.lt.Services;
 
-public sealed class LeaderboardService(IJSRuntime js, ProgressService progress, AuthService auth, HttpClient http, IConfiguration config)
+public sealed class LeaderboardService(ApiClient api, AuthService auth)
 {
-    private const string PlayerIdKey = "nesimokau-player-id";
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly string? supabaseUrl = config["Supabase:Url"];
-    private readonly string? supabaseKey = config["Supabase:PublishableKey"];
+    public Task<IReadOnlyList<LeaderboardEntry>> GetEntriesAsync() => LoadAsync();
 
-    public async Task<IReadOnlyList<LeaderboardEntry>> GetEntriesAsync()
+    public async Task<string> GetCurrentPlayerIdAsync()
     {
-        await UpsertCurrentUserAsync();
-        return await LoadAsync();
+        var session = await auth.GetSessionAsync();
+        return session is null ? string.Empty : $"user-{session.UserId}";
     }
 
-    public Task<string> GetCurrentPlayerIdAsync() => GetOrCreatePlayerIdAsync();
+    public Task<IReadOnlyList<LeaderboardEntry>> RefreshRealtimeAsync() => LoadAsync();
 
-    public async Task<IReadOnlyList<LeaderboardEntry>> RefreshRealtimeAsync()
-    {
-        await UpsertCurrentUserAsync();
-        return await LoadAsync();
-    }
-
-    public async Task ResetCurrentUserScoreAsync()
-    {
-        if (string.IsNullOrWhiteSpace(supabaseUrl) || string.IsNullOrWhiteSpace(supabaseKey)) return;
-
-        var playerId = await GetOrCreatePlayerIdAsync();
-        var playerProgress = await progress.GetAsync();
-        var playerName = string.IsNullOrWhiteSpace(playerProgress.Name) ? "Svečias" : playerProgress.Name.Trim();
-        var avatar = AvatarCatalog.All.FirstOrDefault(x => x.Id == playerProgress.AvatarId)?.Symbol ?? "🙂";
-
-        await RemoveDuplicateRowsByNicknameAsync(playerName, playerId);
-
-        var payload = new[]
-        {
-            new SupabaseLeaderboardRow
-            {
-                PlayerId = playerId,
-                Nickname = playerName,
-                Score = 0,
-                Avatar = avatar,
-                CountryFlag = "🇱🇹",
-                UpdatedAt = DateTime.UtcNow
-            }
-        };
-
-        using var request = CreateRequest(HttpMethod.Post, "rest/v1/leaderboard?on_conflict=player_id");
-        request.Headers.TryAddWithoutValidation("Prefer", "resolution=merge-duplicates,return=minimal");
-        request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
-        _ = await http.SendAsync(request);
-    }
-
-    private async Task UpsertCurrentUserAsync()
-    {
-        if (string.IsNullOrWhiteSpace(supabaseUrl) || string.IsNullOrWhiteSpace(supabaseKey)) return;
-
-        var playerId = await GetOrCreatePlayerIdAsync();
-        var playerProgress = await progress.GetAsync();
-        var playerName = string.IsNullOrWhiteSpace(playerProgress.Name) ? "Svečias" : playerProgress.Name.Trim();
-        var score = Math.Max(playerProgress.RecentResults.Sum(result => result.Score), playerProgress.BestScore);
-        var avatar = AvatarCatalog.All.FirstOrDefault(x => x.Id == playerProgress.AvatarId)?.Symbol ?? "🙂";
-        var countryFlag = "🇱🇹";
-
-        await RemoveDuplicateRowsByNicknameAsync(playerName, playerId);
-
-        var payload = new[]
-        {
-            new SupabaseLeaderboardRow
-            {
-                PlayerId = playerId,
-                Nickname = playerName,
-                Score = score,
-                Avatar = avatar,
-                CountryFlag = countryFlag,
-                UpdatedAt = DateTime.UtcNow
-            }
-        };
-
-        using var request = CreateRequest(HttpMethod.Post, "rest/v1/leaderboard?on_conflict=player_id");
-        request.Headers.TryAddWithoutValidation("Prefer", "resolution=merge-duplicates,return=minimal");
-        request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
-        _ = await http.SendAsync(request);
-    }
+    public async Task ResetCurrentUserScoreAsync() => _ = await api.PostAsync("/leaderboard/reset");
 
     private async Task<IReadOnlyList<LeaderboardEntry>> LoadAsync()
     {
-        if (string.IsNullOrWhiteSpace(supabaseUrl) || string.IsNullOrWhiteSpace(supabaseKey)) return [];
+        var response = await api.GetAsync("/leaderboard");
+        if (!response.Ok) return [];
 
-        using var request = CreateRequest(HttpMethod.Get, "rest/v1/leaderboard?select=player_id,nickname,score,avatar,country_flag,updated_at&order=score.desc,updated_at.asc&limit=200");
-        using var response = await http.SendAsync(request);
-        if (!response.IsSuccessStatusCode)
-        {
-            return [];
-        }
-
-        var json = await response.Content.ReadAsStringAsync();
-        var rows = JsonSerializer.Deserialize<List<SupabaseLeaderboardRow>>(json, JsonOptions) ?? [];
-        var backgrounds = await LoadAvatarBackgroundMapAsync();
+        var rows = response.As<List<LeaderboardRow>>() ?? [];
         return rows
-            .OrderByDescending(x => x.Score)
-            .ThenBy(x => x.UpdatedAt ?? DateTime.MaxValue)
-            .Select(x =>
-            {
-                var playerId = x.PlayerId ?? string.Empty;
-                var userId = TryExtractUserId(playerId);
-                var bg = userId is not null && backgrounds.TryGetValue(userId, out var value)
-                    ? value
-                    : "bg-violet";
-                return new LeaderboardEntry(playerId, x.Nickname ?? "Svečias", x.Score, "🥇", x.Avatar ?? "🙂", x.CountryFlag ?? "🇱🇹", bg);
-            })
-            .Where(x => !string.IsNullOrWhiteSpace(x.Id))
+            .Where(x => !string.IsNullOrWhiteSpace(x.PlayerId))
+            .Select(x => new LeaderboardEntry(
+                x.PlayerId!,
+                string.IsNullOrWhiteSpace(x.Nickname) ? "Svečias" : x.Nickname,
+                x.Score,
+                "🥇",
+                AvatarCatalog.All.FirstOrDefault(a => a.Id == x.AvatarId)?.Symbol ?? "🙂",
+                "🇱🇹",
+                string.IsNullOrWhiteSpace(x.AvatarBackground) ? "bg-violet" : x.AvatarBackground))
             .ToList();
     }
 
-    private async Task<Dictionary<string, string>> LoadAvatarBackgroundMapAsync()
+    private sealed class LeaderboardRow
     {
-        using var request = CreateRequest(HttpMethod.Get, "rest/v1/user_progress?select=user_id,avatar_background");
-        using var response = await http.SendAsync(request);
-        if (!response.IsSuccessStatusCode) return [];
-
-        var json = await response.Content.ReadAsStringAsync();
-        var rows = JsonSerializer.Deserialize<List<UserProgressAvatarRow>>(json, JsonOptions) ?? [];
-        return rows
-            .Where(row => !string.IsNullOrWhiteSpace(row.UserId))
-            .ToDictionary(row => row.UserId!, row => string.IsNullOrWhiteSpace(row.AvatarBackground) ? "bg-violet" : row.AvatarBackground!);
-    }
-
-    private static string? TryExtractUserId(string playerId)
-        => playerId.StartsWith("user-", StringComparison.Ordinal) ? playerId[5..] : null;
-
-    private HttpRequestMessage CreateRequest(HttpMethod method, string path)
-    {
-        var baseUrl = supabaseUrl?.TrimEnd('/') ?? string.Empty;
-        var request = new HttpRequestMessage(method, $"{baseUrl}/{path}");
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Headers.TryAddWithoutValidation("apikey", supabaseKey);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", supabaseKey);
-        return request;
-    }
-
-    private async Task<string> GetOrCreatePlayerIdAsync()
-    {
-        var authSession = await auth.GetSessionAsync();
-        if (authSession is not null && !string.IsNullOrWhiteSpace(authSession.UserId))
-        {
-            var stablePlayerId = $"user-{authSession.UserId}";
-            var stored = await js.InvokeAsync<string?>("localStorage.getItem", PlayerIdKey);
-            if (!string.Equals(stored, stablePlayerId, StringComparison.Ordinal))
-            {
-                await js.InvokeVoidAsync("localStorage.setItem", PlayerIdKey, stablePlayerId);
-            }
-
-            return stablePlayerId;
-        }
-
-        var playerId = await js.InvokeAsync<string?>("localStorage.getItem", PlayerIdKey);
-        if (!string.IsNullOrWhiteSpace(playerId)) return playerId;
-
-        playerId = $"player-{Guid.NewGuid():N}";
-        await js.InvokeVoidAsync("localStorage.setItem", PlayerIdKey, playerId);
-        return playerId;
-    }
-
-    private async Task RemoveDuplicateRowsByNicknameAsync(string nickname, string keepPlayerId)
-    {
-        if (string.IsNullOrWhiteSpace(nickname) || string.IsNullOrWhiteSpace(keepPlayerId)) return;
-
-        var encodedName = Uri.EscapeDataString(nickname);
-        var encodedPlayer = Uri.EscapeDataString(keepPlayerId);
-        using var request = CreateRequest(HttpMethod.Delete, $"rest/v1/leaderboard?nickname=eq.{encodedName}&player_id=neq.{encodedPlayer}");
-        _ = await http.SendAsync(request);
-    }
-
-    private sealed class SupabaseLeaderboardRow
-    {
-        [JsonPropertyName("player_id")]
-        public string? PlayerId { get; set; }
-
-        [JsonPropertyName("nickname")]
-        public string? Nickname { get; set; }
-
-        [JsonPropertyName("score")]
-        public int Score { get; set; }
-
-        [JsonPropertyName("avatar")]
-        public string? Avatar { get; set; }
-
-        [JsonPropertyName("country_flag")]
-        public string? CountryFlag { get; set; }
-
-        [JsonPropertyName("updated_at")]
-        public DateTime? UpdatedAt { get; set; }
-    }
-
-    private sealed class UserProgressAvatarRow
-    {
-        [JsonPropertyName("user_id")]
-        public string? UserId { get; set; }
-
-        [JsonPropertyName("avatar_background")]
-        public string? AvatarBackground { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("player_id")] public string? PlayerId { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("nickname")] public string? Nickname { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("score")] public int Score { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("avatar_id")] public string? AvatarId { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("avatar_background")] public string? AvatarBackground { get; set; }
     }
 }

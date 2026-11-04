@@ -9,30 +9,55 @@
 
 <section class="auth-shell">
     <article class="auth-card auth-card-login @(isRedirecting ? "is-hiding" : string.Empty)">
-        <p class="eyebrow">SUGRĮŽĘS MOKINYS</p>
-        <h1>Prisijungti</h1>
-        <p class="subtitle">Tęsk pažangą nuo ten, kur sustojai.</p>
+        <img class="auth-logo" src="images/nesimokau-logo.png" alt="nesimokau.lt" width="84" height="84" />
+        @if (mfaTicket is null)
+        {
+            <p class="eyebrow">SUGRĮŽĘS MOKINYS</p>
+            <h1>Prisijungti</h1>
+            <p class="subtitle">Tęsk pažangą nuo ten, kur sustojai.</p>
 
-        <EditForm Model="loginForm" OnSubmit="LoginAsync" class="auth-form">
-            <div class="auth-field">
-                <label for="username">Slapyvardis</label>
-                <input id="username" @bind="loginForm.Username" maxlength="24" autocomplete="username" required />
-            </div>
+            <EditForm Model="loginForm" OnSubmit="LoginAsync" class="auth-form">
+                <div class="auth-field">
+                    <label for="username">Slapyvardis</label>
+                    <input id="username" @bind="loginForm.Username" maxlength="24" autocomplete="username" required />
+                </div>
 
-            <div class="auth-field">
-                <label for="password">Slaptažodis</label>
-                <input id="password" type="password" @bind="loginForm.Password" autocomplete="current-password" required />
-            </div>
+                <div class="auth-field">
+                    <label for="password">Slaptažodis</label>
+                    <input id="password" type="password" @bind="loginForm.Password" autocomplete="current-password" required />
+                </div>
 
-            @if (!string.IsNullOrWhiteSpace(errorMessage))
-            {
-                <p class="auth-error">@errorMessage</p>
-            }
+                @if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    <p class="auth-error">@errorMessage</p>
+                }
 
-            <button type="submit" class="button button-primary auth-submit" disabled="@isSubmitting">@(isSubmitting ? "Jungiamasi..." : "Prisijungti")</button>
-        </EditForm>
+                <button type="submit" class="button button-primary auth-submit" disabled="@isSubmitting">@(isSubmitting ? "Jungiamasi..." : "Prisijungti")</button>
+            </EditForm>
 
-        <p class="auth-alt">Neturi paskyros? <a href="/registracija">Registruokis</a></p>
+            <p class="auth-alt">Neturi paskyros? <a href="/registracija">Registruokis</a></p>
+        }
+        else
+        {
+            <p class="eyebrow">DVIEJŲ ŽINGSNIŲ PATIKRA</p>
+            <h1>Įvesk kodą</h1>
+            <p class="subtitle">Atidaryk autentifikavimo programėlę ir įvesk 6 skaitmenų kodą (arba atsarginį kodą).</p>
+
+            <EditForm Model="loginForm" OnSubmit="VerifyMfaAsync" class="auth-form">
+                <div class="auth-field">
+                    <label for="mfa-code">Patvirtinimo kodas</label>
+                    <input id="mfa-code" class="auth-code-input" @bind="mfaCode" maxlength="16" inputmode="text" autocomplete="one-time-code" autofocus required />
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    <p class="auth-error">@errorMessage</p>
+                }
+
+                <button type="submit" class="button button-primary auth-submit" disabled="@isSubmitting">@(isSubmitting ? "Tikrinama..." : "Patvirtinti")</button>
+                <button type="button" class="button button-ghost auth-submit" @onclick="CancelMfa">Atgal</button>
+            </EditForm>
+        }
     </article>
 
     @if (isRedirecting)
@@ -54,6 +79,8 @@
     private bool fastRedirect;
     private bool shouldAutoRedirect;
     private string errorMessage = string.Empty;
+    private string? mfaTicket;
+    private string mfaCode = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,13 +115,57 @@
             isSubmitting = false;
         }
 
+        if (result.MfaRequired)
+        {
+            mfaTicket = result.MfaTicket;
+            mfaCode = string.Empty;
+            return;
+        }
+
         if (!result.Success || result.Session is null)
         {
             errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Prisijungti nepavyko." : result.ErrorMessage;
             return;
         }
 
-        await Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup);
+        await CompleteAsync(result.Session);
+    }
+
+    private async Task VerifyMfaAsync(EditContext _)
+    {
+        if (mfaTicket is null) return;
+        errorMessage = string.Empty;
+        isSubmitting = true;
+        AuthResult result;
+        try
+        {
+            result = await Auth.VerifyMfaAsync(mfaTicket, mfaCode.Trim());
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+
+        if (!result.Success || result.Session is null)
+        {
+            errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Neteisingas kodas." : result.ErrorMessage;
+            return;
+        }
+
+        await CompleteAsync(result.Session);
+    }
+
+    private void CancelMfa()
+    {
+        mfaTicket = null;
+        mfaCode = string.Empty;
+        errorMessage = string.Empty;
+        loginForm.Password = string.Empty;
+    }
+
+    private async Task CompleteAsync(AuthSession session)
+    {
+        await Progress.ApplyAccountProfileAsync(session.Username, session.AvatarId, session.ClassGroup);
         isRedirecting = true;
         await InvokeAsync(StateHasChanged);
         await Task.Delay(1500);

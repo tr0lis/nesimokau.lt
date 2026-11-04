@@ -1,0 +1,110 @@
+@using nesimokau.lt.Models
+@using nesimokau.lt.Components
+@using nesimokau.lt.Services
+@inject AuthService Auth
+
+<section class="twofa-panel" aria-labelledby="twofa-title">
+    <div class="twofa-head">
+        <h3 id="twofa-title">Dviejų žingsnių patikra (2FA)</h3>
+        <span class="twofa-badge @(enabled ? "is-on" : "is-off")">@(enabled ? "Įjungta" : "Išjungta")</span>
+    </div>
+
+    @if (backupCodes.Count > 0)
+    {
+        <div class="twofa-codes">
+            <p><strong>Atsarginiai kodai.</strong> Išsaugok juos saugioje vietoje – kiekvienas veikia tik kartą ir daugiau jų nebus rodoma.</p>
+            <ul>
+                @foreach (var c in backupCodes)
+                {
+                    <li>@c</li>
+                }
+            </ul>
+            <button type="button" class="button button-secondary compact-btn" @onclick="() => backupCodes = new()">Išsaugojau</button>
+        </div>
+    }
+    else if (setup is not null)
+    {
+        <div class="twofa-setup">
+            <QrCodeView Matrix="setup.Qr" />
+            <p class="twofa-hint">Nuskenuok kodą programėle (Google Authenticator, Authy, 1Password…) ir įvesk 6 skaitmenų kodą.</p>
+            <details class="twofa-manual"><summary>Negaliu nuskenuoti</summary><code>@setup.Secret</code></details>
+            <input class="twofa-input" @bind="code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" aria-label="Patvirtinimo kodas" />
+            <div class="twofa-actions">
+                <button type="button" class="button button-primary compact-btn" disabled="@busy" @onclick="ConfirmAsync">Įjungti</button>
+                <button type="button" class="button button-ghost compact-btn" @onclick="Cancel">Atšaukti</button>
+            </div>
+        </div>
+    }
+    else if (!enabled)
+    {
+        <p class="twofa-hint">Apsaugok paskyrą papildomu kodu iš telefono programėlės.</p>
+        <input class="twofa-input" type="password" @bind="password" autocomplete="current-password" placeholder="Slaptažodis" aria-label="Slaptažodis" />
+        <div class="twofa-actions">
+            <button type="button" class="button button-primary compact-btn" disabled="@busy" @onclick="BeginAsync">Įjungti 2FA</button>
+        </div>
+    }
+    else
+    {
+        <input class="twofa-input" type="password" @bind="password" autocomplete="current-password" placeholder="Slaptažodis" aria-label="Slaptažodis" />
+        <input class="twofa-input" @bind="code" maxlength="16" autocomplete="one-time-code" placeholder="2FA arba atsarginis kodas" aria-label="2FA kodas" />
+        <div class="twofa-actions">
+            <button type="button" class="button button-secondary compact-btn" disabled="@busy" @onclick="RegenerateAsync">Nauji atsarginiai kodai</button>
+            <button type="button" class="button button-ghost compact-btn" disabled="@busy" @onclick="DisableAsync">Išjungti 2FA</button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(error)) { <p class="auth-error">@error</p> }
+</section>
+
+@code {
+    private bool enabled;
+    private bool busy;
+    private string password = string.Empty;
+    private string code = string.Empty;
+    private string error = string.Empty;
+    private TwoFactorSetup? setup;
+    private List<string> backupCodes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        enabled = (await Auth.GetSessionAsync())?.TotpEnabled ?? false;
+    }
+
+    private async Task BeginAsync()
+    {
+        busy = true; error = string.Empty;
+        var r = await Auth.BeginTwoFactorAsync(password);
+        busy = false;
+        if (!r.Ok) { error = r.Error; return; }
+        setup = r.Setup; password = string.Empty; code = string.Empty;
+    }
+
+    private async Task ConfirmAsync()
+    {
+        busy = true; error = string.Empty;
+        var r = await Auth.EnableTwoFactorAsync(code.Trim());
+        busy = false;
+        if (!r.Ok) { error = r.Error; return; }
+        enabled = true; setup = null; code = string.Empty; backupCodes = r.BackupCodes;
+    }
+
+    private void Cancel() { setup = null; code = string.Empty; error = string.Empty; }
+
+    private async Task DisableAsync()
+    {
+        busy = true; error = string.Empty;
+        var r = await Auth.DisableTwoFactorAsync(password, code.Trim());
+        busy = false;
+        if (!r.Ok) { error = r.Error; return; }
+        enabled = false; password = string.Empty; code = string.Empty;
+    }
+
+    private async Task RegenerateAsync()
+    {
+        busy = true; error = string.Empty;
+        var r = await Auth.RegenerateBackupCodesAsync(password, code.Trim());
+        busy = false;
+        if (!r.Ok) { error = r.Error; return; }
+        backupCodes = r.BackupCodes; password = string.Empty; code = string.Empty;
+    }
+}

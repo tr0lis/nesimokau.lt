@@ -8,7 +8,7 @@ using nesimokau.lt.Models;
 
 namespace nesimokau.lt.Services;
 
-public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLog, AuthService auth, HttpClient http, IConfiguration config)
+public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLog, AuthService auth, ApiClient api)
 {
     public sealed record DbSyncStatus(string State, string Message, DateTime UpdatedAtUtc);
 
@@ -24,8 +24,6 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     private const string PendingQueueKey = "nesimokau-progress-sync-queue";
     private const string LastSuccessKey = "nesimokau-progress-last-sync-success-utc";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly string? supabaseUrl = config["Supabase:Url"];
-    private readonly string? supabaseKey = config["Supabase:PublishableKey"];
     private StudentProgress? cached;
     private string? cachedUserKey;
     private DbSyncStatus syncStatus = new("unknown", "Tikrinama...", DateTime.UtcNow);
@@ -596,29 +594,16 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
         return string.IsNullOrWhiteSpace(session?.UserId) ? null : session.UserId;
     }
 
-    private bool IsDbReady() => !string.IsNullOrWhiteSpace(supabaseUrl) && !string.IsNullOrWhiteSpace(supabaseKey);
-
-    private HttpRequestMessage CreateRequest(HttpMethod method, string path)
-    {
-        var baseUrl = supabaseUrl?.TrimEnd('/') ?? string.Empty;
-        var request = new HttpRequestMessage(method, $"{baseUrl}/{path}");
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Headers.TryAddWithoutValidation("apikey", supabaseKey);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", supabaseKey);
-        return request;
-    }
+    private static bool IsDbReady() => true;
 
     private async Task<DbLoadResult> LoadFromDbAsync(string userId)
     {
         try
         {
-            using var request = CreateRequest(HttpMethod.Get, $"rest/v1/user_progress?select=*&user_id=eq.{Uri.EscapeDataString(userId)}&limit=1");
-            using var response = await http.SendAsync(request);
-            if (!response.IsSuccessStatusCode) return DbLoadResult.Failed();
+            var response = await api.GetAsync("/progress");
+            if (!response.Ok) return DbLoadResult.Failed();
 
-            var json = await response.Content.ReadAsStringAsync();
-            var rows = JsonSerializer.Deserialize<List<UserProgressRow>>(json, JsonOptions) ?? [];
-            var row = rows.FirstOrDefault();
+            var row = response.As<UserProgressRow>();
             return row is null
                 ? DbLoadResult.Success(null)
                 : DbLoadResult.Success(ToStudentProgress(row));
@@ -633,12 +618,8 @@ public sealed class ProgressService(IJSRuntime js, ActivityLogService activityLo
     {
         try
         {
-            var payload = new[] { ToRow(userId, progress) };
-            using var request = CreateRequest(HttpMethod.Post, "rest/v1/user_progress?on_conflict=user_id");
-            request.Headers.TryAddWithoutValidation("Prefer", "resolution=merge-duplicates,return=minimal");
-            request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
-            using var response = await http.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            var response = await api.PutAsync("/progress", ToRow(userId, progress));
+            return response.Ok;
         }
         catch
         {
