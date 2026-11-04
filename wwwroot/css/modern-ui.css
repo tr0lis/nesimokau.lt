@@ -2127,7 +2127,7 @@ textarea,
     border-top: 1px solid #eeeaf4;
 }
 
-.sidebar-account-link {
+.sidebar-account-link[class*="avatar-"] {
     display: flex;
     min-width: 0;
     min-height: 48px;
@@ -2388,9 +2388,9 @@ textarea,
     color: #cbbaff;
 }
 
-:root[data-theme="dark"] .sidebar-account-link,
-:root[data-theme="dark"] .sidebar-account-link:hover,
-:root[data-theme="dark"] .sidebar-account-link.active {
+:root[data-theme="dark"] .sidebar-account-link[class*="avatar-"],
+:root[data-theme="dark"] .sidebar-account-link[class*="avatar-"]:hover,
+:root[data-theme="dark"] .sidebar-account-link[class*="avatar-"].active {
     color: #f1edf8;
 }
 
@@ -3247,6 +3247,13 @@ textarea,
 
 :root[data-theme="dark"] .home-level-copy small,
 :root[data-theme="dark"] .home-level-streak { color: #d0c4e6; }
+
+:root[data-theme="dark"] .home-level-progress,
+:root[data-theme="dark"] .home-progress-track {
+    background: #403751;
+}
+
+:root[data-theme="dark"] .brand-wordmark { color: #f0eaff; }
 
 :root[data-theme="dark"] .home-level-icon {
     background: linear-gradient(145deg, color-mix(in srgb, var(--level-glow, #a38aff) 38%, #302a40), #282237);
