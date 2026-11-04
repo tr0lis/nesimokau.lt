@@ -558,3 +558,20 @@ a:hover .fx-coin, .stat-card:hover .fx-coin, .sidebar-account-link:hover .fx-coi
 :root[data-theme="dark"] .sk { background: linear-gradient(100deg, #231c36 30%, #30264a 50%, #231c36 70%); background-size: 200% 100%; }
 @keyframes skShimmer { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+
+/* ===== Dev note ===== */
+.dev-note { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; padding: 12px 16px; border-radius: 18px; border: 1px solid rgba(116, 84, 237, .28); background: linear-gradient(120deg, rgba(116, 84, 237, .10), rgba(84, 208, 191, .10)); color: #3b2f66; }
+.dev-note p { margin: 0; font-size: 14px; line-height: 1.45; }
+.dev-note strong { color: #5b3fd0; }
+.dev-note-compact { padding: 9px 14px; margin-bottom: 14px; }
+.dev-note-compact p { font-size: 13px; }
+.dev-orb { position: relative; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle at 30% 28%, #c9b8ff, #7454ed 60%, #4a2fb8); box-shadow: 0 0 0 0 rgba(116, 84, 237, .5), 0 4px 14px rgba(116, 84, 237, .45); animation: devPulse 2.2s ease-in-out infinite; cursor: pointer; transition: transform .25s; }
+.dev-orb:hover { transform: scale(1.18); }
+.dev-orb i { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #fff; transform-origin: 3px 3px; animation: devOrbit 1.6s linear infinite; }
+.dev-orb i:nth-child(2) { animation-delay: -.53s; opacity: .8; }
+.dev-orb i:nth-child(3) { animation-delay: -1.06s; opacity: .6; }
+@keyframes devOrbit { from { transform: rotate(0) translateX(21px); } to { transform: rotate(360deg) translateX(21px); } }
+@keyframes devPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(116, 84, 237, .45), 0 4px 14px rgba(116, 84, 237, .45); } 50% { box-shadow: 0 0 0 9px rgba(116, 84, 237, 0), 0 4px 14px rgba(116, 84, 237, .45); } }
+:root[data-theme="dark"] .dev-note { color: #e6dffa; border-color: rgba(167, 139, 250, .35); background: linear-gradient(120deg, rgba(116, 84, 237, .20), rgba(84, 208, 191, .12)); }
+:root[data-theme="dark"] .dev-note strong { color: #c4b2ff; }
+@media (prefers-reduced-motion: reduce) { .dev-orb, .dev-orb i { animation: none; } }
