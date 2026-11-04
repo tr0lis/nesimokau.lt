@@ -2,77 +2,87 @@
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject LeaderboardService Leaderboard
+@inject IJSRuntime JS
 @implements IDisposable
 
 <SeoHead Title="Turnyrinė lentelė | nesimokau.lt" Description="Asmeninė mokinių rezultatų turnyrinė lentelė." Indexable="false" />
 
-<section class="tournament-page">
-    <header class="tournament-head">
-        <p class="eyebrow">🏅 TURNYRINĖ LENTELĖ</p>
-        <h1>Geriausi žaidėjai Lietuvoje</h1>
-        <p class="subtitle">Reitingas atnaujinamas realiu laiku pagal taškų kiekį.</p>
+<section class="lb-page">
+    <div class="lb-glow" aria-hidden="true"></div>
+    <header class="lb-head">
+        <div>
+            <p class="lb-label">TURNYRINĖ LENTELĖ</p>
+            <h1>Geriausi žaidėjai Lietuvoje</h1>
+            <p class="lb-live"><span class="lb-dot" aria-hidden="true"></span>Atnaujinama realiu laiku</p>
+        </div>
+        <div class="lb-tabs" role="tablist" aria-label="Laikotarpis">
+            @foreach (var tab in Periods)
+            {
+                <button type="button" role="tab" class="lb-tab @(period == tab.Key ? "is-active" : "")" aria-selected="@(period == tab.Key ? "true" : "false")" @onclick="() => period = tab.Key">@tab.Label</button>
+            }
+        </div>
     </header>
 
     @if (isLoading)
     {
-        <div class="loading-state loading-skeleton" role="status" aria-label="Kraunama"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span><div class="sk-grid"><span class="sk sk-card"></span><span class="sk sk-card"></span><span class="sk sk-card"></span></div></div>
+        <div class="loading-state loading-skeleton" role="status" aria-label="Kraunama"><span class="sk sk-title"></span><span class="sk sk-line"></span><div class="sk-grid"><span class="sk sk-card"></span><span class="sk sk-card"></span><span class="sk sk-card"></span></div></div>
     }
     else if (!entries.Any())
     {
-        <section class="tournament-table-card">
-            <div class="section-heading">
-                <div><h2>Top 20</h2><span class="catalog-count">Dar nėra rezultatų</span></div>
-            </div>
-            <div class="tournament-table">
-                <div class="tournament-separator">Kol kas tuščia. Užbaik užduotis ir būk pirmas.</div>
-            </div>
+        <section class="lb-card">
+            <div class="lb-card-head"><h2>Top 20</h2><span>Dar nėra rezultatų</span></div>
+            <p class="lb-empty">Kol kas tuščia. Užbaik užduotis ir būk pirmas.</p>
         </section>
     }
     else
     {
-        <div class="podium-grid" aria-label="Top 3 podiumas">
+        <div class="lb-podium" aria-label="Top 3 podiumas">
             @foreach (var item in PodiumOrdered)
             {
-                <article class="podium-card podium-@item.Place">
-                    @if (item.Place == 1) { <span class="podium-crown" aria-hidden="true">👑</span> }
-                    <div class="podium-avatar @AvatarBgClassFor(item.Entry)">@item.Entry.Avatar</div>
-                    <strong class="podium-name">@item.Entry.Name</strong>
-                    <small class="podium-score">@item.Entry.Score taškų</small>
-                    <div class="podium-step"><span>@item.Place</span></div>
+                <article class="lb-pod lb-pod-@item.Place">
+                    @if (item.Place == 1)
+                    {
+                        <svg class="lb-crown" viewBox="0 0 32 24" aria-hidden="true"><path d="M3 20 1 6l8 6 7-10 7 10 8-6-2 14z" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.2" stroke-linejoin="round"/><rect x="3" y="21" width="26" height="2.4" rx="1.2" fill="#f59e0b"/></svg>
+                    }
+                    <div class="lb-pod-avatar @AvatarBgClassFor(item.Entry)">@item.Entry.Avatar</div>
+                    <strong class="lb-pod-name">@item.Entry.Name</strong>
+                    <small class="lb-pod-score"><span data-countup="@item.Entry.Score">@Fmt(item.Entry.Score)</span> taškų</small>
+                    <div class="lb-pod-step"><span>@item.Place</span></div>
                 </article>
             }
         </div>
 
-        <section class="tournament-table-card">
-            <div class="section-heading">
-                <div><h2>Top 20</h2><span class="catalog-count">Visi pagal taškus</span></div>
-            </div>
-            <div class="tournament-table">
-                @foreach (var row in TopRows)
+        <section class="lb-card">
+            <div class="lb-card-head"><h2>Top 20</h2><span>Nuo 4 vietos pagal taškus</span></div>
+            <ol class="lb-list">
+                @foreach (var row in ListRows)
                 {
-                    <div class="tournament-row @(row.Entry.Id == currentPlayerId ? "is-self" : "")">
-                        <span class="tournament-rank">@row.DisplayRank</span>
-                        <span class="tournament-avatar @AvatarBgClassFor(row.Entry)">@row.Entry.Avatar</span>
-                        <strong class="tournament-name">@row.Entry.Name <span class="player-flag">@row.Entry.CountryFlag</span></strong>
-                        <b class="tournament-score">@row.Entry.Score</b>
-                    </div>
+                    <li class="lb-row @(row.Entry.Id == currentPlayerId ? "is-self" : "")" style="--i:@row.Index">
+                        <span class="lb-rank">@row.Place</span>
+                        <span class="lb-avatar @AvatarBgClassFor(row.Entry)">@row.Entry.Avatar</span>
+                        <div class="lb-who">
+                            <strong>@row.Entry.Name <span class="player-flag">@row.Entry.CountryFlag</span></strong>
+                            <span class="lb-bar"><i style="width:@Pct(row.Entry.Score)%"></i></span>
+                        </div>
+                        <b class="lb-score">@Fmt(row.Entry.Score)</b>
+                    </li>
                 }
-
-                @if (CurrentUserOutsideTop20)
-                {
-                    <div class="tournament-separator">…</div>
-                    <div class="tournament-row is-self">
-                        <span class="tournament-rank">21</span>
-                        <span class="tournament-avatar @AvatarBgClassFor(CurrentUserEntry)">@CurrentUserEntry?.Avatar</span>
-                        <strong class="tournament-name">@CurrentUserEntry?.Name <span class="player-flag">@CurrentUserEntry?.CountryFlag</span></strong>
-                        <b class="tournament-score">@CurrentUserEntry?.Score</b>
+            </ol>
+            @if (CurrentUserEntry is not null)
+            {
+                <div class="lb-me">
+                    <span class="lb-rank">@(CurrentUserIndex + 1)</span>
+                    <span class="lb-avatar @AvatarBgClassFor(CurrentUserEntry)">@CurrentUserEntry.Avatar</span>
+                    <div class="lb-who">
+                        <strong>Tavo vieta · @CurrentUserEntry.Name</strong>
+                        <small>@GapText</small>
                     </div>
-                }
-            </div>
+                    <b class="lb-score">@Fmt(CurrentUserEntry.Score)</b>
+                </div>
+            }
         </section>
     }
 </section>
-
 @code {
     private List<LeaderboardEntry> entries = [];
     private string currentPlayerId = string.Empty;
@@ -82,9 +92,26 @@
 
     private IEnumerable<(int Place, LeaderboardEntry Entry)> Podium => entries.Take(3).Select((entry, index) => (index + 1, entry));
     private IEnumerable<(int Place, LeaderboardEntry Entry)> PodiumOrdered => Podium.OrderBy(p => p.Place == 1 ? 2 : p.Place == 2 ? 1 : 3);
-    private IEnumerable<(string DisplayRank, LeaderboardEntry Entry)> TopRows => entries.Take(20).Select((entry, index) => ($"{index + 1}", entry));
-    private LeaderboardEntry? CurrentUserEntry => entries.FirstOrDefault(entry => entry.Id == currentPlayerId);
-    private bool CurrentUserOutsideTop20 => CurrentUserEntry is not null && entries.FindIndex(entry => entry.Id == currentPlayerId) > 19;
+    private IEnumerable<(int Place, int Index, LeaderboardEntry Entry)> ListRows => entries.Skip(3).Take(17).Select((entry, index) => (index + 4, index, entry));
+    private int CurrentUserIndex => entries.FindIndex(entry => entry.Id == currentPlayerId);
+    private LeaderboardEntry? CurrentUserEntry => string.IsNullOrEmpty(currentPlayerId) ? null : entries.FirstOrDefault(entry => entry.Id == currentPlayerId);
+    private string GapText => CurrentUserIndex <= 0 ? "Tu pirmauji – taip ir toliau!" : $"Iki kitos vietos trūksta {Fmt(Math.Max(1, entries[CurrentUserIndex - 1].Score - CurrentUserEntry!.Score + 1))} taškų";
+    private double Pct(int score) => entries.Count == 0 || entries[0].Score <= 0 ? 0 : Math.Clamp(score * 100.0 / entries[0].Score, 0, 100);
+    private static string Fmt(int value) => value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture).Replace(",", "\u00A0");
+
+    // TODO: the API does not support period filtering yet; the tabs only change UI state.
+    private string period = "all";
+    private static readonly (string Key, string Label)[] Periods = [("all", "Visi laikai"), ("month", "Šis mėnuo"), ("week", "Ši savaitė")];
+    private bool animated;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!animated && !isLoading && entries.Count > 0)
+        {
+            animated = true;
+            try { await JS.InvokeVoidAsync("nesimokau.countUp"); } catch (JSException) { }
+        }
+    }
     private string AvatarBgClassFor(LeaderboardEntry? entry)
     {
         if (entry is null) return "avatar-bg-violet";

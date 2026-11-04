@@ -120,3 +120,19 @@ window.nesimokau.celebrateMicroComplete = function (key) {
 
     setTimeout(() => root.remove(), 1200);
 };
+
+window.nesimokau.countUp = function () {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll('[data-countup]').forEach((el) => {
+        const target = Number(el.dataset.countup);
+        if (reduce || !Number.isFinite(target)) return;
+        const start = performance.now();
+        const fmt = (v) => Math.round(v).toLocaleString('en-US').replace(/,/g, '\u00A0');
+        const tick = (now) => {
+            const p = Math.min(1, (now - start) / 800);
+            el.textContent = fmt(target * (1 - Math.pow(1 - p, 3)));
+            if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    });
+};
