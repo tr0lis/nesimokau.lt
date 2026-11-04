@@ -29,8 +29,10 @@ else
                 {
                     <div class="name-inline-edit">
                         <input @bind="nameDraft" @bind:event="oninput" maxlength="30" aria-label="Vardo redagavimas" />
-                        <button class="button button-secondary compact-btn" @onclick="SaveName">Išsaugoti</button>
-                        <button class="button button-ghost compact-btn" @onclick="CancelNameEdit">Atšaukti</button>
+                        <div class="name-edit-actions">
+                            <button class="button button-primary compact-btn" @onclick="SaveName">Išsaugoti</button>
+                            <button class="button button-ghost compact-btn" @onclick="CancelNameEdit">Atšaukti</button>
+                        </div>
                     </div>
                 }
 

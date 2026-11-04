@@ -284,6 +284,100 @@ select {
 .main-nav .nav-guest .button-secondary { color: #5431c7; }
 .main-nav .nav-guest .button-secondary:hover { color: #4526ad; background: #e8e0ff; }
 :root[data-theme="dark"] .main-nav .nav-guest .button-secondary { color: #e4dcf2; }
+
+/* ===== Auth pages without sidebar ===== */
+.app-shell.app-shell-auth { display: block; }
+.app-shell-auth .app-main { display: grid; min-height: 100dvh; place-items: center; padding: 32px 16px; }
+.app-shell-auth .page-container { width: 100%; max-width: 520px; }
+
+/* ===== Achievements spacing ===== */
+.achievement-page { display: grid; gap: 20px; }
+.achievement-page > * { margin: 0; }
+.achievement-collection { padding-top: 4px; }
+.achievement-overview { margin-bottom: 4px; }
+
+/* ===== Home insights aligned with subject grid ===== */
+.home-insights { width: 100%; box-sizing: border-box; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; }
+.home-insights > * { min-width: 0; }
+@media (max-width: 1100px) { .home-insights { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .home-insights { grid-template-columns: 1fr; } }
+
+/* Progress card: light theme variant */
+:root:not([data-theme="dark"]) .home-progress-card {
+    border-color: #ddd2fb;
+    background: radial-gradient(circle at 90% 4%, rgba(170, 130, 255, .28), transparent 40%), linear-gradient(125deg, #f6f1ff, #e9defd);
+    color: #2b1768;
+}
+:root:not([data-theme="dark"]) .home-progress-label { color: #6a42d6; }
+:root:not([data-theme="dark"]) .home-progress-copy > span { color: #5d5280; }
+:root:not([data-theme="dark"]) .home-progress-track { background: rgba(98, 62, 200, .15); }
+
+/* ===== Profile username edit ===== */
+.profile-hero { min-width: 0; }
+.name-inline-edit { display: grid; width: 100%; max-width: 320px; margin: 12px auto 0; gap: 10px; box-sizing: border-box; }
+.name-inline-edit input { width: 100%; min-width: 0; box-sizing: border-box; text-align: center; }
+.name-edit-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.name-edit-actions .button { width: 100%; justify-content: center; }
+:root[data-theme="dark"] .name-inline-edit input { background: #241d36; border-color: #3d3358; color: #f1ecfb; }
+
+/* ===== 2FA panel ===== */
+.twofa-panel { display: grid; gap: 14px; margin-top: 18px; padding: 18px; border-radius: 18px; text-align: left; }
+.twofa-head { display: flex; align-items: center; gap: 12px; }
+.twofa-shield { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border-radius: 12px; background: rgba(124, 58, 237, .14); font-size: 20px; }
+.twofa-head-copy { flex: 1; min-width: 0; }
+.twofa-head-copy h3 { margin: 0; font-size: 15px; }
+.twofa-head-copy p { margin: 2px 0 0; font-size: 12px; opacity: .7; }
+.twofa-badge { flex: 0 0 auto; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+.twofa-badge.is-on { background: rgba(16, 185, 129, .16); color: #0f8a62; }
+.twofa-badge.is-off { background: rgba(124, 58, 237, .12); color: #6b46d8; }
+.twofa-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.twofa-row .twofa-input { flex: 1 1 160px; min-width: 0; width: auto; }
+.twofa-fields { display: grid; gap: 8px; }
+.twofa-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.twofa-actions .button { flex: 1 1 140px; justify-content: center; }
+.twofa-setup { display: grid; gap: 12px; justify-items: center; text-align: center; }
+.twofa-qr { padding: 12px; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(60, 30, 140, .15); }
+.twofa-setup .twofa-row { width: 100%; }
+.twofa-code { text-align: center; letter-spacing: .3em; font-weight: 800; }
+.twofa-manual code { display: block; margin-top: 6px; word-break: break-all; font-size: 12px; }
+.twofa-codes ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 10px 0; padding: 0; list-style: none; }
+.twofa-codes li { padding: 8px; border-radius: 10px; background: rgba(124, 58, 237, .1); font-family: ui-monospace, monospace; font-size: 13px; text-align: center; }
+.button-danger { border: 1px solid rgba(220, 38, 38, .35); background: rgba(220, 38, 38, .08); color: #c42626; font-weight: 700; }
+.button-danger:hover { background: #dc2626; color: #fff; }
+:root[data-theme="dark"] .twofa-qr { background: #fff; }
+:root[data-theme="dark"] .twofa-badge.is-on { color: #5eead4; }
+:root[data-theme="dark"] .twofa-badge.is-off { color: #cdbcff; }
+:root[data-theme="dark"] .button-danger { color: #fca5a5; }
+
+/* ===== Tournament podium ===== */
+.podium-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: end; max-width: 760px; margin: 8px auto 0; }
+.podium-card { min-height: 0; padding: 18px 10px 0; overflow: visible; border: 0; background: none; box-shadow: none; animation: podiumRise .8s cubic-bezier(.2, .9, .3, 1) both; }
+.podium-1 { animation-delay: .25s; }
+.podium-2 { animation-delay: .05s; }
+.podium-3 { animation-delay: .45s; }
+.podium-avatar { position: relative; width: 72px; height: 72px; margin: 0 auto 10px; border-radius: 50%; font-size: 36px; border: 3px solid var(--medal); box-shadow: 0 0 0 4px color-mix(in srgb, var(--medal) 25%, transparent), 0 10px 26px color-mix(in srgb, var(--medal) 45%, transparent); }
+.podium-1 { --medal: #f5b82e; --step-h: 120px; }
+.podium-2 { --medal: #aab4c8; --step-h: 88px; }
+.podium-3 { --medal: #d08a52; --step-h: 64px; }
+.podium-1 .podium-avatar { width: 88px; height: 88px; font-size: 44px; animation: podiumGlow 2.4s ease-in-out infinite; }
+.podium-crown { position: absolute; top: -14px; font-size: 28px; animation: crownBob 2.4s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(245, 184, 46, .5)); }
+.podium-card .podium-name { display: block; max-width: 100%; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
+.podium-card .podium-score { display: block; margin-bottom: 10px; font-weight: 700; }
+.podium-step { display: grid; width: 100%; height: var(--step-h); place-items: center; border-radius: 16px 16px 0 0; background: linear-gradient(180deg, color-mix(in srgb, var(--medal) 85%, #fff), color-mix(in srgb, var(--medal) 55%, #3b2a7a)); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .45); transform-origin: bottom; animation: stepGrow .8s cubic-bezier(.2, .9, .3, 1) both; }
+.podium-step span { color: #fff; font-size: 34px; font-weight: 900; text-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
+.tournament-row { transition: transform .2s ease, box-shadow .2s ease; animation: rowIn .4s ease both; }
+.tournament-row:hover { transform: translateX(3px); }
+:root[data-theme="dark"] .podium-card .podium-score { color: #b9aed6; }
+:root[data-theme="dark"] .tournament-table-card { background: #1d172b; border-color: #35294d; }
+:root[data-theme="dark"] .tournament-row { background: #261e38; border-color: #35294d; }
+:root[data-theme="dark"] .tournament-row.is-self { background: #3a2c63; border-color: #7a5ceb; }
+:root[data-theme="dark"] .tournament-rank, :root[data-theme="dark"] .tournament-score { color: #d8ccff; }
+@keyframes podiumRise { from { opacity: 0; transform: translateY(36px); } to { opacity: 1; transform: none; } }
+@keyframes stepGrow { from { transform: scaleY(.1); } to { transform: scaleY(1); } }
+@keyframes podiumGlow { 50% { box-shadow: 0 0 0 7px rgba(245, 184, 46, .22), 0 12px 34px rgba(245, 184, 46, .6); } }
+@keyframes crownBob { 50% { transform: translateY(-4px) rotate(-4deg); } }
+@keyframes rowIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .podium-card, .podium-step, .podium-avatar, .podium-crown, .tournament-row { animation: none !important; } }
 :root[data-theme="dark"] .main-nav .nav-guest .button-secondary:hover { color: #f6f0ff; background: #3b3152; }
 
 :root[data-theme="dark"] .nav-guest p { color: #beb4d0; }

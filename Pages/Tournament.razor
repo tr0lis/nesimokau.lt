@@ -31,13 +31,14 @@
     else
     {
         <div class="podium-grid" aria-label="Top 3 podiumas">
-            @foreach (var item in Podium)
+            @foreach (var item in PodiumOrdered)
             {
                 <article class="podium-card podium-@item.Place">
+                    @if (item.Place == 1) { <span class="podium-crown" aria-hidden="true">👑</span> }
                     <div class="podium-avatar @AvatarBgClassFor(item.Entry)">@item.Entry.Avatar</div>
-                    <span class="podium-place">#@item.Place</span>
-                    <strong>@item.Entry.Name <span class="player-flag">@item.Entry.CountryFlag</span></strong>
-                    <small>@item.Entry.Score taškų</small>
+                    <strong class="podium-name">@item.Entry.Name</strong>
+                    <small class="podium-score">@item.Entry.Score taškų</small>
+                    <div class="podium-step"><span>@item.Place</span></div>
                 </article>
             }
         </div>
@@ -80,6 +81,7 @@
     private CancellationTokenSource? cts;
 
     private IEnumerable<(int Place, LeaderboardEntry Entry)> Podium => entries.Take(3).Select((entry, index) => (index + 1, entry));
+    private IEnumerable<(int Place, LeaderboardEntry Entry)> PodiumOrdered => Podium.OrderBy(p => p.Place == 1 ? 2 : p.Place == 2 ? 1 : 3);
     private IEnumerable<(string DisplayRank, LeaderboardEntry Entry)> TopRows => entries.Take(20).Select((entry, index) => ($"{index + 1}", entry));
     private LeaderboardEntry? CurrentUserEntry => entries.FirstOrDefault(entry => entry.Id == currentPlayerId);
     private bool CurrentUserOutsideTop20 => CurrentUserEntry is not null && entries.FindIndex(entry => entry.Id == currentPlayerId) > 19;

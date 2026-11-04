@@ -1,35 +1,39 @@
-@using nesimokau.lt.Models
+﻿@using nesimokau.lt.Models
 @using nesimokau.lt.Components
 @using nesimokau.lt.Services
 @inject AuthService Auth
 
 <section class="twofa-panel" aria-labelledby="twofa-title">
     <div class="twofa-head">
-        <h3 id="twofa-title">Dviejų žingsnių patikra (2FA)</h3>
+        <span class="twofa-shield" aria-hidden="true">🛡️</span>
+        <div class="twofa-head-copy">
+            <h3 id="twofa-title">Dviejų žingsnių patikra</h3>
+            <p>Papildomas kodas iš telefono programėlės.</p>
+        </div>
         <span class="twofa-badge @(enabled ? "is-on" : "is-off")">@(enabled ? "Įjungta" : "Išjungta")</span>
     </div>
 
     @if (backupCodes.Count > 0)
     {
         <div class="twofa-codes">
-            <p><strong>Atsarginiai kodai.</strong> Išsaugok juos saugioje vietoje – kiekvienas veikia tik kartą ir daugiau jų nebus rodoma.</p>
+            <p><strong>Atsarginiai kodai.</strong> Išsaugok saugioje vietoje – kiekvienas veikia tik kartą ir daugiau nebus rodomas.</p>
             <ul>
                 @foreach (var c in backupCodes)
                 {
                     <li>@c</li>
                 }
             </ul>
-            <button type="button" class="button button-secondary compact-btn" @onclick="() => backupCodes = new()">Išsaugojau</button>
+            <div class="twofa-actions"><button type="button" class="button button-primary compact-btn" @onclick="() => backupCodes = new()">Išsaugojau</button></div>
         </div>
     }
     else if (setup is not null)
     {
         <div class="twofa-setup">
-            <QrCodeView Matrix="setup.Qr" />
+            <div class="twofa-qr"><QrCodeView Matrix="setup.Qr" /></div>
             <p class="twofa-hint">Nuskenuok kodą programėle (Google Authenticator, Authy, 1Password…) ir įvesk 6 skaitmenų kodą.</p>
             <details class="twofa-manual"><summary>Negaliu nuskenuoti</summary><code>@setup.Secret</code></details>
-            <input class="twofa-input" @bind="code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" aria-label="Patvirtinimo kodas" />
-            <div class="twofa-actions">
+            <div class="twofa-row">
+                <input class="twofa-input twofa-code" @bind="code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" aria-label="Patvirtinimo kodas" />
                 <button type="button" class="button button-primary compact-btn" disabled="@busy" @onclick="ConfirmAsync">Įjungti</button>
                 <button type="button" class="button button-ghost compact-btn" @onclick="Cancel">Atšaukti</button>
             </div>
@@ -37,19 +41,20 @@
     }
     else if (!enabled)
     {
-        <p class="twofa-hint">Apsaugok paskyrą papildomu kodu iš telefono programėlės.</p>
-        <input class="twofa-input" type="password" @bind="password" autocomplete="current-password" placeholder="Slaptažodis" aria-label="Slaptažodis" />
-        <div class="twofa-actions">
+        <div class="twofa-row">
+            <input class="twofa-input" type="password" @bind="password" autocomplete="current-password" placeholder="Slaptažodis" aria-label="Slaptažodis" />
             <button type="button" class="button button-primary compact-btn" disabled="@busy" @onclick="BeginAsync">Įjungti 2FA</button>
         </div>
     }
     else
     {
-        <input class="twofa-input" type="password" @bind="password" autocomplete="current-password" placeholder="Slaptažodis" aria-label="Slaptažodis" />
-        <input class="twofa-input" @bind="code" maxlength="16" autocomplete="one-time-code" placeholder="2FA arba atsarginis kodas" aria-label="2FA kodas" />
+        <div class="twofa-fields">
+            <input class="twofa-input" type="password" @bind="password" autocomplete="current-password" placeholder="Slaptažodis" aria-label="Slaptažodis" />
+            <input class="twofa-input" @bind="code" maxlength="16" autocomplete="one-time-code" placeholder="2FA arba atsarginis kodas" aria-label="2FA kodas" />
+        </div>
         <div class="twofa-actions">
             <button type="button" class="button button-secondary compact-btn" disabled="@busy" @onclick="RegenerateAsync">Nauji atsarginiai kodai</button>
-            <button type="button" class="button button-ghost compact-btn" disabled="@busy" @onclick="DisableAsync">Išjungti 2FA</button>
+            <button type="button" class="button button-danger compact-btn" disabled="@busy" @onclick="DisableAsync">Išjungti 2FA</button>
         </div>
     }
 

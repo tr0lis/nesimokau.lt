@@ -65,6 +65,9 @@ export async function handle(req, res) {
       return sendJson(res, error.status, { error: error.message });
     }
     console.error('API error:', error);
-    sendJson(res, 500, { error: 'Serverio klaida. Pabandyk vėliau.' });
+    // Only database error codes are echoed (never values), so schema problems can be diagnosed from the UI.
+    const dbCode = error?.data?.code ?? (error?.status ? `HTTP${error.status}` : error?.code);
+    const suffix = dbCode ? ` (kodas: ${String(dbCode).slice(0, 24)})` : '';
+    sendJson(res, 500, { error: `Serverio klaida. Pabandyk vėliau.${suffix}` });
   }
 }

@@ -1,4 +1,4 @@
-import fs from 'node:fs/promises';
+﻿import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,7 +16,7 @@ const pages = [
   {
     path: '/',
     title: 'nesimokau.lt – Mokykis žaisdamas!',
-    description: 'Mokomieji žaidimai 1–12 klasių mokiniams. Tobulėk lengviau!',
+    description: 'Mokomieji žaidimai 1–12 klasių mokiniams. Edukaciniai žaidimai vaikams pagal mokomuosius dalykus. Tobulėk lengviau!',
     sitemap: true,
     h1: 'Mokykis žaisdamas!',
     sections: [

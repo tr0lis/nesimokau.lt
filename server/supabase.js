@@ -7,6 +7,7 @@ const tables = {
   activity_log: { name: 'user_activity_log', fields: { uid: 'user_id' } },
   rate_limits: { name: 'rate_limits', fields: {} },
   auth_events: { name: 'auth_events', fields: {} },
+  leaderboard: { name: 'leaderboard', fields: {} },
 };
 
 function mapping(collection) {

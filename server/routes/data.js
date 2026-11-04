@@ -109,7 +109,6 @@ export const dataRoutes = {
       custom_avatar_data_url: avatarDataUrl(b.custom_avatar_data_url),
       diagnostic_attempts: objects(b.diagnostic_attempts, 200),
       recent_results: recent,
-      score: computeScore(recent, bestScore),
     };
 
     const existing = await db.first('user_progress', `uid = ${q(player.uid)}`);
@@ -125,24 +124,54 @@ export const dataRoutes = {
 
   async 'GET /leaderboard'(req, res) {
     await requirePlayer(req, res);
+    const merged = new Map();
+    const put = (key, entry) => {
+      const prev = merged.get(key);
+      if (!prev || entry.score > prev.score) merged.set(key, entry);
+    };
+
     const rows = await db.list('user_progress', {
-      sort: '-score,updated',
-      perPage: 200,
-      fields: 'uid,name,score,avatar_id,avatar_background',
+      perPage: 1000,
+      fields: 'uid,name,avatar_id,avatar_background,best_score,recent_results',
     });
-    sendJson(res, 200, rows.map((r) => ({
-      player_id: `user-${r.uid}`,
-      nickname: r.name,
-      score: r.score ?? 0,
-      avatar_id: r.avatar_id,
-      avatar_background: r.avatar_background || 'bg-violet',
-    })));
+    for (const r of rows) {
+      const recent = objects(r.recent_results, 100);
+      put(`u:${r.uid}`, {
+        player_id: `user-${r.uid}`,
+        nickname: r.name,
+        score: computeScore(recent, int(r.best_score, 0, 10_000_000)),
+        avatar_id: r.avatar_id,
+        avatar_background: r.avatar_background || 'bg-violet',
+      });
+    }
+
+    // Legacy leaderboard table may hold players imported from the old version of the site.
+    try {
+      const legacy = await db.list('leaderboard', { sort: '-score', perPage: 200 });
+      const known = new Set([...merged.values()].map((e) => String(e.nickname ?? '').toLowerCase()));
+      for (const r of legacy) {
+        const nick = String(r.nickname ?? '').trim();
+        if (!nick || known.has(nick.toLowerCase())) continue;
+        put(`l:${r.player_id}`, {
+          player_id: `legacy-${r.player_id}`,
+          nickname: nick,
+          score: int(r.score, 0, 10_000_000),
+          avatar_id: r.avatar ?? 'a1',
+          avatar_background: 'bg-violet',
+        });
+      }
+    } catch (error) {
+      console.error('Legacy leaderboard unavailable:', error instanceof Error ? error.message : 'unknown');
+    }
+
+    const top = [...merged.values()].sort((a, b) => b.score - a.score).slice(0, 50);
+    sendJson(res, 200, top);
   },
 
   async 'POST /leaderboard/reset'(req, res) {
     const { player } = await requirePlayer(req, res);
     const row = await db.first('user_progress', `uid = ${q(player.uid)}`);
-    if (row) await db.update('user_progress', row.id, { score: 0 });
+    if (row) await db.update('user_progress', row.id, { best_score: 0, recent_results: [] });
     sendJson(res, 200, { ok: true });
   },
 

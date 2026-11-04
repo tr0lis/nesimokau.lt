@@ -2,8 +2,11 @@
 @implements IDisposable
 @using nesimokau.lt.Services
 
-<div class="app-shell">
-    <NavMenu />
+<div class="app-shell @(isAuthPage ? "app-shell-auth" : "")">
+    @if (!isAuthPage)
+    {
+        <NavMenu />
+    }
     <main class="app-main">
         <div class="page-container">
             @if (allowed)
@@ -21,6 +24,7 @@
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
     private bool allowed;
+    private bool isAuthPage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -44,6 +48,7 @@
     private async Task EvaluateAsync()
     {
         var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
+        isAuthPage = path is "prisijungimas" or "registracija";
         if (PublicPaths.Contains(path))
         {
             allowed = true;
