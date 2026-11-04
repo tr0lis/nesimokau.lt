@@ -11,7 +11,17 @@ async function health(res) {
   const result = { config: 'ok', database: 'unknown' };
   const missing = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SESSION_SECRET', 'TOTP_ENC_KEY', 'ALLOWED_ORIGINS']
     .filter((name) => !process.env[name]);
-  if (missing.length) result.missing = missing;
+  if (missing.length) {
+    result.missing = missing;
+    // Names only: helps spot env vars scoped to another environment, empty values or typos.
+    result.runtime = {
+      vercelEnv: process.env.VERCEL_ENV ?? null,
+      commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7) || null,
+      envCount: Object.keys(process.env).length,
+      similarNames: Object.keys(process.env).filter((n) => /SUPA|SESSION|TOTP|ORIGIN/i.test(n)),
+      emptyNames: missing.filter((n) => n in process.env),
+    };
+  }
   try {
     getConfig();
   } catch (error) {
