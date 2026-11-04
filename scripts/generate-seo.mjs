@@ -199,7 +199,9 @@ function renderDocument(indexHtml, page) {
   html = injectMeta(html, 'twitter:description', page.description);
   html = html.replace(/<link\s+rel="canonical"[^>]*>/i, `<link rel="canonical" href="${canonical}" />`);
   html = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/i, `<script type="application/ld+json">${structuredData(page)}</script>`);
-  html = html.replace(/<div id="app">[\s\S]*?(?=<div id="blazor-error-ui")/, `<div id="app">${pageContent(page)}</div>\n\n    `);
+  // Keep the branded loader visible; the crawlable content stays in the DOM but is visually hidden until Blazor boots.
+  const loader = (html.match(/<div class="app-loading">[\s\S]*?<\/div>\s*<\/div>/) ?? [''])[0];
+  html = html.replace(/<div id="app">[\s\S]*?(?=<div id="blazor-error-ui")/, `<div id="app">${loader}${pageContent(page)}</div>\n\n    `);
   return html;
 }
 

@@ -4,10 +4,19 @@ window.nesimokau.setTheme = function (theme) {
     const isDark = theme === 'dark';
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
     document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+    try { localStorage.setItem('nsm-theme', isDark ? 'dark' : 'light'); } catch { }
     if (document.body) {
         document.body.classList.toggle('dark-theme', isDark);
     }
 };
+
+try {
+    const storedTheme = localStorage.getItem('nsm-theme');
+    if (storedTheme === 'dark' || storedTheme === 'light') {
+        document.documentElement.dataset.theme = storedTheme;
+        document.documentElement.style.colorScheme = storedTheme;
+    }
+} catch { }
 
 window.nesimokau.downloadDiagnosticReport = function (reportTitle, accuracy, questions, durationSeconds, wrongAnswers) {
     const canvas = document.createElement("canvas"); canvas.width = 1190; canvas.height = 1684;

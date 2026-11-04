@@ -1,4 +1,4 @@
-@page "/pasitaisyti"
+﻿@page "/pasitaisyti"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject ProgressService Progress
@@ -9,7 +9,7 @@
 <section class="tool-page">
     <p class="eyebrow">TIKSLINĖ TRENIRUOTĖ</p><h1>Pakartok tai, kas buvo sunkiau</h1><p class="subtitle">Tobulas pakartojimas pašalins pamoką iš šio sąrašo.</p>
     @if (!Targets.Any()) { <div class="practice-empty"><span>🌟</span><strong>Kol kas nėra ką kartoti</strong><small>Pratimai su klaidomis atsiras čia.</small></div> }
-    else { <div class="practice-targets">@foreach (var target in Targets) { <NavLink class="practice-target" href="@GameHref(target.Game.Id)"><span class="game-icon icon-@target.Game.Accent">@target.Game.Icon</span><span><strong>@target.Game.Title</strong><small>@target.Game.Subject · Ankstesnės klaidos: @target.Mistakes</small></span><b>Pakartoti →</b></NavLink> }</div> }
+    else { <div class="practice-targets">@foreach (var target in Targets) { <NavLink class="practice-target" href="@GameHref(target.Game.Id)"><span class="game-icon icon-@target.Game.Accent"><GameIcon Key="@target.Game.Id" /></span><span><strong>@target.Game.Title</strong><small>@target.Game.Subject · Ankstesnės klaidos: @target.Mistakes</small></span><b>Pakartoti →</b></NavLink> }</div> }
 </section>
 
 @code {

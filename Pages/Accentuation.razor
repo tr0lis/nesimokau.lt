@@ -1,4 +1,4 @@
-@page "/zaidimai/kirciavimas"
+﻿@page "/zaidimai/kirciavimas"
 @page "/lietuviu-kalba/{ClassSlug}/kirciavimas"
 @implements IDisposable
 @using System.Globalization
@@ -47,7 +47,7 @@ else if (finished)
 else if (current is not null)
 {
     <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="true" />
-    <div class="game-header"><button class="back-button" @onclick="GoHome" aria-label="Grįžti">←</button><div class="game-title"><span class="game-icon icon-violet">ˈ</span><div><p class="eyebrow">LIETUVIŲ KALBA</p><h1>Kirčiavimas</h1></div></div></div>
+    <div class="game-header"><button class="back-button" @onclick="GoHome" aria-label="Grįžti">←</button><div class="game-title"><span class="game-icon icon-violet"><GameIcon Key="accentuation" /></span><div><p class="eyebrow">LIETUVIŲ KALBA</p><h1>Kirčiavimas</h1></div></div></div>
     <div class="game-progress"><div><span>@(@index + 1) / @questions.Count</span><span>@score taškai</span></div><div class="progress-track"><span style="width:@ProgressPercent%"></span></div></div>
 
     <section class="game-panel accentuation-panel">

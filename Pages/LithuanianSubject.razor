@@ -1,4 +1,4 @@
-@page "/lietuviu-kalba"
+﻿@page "/lietuviu-kalba"
 @page "/lietuviu-kalba/{LevelSlug}"
 @using System.Text.RegularExpressions
 @using nesimokau.lt.Models
@@ -20,7 +20,7 @@
         <h1>Lietuvių kalba</h1>
         <p class="subtitle">Spręsk lietuvių kalbos užduotis, lavink rašybą ir mokykis pagal savo klasę. Interaktyvūs žaidimai padeda naujas taisykles įtvirtinti praktiškai.</p>
         <NavLink class="button button-primary lessons-banner-link" href="/lietuviu-kalba/1-2-klases/pamokos">
-            <span>📚</span> Mokomoji medžiaga 1–2 klasei <span>→</span>
+            <GameIcon Key="Lietuvių kalba" /> Mokomoji medžiaga 1–2 klasei <span>→</span>
         </NavLink>
     </header>
 
@@ -98,7 +98,7 @@
                             {
                                 <span class="exercise-progress-tooltip">Dar yra nespręstų užduočių</span>
                             }
-                            <span class="game-icon icon-@exercise.Accent">@exercise.Icon</span>
+                            <span class="game-icon icon-@exercise.Accent"><GameIcon Key="@exercise.Id" /></span>
                             <h3>@exercise.Title</h3>
                             <p>@exercise.Description</p>
                             <div class="game-meta"><span>@exercise.Grades</span><span>@string.Join(" · ", ExerciseTopics(exercise.Id))</span></div>

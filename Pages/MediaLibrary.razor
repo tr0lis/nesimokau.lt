@@ -1,4 +1,4 @@
-@page "/mediateka"
+﻿@page "/mediateka"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject ProgressService Progress
@@ -16,7 +16,7 @@
     <div class="media-library-empty"><span>🎥</span><strong>Vaizdo pamokos jau pakeliui</strong><small>Čia bus galima pažymėti pamokas žvaigždute ir rasti jas skiltyje „Žiūrėti vėliau“.</small></div>
     @if (savedOpen)
     {
-        <aside class="saved-media-panel"><div><strong>Žiūrėti vėliau</strong><button @onclick="() => savedOpen = false" aria-label="Uždaryti">×</button></div>@if (!SortedBookmarks.Any()) { <p class="subtitle">Dar nieko neišsaugojai.</p> } else { @foreach (var game in SortedBookmarks) { <div class="recent-row"><span class="game-icon icon-@game.Accent">@game.Icon</span><div><strong>@game.Title</strong><small>@game.Subject</small></div><button class="button button-ghost" @onclick="() => ToggleBookmark(game.Id)">★</button></div> } }</aside>
+        <aside class="saved-media-panel"><div><strong>Žiūrėti vėliau</strong><button @onclick="() => savedOpen = false" aria-label="Uždaryti">×</button></div>@if (!SortedBookmarks.Any()) { <p class="subtitle">Dar nieko neišsaugojai.</p> } else { @foreach (var game in SortedBookmarks) { <div class="recent-row"><span class="game-icon icon-@game.Accent"><GameIcon Key="@game.Id" /></span><div><strong>@game.Title</strong><small>@game.Subject</small></div><button class="button button-ghost" @onclick="() => ToggleBookmark(game.Id)">★</button></div> } }</aside>
     }
 </section>
 

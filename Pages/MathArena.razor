@@ -1,4 +1,4 @@
-@page "/matematika/zaidimai/skaiciu-arena"
+﻿@page "/matematika/zaidimai/skaiciu-arena"
 @using Microsoft.AspNetCore.Components
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
@@ -56,7 +56,7 @@ else if (finished)
 else if (current is not null)
 {
     <NavigationLock OnBeforeInternalNavigation="ConfirmLeave" ConfirmExternalNavigation="true" />
-    <div class="game-header"><button class="back-button" @onclick="GoHome" aria-label="Grįžti">←</button><div class="game-title"><span class="game-icon icon-blue">∑</span><div><p class="eyebrow">MATEMATIKA</p><h1>Skaičių arena</h1></div></div><div class="lives" aria-label="Liko gyvybių">@for (var i = 0; i < lives; i++) { <span>♥</span> }</div></div>
+    <div class="game-header"><button class="back-button" @onclick="GoHome" aria-label="Grįžti">←</button><div class="game-title"><span class="game-icon icon-blue"><GameIcon Key="math-arena" /></span><div><p class="eyebrow">MATEMATIKA</p><h1>Skaičių arena</h1></div></div><div class="lives" aria-label="Liko gyvybių">@for (var i = 0; i < lives; i++) { <span>♥</span> }</div></div>
     <div class="game-progress"><div><span>@(@index + 1) / @questions.Count</span><span>@score taškai</span></div><div class="progress-track"><span style="width:@ProgressPercent%"></span></div></div>
     <section class="game-panel">
         <div class="tip-card tip-card-inline"><span>∑</span><div><strong>Mažas patarimas</strong><p>Skaičiuok mintinai, naudok skaidymo strategiją.</p></div></div>

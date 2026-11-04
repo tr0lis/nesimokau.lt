@@ -1,4 +1,4 @@
-@page "/matematika"
+﻿@page "/matematika"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject GameCatalogService Catalog
@@ -70,7 +70,7 @@
                             <span class="exercise-state @(completion.IsDone ? "done" : "pending")" style="--completion:@completion.Percent;" title="@($"{completion.Percent}%")">
                                 <span class="exercise-state-inner">@(completion.IsDone ? "✓" : string.Empty)</span>
                             </span>
-                            <span class="game-icon icon-@exercise.Accent">@exercise.Icon</span>
+                            <span class="game-icon icon-@exercise.Accent"><GameIcon Key="@exercise.Id" /></span>
                             <h3>@exercise.Title</h3>
                             <p>@exercise.Description</p>
                             <div class="game-meta"><span>@exercise.Grades</span><span>@string.Join(" · ", ExerciseTopics(exercise.Id))</span></div>
