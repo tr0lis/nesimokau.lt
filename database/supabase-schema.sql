@@ -95,6 +95,9 @@ create table if not exists public.user_progress (
 create index if not exists idx_user_progress_updated_at
   on public.user_progress (updated_at desc);
 
+alter table if exists public.user_progress
+  add column if not exists leaderboard_reset_at timestamptz not null default 'epoch'::timestamptz;
+
 -- =========================
 -- Leaderboard
 -- =========================
@@ -152,6 +155,10 @@ create index if not exists idx_user_activity_user_time
 create index if not exists idx_user_activity_event_type
   on public.user_activity_log (event_type, created_at desc);
 
+create index if not exists idx_user_activity_leaderboard_time
+  on public.user_activity_log (created_at_lt desc)
+  where event_type = 'game_result_saved';
+
 create index if not exists idx_user_activity_subject
   on public.user_activity_log (subject, created_at desc);
 
@@ -160,6 +167,63 @@ create index if not exists idx_user_activity_game
 
 create index if not exists idx_user_activity_payload_gin
   on public.user_activity_log using gin (payload);
+
+create or replace function public.leaderboard_period_scores(p_period text)
+returns table (
+  user_id text,
+  nickname text,
+  score bigint,
+  avatar_id text,
+  avatar_background text
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with period_bounds as (
+    select
+      case p_period
+        when 'month' then date_trunc('month', now() at time zone 'Europe/Vilnius')
+        when 'week' then date_trunc('week', now() at time zone 'Europe/Vilnius')
+        when 'all' then null
+      end as starts_at,
+      now() at time zone 'Europe/Vilnius' as ends_at
+  ),
+  player_scores as (
+    select
+      activity.user_id,
+      max(activity.username) as activity_username,
+      sum(greatest(coalesce(activity.score, 0), 0)) as total_score
+    from public.user_activity_log activity
+    cross join period_bounds bounds
+    left join public.user_progress player_progress on player_progress.user_id = activity.user_id
+    where activity.event_type = 'game_result_saved'
+      and activity.created_at >= coalesce(player_progress.leaderboard_reset_at, '-infinity'::timestamptz)
+      and (
+        p_period = 'all'
+        or (
+          bounds.starts_at is not null
+          and activity.created_at_lt >= bounds.starts_at
+          and activity.created_at_lt <= bounds.ends_at
+        )
+      )
+    group by activity.user_id
+  )
+  select
+    scores.user_id,
+    coalesce(nullif(progress.name, ''), scores.activity_username, 'Svečias'),
+    scores.total_score,
+    progress.avatar_id,
+    coalesce(progress.avatar_background, 'bg-violet')
+  from player_scores scores
+  left join public.user_progress progress on progress.user_id::text = scores.user_id
+  order by scores.total_score desc, nickname asc
+  limit 50;
+$$;
+
+revoke all on function public.leaderboard_period_scores(text) from public, anon, authenticated;
+grant execute on function public.leaderboard_period_scores(text) to service_role;
 
 -- Private application sessions and security telemetry. These tables are accessed
 -- only by the Vercel API through the Supabase service-role key.

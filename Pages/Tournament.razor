@@ -18,7 +18,7 @@
         <div class="lb-tabs" role="tablist" aria-label="Laikotarpis">
             @foreach (var tab in Periods)
             {
-                <button type="button" role="tab" class="lb-tab @(period == tab.Key ? "is-active" : "")" aria-selected="@(period == tab.Key ? "true" : "false")" @onclick="() => period = tab.Key">@tab.Label</button>
+                <button type="button" role="tab" class="lb-tab @(period == tab.Key ? "is-active" : "")" aria-selected="@(period == tab.Key ? "true" : "false")" @onclick="() => SetPeriodAsync(tab.Key)">@tab.Label</button>
             }
         </div>
     </header>
@@ -36,24 +36,8 @@
     }
     else
     {
-        <div class="lb-podium" aria-label="Top 3 podiumas">
-            @foreach (var item in PodiumOrdered)
-            {
-                <article class="lb-pod lb-pod-@item.Place">
-                    @if (item.Place == 1)
-                    {
-                        <svg class="lb-crown" viewBox="0 0 32 24" aria-hidden="true"><path d="M3 20 1 6l8 6 7-10 7 10 8-6-2 14z" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.2" stroke-linejoin="round"/><rect x="3" y="21" width="26" height="2.4" rx="1.2" fill="#f59e0b"/></svg>
-                    }
-                    <div class="lb-pod-avatar @AvatarBgClassFor(item.Entry)">@item.Entry.Avatar</div>
-                    <strong class="lb-pod-name">@item.Entry.Name</strong>
-                    <small class="lb-pod-score"><span data-countup="@item.Entry.Score">@Fmt(item.Entry.Score)</span> taškų</small>
-                    <div class="lb-pod-step"><span>@item.Place</span></div>
-                </article>
-            }
-        </div>
-
         <section class="lb-card">
-            <div class="lb-card-head"><h2>Top 20</h2><span>Nuo 4 vietos pagal taškus</span></div>
+            <div class="lb-card-head"><h2>Top 20</h2><span>Rikiuojama pagal taškus</span></div>
             <ol class="lb-list">
                 @foreach (var row in ListRows)
                 {
@@ -68,7 +52,7 @@
                     </li>
                 }
             </ol>
-            @if (CurrentUserEntry is not null)
+            @if (CurrentUserEntry is not null && CurrentUserIndex >= 20)
             {
                 <div class="lb-me">
                     <span class="lb-rank">@(CurrentUserIndex + 1)</span>
@@ -90,19 +74,36 @@
     private PeriodicTimer? timer;
     private CancellationTokenSource? cts;
 
-    private IEnumerable<(int Place, LeaderboardEntry Entry)> Podium => entries.Take(3).Select((entry, index) => (index + 1, entry));
-    private IEnumerable<(int Place, LeaderboardEntry Entry)> PodiumOrdered => Podium.OrderBy(p => p.Place == 1 ? 2 : p.Place == 2 ? 1 : 3);
-    private IEnumerable<(int Place, int Index, LeaderboardEntry Entry)> ListRows => entries.Skip(3).Take(17).Select((entry, index) => (index + 4, index, entry));
+    private IEnumerable<(int Place, int Index, LeaderboardEntry Entry)> ListRows => entries.Take(20).Select((entry, index) => (index + 1, index, entry));
     private int CurrentUserIndex => entries.FindIndex(entry => entry.Id == currentPlayerId);
     private LeaderboardEntry? CurrentUserEntry => string.IsNullOrEmpty(currentPlayerId) ? null : entries.FirstOrDefault(entry => entry.Id == currentPlayerId);
     private string GapText => CurrentUserIndex <= 0 ? "Tu pirmauji – taip ir toliau!" : $"Iki kitos vietos trūksta {Fmt(Math.Max(1, entries[CurrentUserIndex - 1].Score - CurrentUserEntry!.Score + 1))} taškų";
     private double Pct(int score) => entries.Count == 0 || entries[0].Score <= 0 ? 0 : Math.Clamp(score * 100.0 / entries[0].Score, 0, 100);
     private static string Fmt(int value) => value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture).Replace(",", "\u00A0");
 
-    // TODO: the API does not support period filtering yet; the tabs only change UI state.
     private string period = "all";
     private static readonly (string Key, string Label)[] Periods = [("all", "Visi laikai"), ("month", "Šis mėnuo"), ("week", "Ši savaitė")];
     private bool animated;
+    private int loadVersion;
+
+    private async Task SetPeriodAsync(string value)
+    {
+        if (period == value) return;
+        period = value;
+        animated = false;
+        isLoading = true;
+        var version = ++loadVersion;
+        await LoadEntriesAsync(version);
+    }
+
+    private async Task LoadEntriesAsync(int version)
+    {
+        var result = (await Leaderboard.GetEntriesAsync(period)).ToList();
+        if (version != loadVersion) return;
+        entries = result;
+        isLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -121,7 +122,7 @@
     protected override async Task OnInitializedAsync()
     {
         currentPlayerId = await Leaderboard.GetCurrentPlayerIdAsync();
-        entries = (await Leaderboard.GetEntriesAsync()).ToList();
+        entries = (await Leaderboard.GetEntriesAsync(period)).ToList();
         isLoading = false;
 
         cts = new CancellationTokenSource();
@@ -130,7 +131,10 @@
         {
             while (timer is not null && await timer.WaitForNextTickAsync(cts.Token))
             {
-                entries = (await Leaderboard.RefreshRealtimeAsync()).ToList();
+                var refreshPeriod = period;
+                var result = (await Leaderboard.RefreshRealtimeAsync(refreshPeriod)).ToList();
+                if (period != refreshPeriod) continue;
+                entries = result;
                 await InvokeAsync(StateHasChanged);
             }
         }, cts.Token);

@@ -124,11 +124,26 @@ export const dataRoutes = {
 
   async 'GET /leaderboard'(req, res) {
     await requirePlayer(req, res);
+    const period = new URL(req.url, 'http://localhost').searchParams.get('period') ?? 'all';
+    if (!['all', 'month', 'week'].includes(period)) throw new HttpError(400, 'Neteisingas laikotarpis.');
+
+    const periodRows = await db.rpc('leaderboard_period_scores', { p_period: period });
+    const periodEntries = (periodRows ?? []).map((row) => ({
+        player_id: `user-${row.user_id}`,
+        nickname: row.nickname || 'Svečias',
+        score: int(row.score, 0, 10_000_000),
+        avatar_id: row.avatar_id,
+        avatar_background: row.avatar_background || 'bg-violet',
+      }));
+    if (period !== 'all') return sendJson(res, 200, periodEntries);
+
     const merged = new Map();
     const put = (key, entry) => {
       const prev = merged.get(key);
       if (!prev || entry.score > prev.score) merged.set(key, entry);
     };
+
+    for (const entry of periodEntries) put(`u:${entry.player_id.slice(5)}`, entry);
 
     const rows = await db.list('user_progress', {
       perPage: 1000,
@@ -171,7 +186,11 @@ export const dataRoutes = {
   async 'POST /leaderboard/reset'(req, res) {
     const { player } = await requirePlayer(req, res);
     const row = await db.first('user_progress', `uid = ${q(player.uid)}`);
-    if (row) await db.update('user_progress', row.id, { best_score: 0, recent_results: [] });
+    if (row) await db.update('user_progress', row.id, {
+      best_score: 0,
+      recent_results: [],
+      leaderboard_reset_at: new Date().toISOString(),
+    });
     sendJson(res, 200, { ok: true });
   },
 

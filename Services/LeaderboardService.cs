@@ -4,7 +4,7 @@ namespace nesimokau.lt.Services;
 
 public sealed class LeaderboardService(ApiClient api, AuthService auth)
 {
-    public Task<IReadOnlyList<LeaderboardEntry>> GetEntriesAsync() => LoadAsync();
+    public Task<IReadOnlyList<LeaderboardEntry>> GetEntriesAsync(string period = "all") => LoadAsync(period);
 
     public async Task<string> GetCurrentPlayerIdAsync()
     {
@@ -12,13 +12,13 @@ public sealed class LeaderboardService(ApiClient api, AuthService auth)
         return session is null ? string.Empty : $"user-{session.UserId}";
     }
 
-    public Task<IReadOnlyList<LeaderboardEntry>> RefreshRealtimeAsync() => LoadAsync();
+    public Task<IReadOnlyList<LeaderboardEntry>> RefreshRealtimeAsync(string period = "all") => LoadAsync(period);
 
     public async Task ResetCurrentUserScoreAsync() => _ = await api.PostAsync("/leaderboard/reset");
 
-    private async Task<IReadOnlyList<LeaderboardEntry>> LoadAsync()
+    private async Task<IReadOnlyList<LeaderboardEntry>> LoadAsync(string period)
     {
-        var response = await api.GetAsync("/leaderboard");
+        var response = await api.GetAsync($"/leaderboard?period={Uri.EscapeDataString(period)}");
         if (!response.Ok) return [];
 
         var rows = response.As<List<LeaderboardRow>>() ?? [];

@@ -1,0 +1,636 @@
+@page "/irankiai"
+@using System.Globalization
+@using System.Numerics
+@using nesimokau.lt
+
+<SeoHead Title="Matematikos įrankiai | nesimokau.lt" Description="Interaktyvūs matematikos įrankiai: grafikų braižyklė, lygčių sprendimas, skaičiuotuvai ir statistika." Indexable="false" />
+
+<section class="tools-page">
+    <header class="tools-heading">
+        <div>
+            <p class="eyebrow">MATEMATIKA · INTERAKTYVŪS ĮRANKIAI</p>
+            <h1>Idėjas paversk <span>sprendimais.</span></h1>
+            <p class="tools-intro">Braižyk grafikus, tyrinėk lygtis ir pasitikrink skaičiavimus vienoje vietoje.</p>
+        </div>
+        <div class="tools-heading-mark" aria-hidden="true">ƒ(x)</div>
+    </header>
+
+    <div class="tools-layout">
+        <nav class="tool-picker" aria-label="Matematikos įrankiai">
+            @foreach (var tool in Tools)
+            {
+                <button type="button" class="tool-picker-item @(activeTool == tool.Id ? "active" : "")" @onclick="() => activeTool = tool.Id" aria-current="@(activeTool == tool.Id ? "page" : null)">
+                    <span class="tool-picker-icon">@tool.Icon</span>
+                    <span><strong>@tool.Name</strong><small>@tool.Description</small></span>
+                    <span class="tool-picker-arrow" aria-hidden="true">›</span>
+                </button>
+            }
+        </nav>
+
+        <main class="tool-panel">
+            @if (activeTool == "graph")
+            {
+                <div class="tool-panel-heading">
+                    <div><p class="eyebrow">FUNKCIJOS</p><h2>Grafikų braižyklė</h2><p>Įvesk funkciją, naudodamas <code>x</code>, ir iškart matyk jos grafiką.</p></div>
+                    <span class="panel-symbol">⌁</span>
+                </div>
+                <div class="graph-controls">
+                    <label class="tool-field graph-expression"><span>Funkcija y =</span><input @bind="graphDraft" @bind:event="oninput" @onkeydown="HandleGraphKey" placeholder="pvz., sin(x) arba x^2 - 3" aria-label="Funkcijos išraiška" /></label>
+                    <button class="button button-primary" @onclick="AddGraphFunction">Pridėti grafiką <span>＋</span></button>
+                </div>
+                <div class="graph-function-list">
+                    @foreach (var function in graphFunctions)
+                    {
+                        <div class="graph-function" @key="function">
+                            <span class="graph-function-dot" style="--function-color:@function.Color"></span>
+                            <strong>y = @function.Expression</strong>
+                            <button type="button" @onclick="() => RemoveGraphFunction(function)" aria-label="Pašalinti y = @function.Expression">×</button>
+                        </div>
+                    }
+                </div>
+                <div class="graph-board">
+                    <svg class="graph-svg" viewBox="0 0 720 360" role="img" aria-label="Funkcijų grafikas koordinatėje">
+                        @for (var index = 0; index <= 10; index++)
+                        {
+                            var gridX = 40 + index * 64;
+                            var gridY = 20 + index * 30;
+                            <line x1="@gridX" y1="20" x2="@gridX" y2="320" class="graph-grid-line" />
+                            <line x1="40" y1="@gridY" x2="680" y2="@gridY" class="graph-grid-line" />
+                        }
+                        <line x1="40" y1="@CoordinateY(0)" x2="680" y2="@CoordinateY(0)" class="graph-axis" />
+                        <line x1="@CoordinateX(0)" y1="20" x2="@CoordinateX(0)" y2="320" class="graph-axis" />
+                        <text x="684" y="@(CoordinateY(0) - 7)" class="graph-axis-label">x</text>
+                        <text x="@(CoordinateX(0) + 7)" y="19" class="graph-axis-label">y</text>
+                        @foreach (var function in graphFunctions)
+                        {
+                            var path = CreateGraphPath(function.Expression);
+                            <path d="@path" class="graph-curve" style="--function-color:@function.Color" />
+                        }
+                    </svg>
+                </div>
+                <div class="graph-footer">
+                    <div class="graph-range"><span>Matomas x intervalas</span><button type="button" @onclick="() => ChangeGraphRange(-1)" aria-label="Nutolinti">−</button><strong>@GraphMin.ToString("0.#", CultureInfo.InvariantCulture) … @GraphMax.ToString("0.#", CultureInfo.InvariantCulture)</strong><button type="button" @onclick="() => ChangeGraphRange(1)" aria-label="Priartinti">＋</button><button type="button" class="graph-reset" @onclick="ResetGraphRange">Atstatyti</button></div>
+                    <small>Galima naudoti: +, −, *, /, ^, sin, cos, tan, sqrt, abs, ln, log, pi ir e.</small>
+                </div>
+                @if (!string.IsNullOrEmpty(graphError))
+                {
+                    <p class="tool-feedback error" role="status">@graphError</p>
+                }
+            }
+            else if (activeTool == "equation")
+            {
+                <div class="tool-panel-heading">
+                    <div><p class="eyebrow">SPRENDIMAS ŽINGSNIAIS</p><h2>Lygčių sprendiklis</h2><p>Išspręsk tiesinę arba kvadratinę lygtį <code>ax² + bx + c = 0</code>.</p></div>
+                    <span class="panel-symbol">x²</span>
+                </div>
+                <div class="coefficient-grid">
+                    <label class="tool-field"><span>a · x²</span><input type="number" step="any" @bind="equationA" aria-label="Koeficientas a" /></label>
+                    <label class="tool-field"><span>b · x</span><input type="number" step="any" @bind="equationB" aria-label="Koeficientas b" /></label>
+                    <label class="tool-field"><span>c</span><input type="number" step="any" @bind="equationC" aria-label="Koeficientas c" /></label>
+                    <button class="button button-primary" @onclick="SolveEquation">Spręsti <span>→</span></button>
+                </div>
+                @if (equationResult is not null)
+                {
+                    <div class="solution-card" role="status">
+                        <span class="solution-badge">SPRENDIMAS</span>
+                        <h3>@equationResult.Title</h3>
+                        <ol>@foreach (var step in equationResult.Steps) { <li>@step</li> }</ol>
+                    </div>
+                }
+                else
+                {
+                    <div class="example-card"><span>✦</span><p><strong>Pavyzdys</strong><br />Lygties <code>x² − 5x + 6 = 0</code> sprendiniai yra x = 2 ir x = 3.</p></div>
+                }
+            }
+            else if (activeTool == "scientific")
+            {
+                <div class="tool-panel-heading">
+                    <div><p class="eyebrow">SKAIČIAVIMAI</p><h2>Mokslinis skaičiuotuvas</h2><p>Naudok skliaustus, laipsnius ir trigonometrines funkcijas. Kampai įvedami radianais.</p></div>
+                    <span class="panel-symbol">∑</span>
+                </div>
+                <label class="tool-field calculator-display"><span>Išraiška</span><input @bind="scientificExpression" @bind:event="oninput" @onkeydown="HandleCalculatorKey" placeholder="pvz., sin(pi / 2) + 2^3" aria-label="Matematinė išraiška" /></label>
+                <div class="calculator-buttons">
+                    @foreach (var key in CalculatorKeys)
+                    {
+                        <button type="button" class="@(key == "=" ? "key-equals" : "")" @onclick="() => PressCalculatorKey(key)">@key</button>
+                    }
+                    <button type="button" class="key-clear" @onclick="ClearCalculator">C</button>
+                </div>
+                @if (scientificResult is not null)
+                {
+                    <div class="calculator-result" role="status"><span>REZULTATAS</span><strong>@scientificResult</strong></div>
+                }
+            }
+            else if (activeTool == "fraction")
+            {
+                <div class="tool-panel-heading">
+                    <div><p class="eyebrow">TIKSLIAI IR PAPRASTAI</p><h2>Trupmenų skaičiuotuvas</h2><p>Atlik veiksmus ir gauk sutrumpintą trupmeną bei dešimtainę išraišką.</p></div>
+                    <span class="panel-symbol">½</span>
+                </div>
+                <div class="fraction-calculator">
+                    <div class="fraction-input"><label class="tool-field"><span>Pirmas skaitiklis</span><input type="number" @bind="fractionA" aria-label="Pirmas skaitiklis" /></label><span class="fraction-line"></span><label class="tool-field"><span>Vardiklis</span><input type="number" @bind="fractionADenominator" aria-label="Pirmas vardiklis" /></label></div>
+                    <select @bind="fractionOperation" aria-label="Veiksmas"><option value="+">+</option><option value="-">−</option><option value="×">×</option><option value="÷">÷</option></select>
+                    <div class="fraction-input"><label class="tool-field"><span>Antras skaitiklis</span><input type="number" @bind="fractionB" aria-label="Antras skaitiklis" /></label><span class="fraction-line"></span><label class="tool-field"><span>Vardiklis</span><input type="number" @bind="fractionBDenominator" aria-label="Antras vardiklis" /></label></div>
+                </div>
+                <button class="button button-primary" @onclick="CalculateFraction">Apskaičiuoti <span>→</span></button>
+                @if (fractionResult is not null)
+                {
+                    <div class="solution-card" role="status"><span class="solution-badge">REZULTATAS</span><h3>@fractionResult</h3><p>@fractionExplanation</p></div>
+                }
+            }
+            else if (activeTool == "percentage")
+            {
+                <div class="tool-panel-heading">
+                    <div><p class="eyebrow">KASDIENIAI SKAIČIAVIMAI</p><h2>Procentų skaičiuotuvas</h2><p>Greitai apskaičiuok dalį nuo skaičiaus arba procentinį pokytį.</p></div>
+                    <span class="panel-symbol">%</span>
+                </div>
+                <div class="mode-switch" role="group" aria-label="Procentų skaičiavimo būdas">
+                    <button class="@(percentageMode == "part" ? "selected" : "")" @onclick='() => percentageMode = "part"'>Kiek sudaro procentai?</button>
+                    <button class="@(percentageMode == "change" ? "selected" : "")" @onclick='() => percentageMode = "change"'>Procentinis pokytis</button>
+                </div>
+                @if (percentageMode == "part")
+                {
+                    <div class="coefficient-grid percentage-grid"><label class="tool-field"><span>Procentai (%)</span><input type="number" step="any" @bind="percentageValue" /></label><span class="math-operator">%</span><label class="tool-field"><span>Skaičius</span><input type="number" step="any" @bind="percentageBase" /></label></div>
+                }
+                else
+                {
+                    <div class="coefficient-grid percentage-grid"><label class="tool-field"><span>Pradinė reikšmė</span><input type="number" step="any" @bind="percentageStart" /></label><span class="math-operator">→</span><label class="tool-field"><span>Nauja reikšmė</span><input type="number" step="any" @bind="percentageEnd" /></label></div>
+                }
+                <button class="button button-primary" @onclick="CalculatePercentage">Apskaičiuoti <span>→</span></button>
+                @if (percentageResult is not null)
+                {
+                    <div class="calculator-result" role="status"><span>@percentageFormula</span><strong>@percentageResult</strong></div>
+                }
+            }
+            else if (activeTool == "geometry")
+            {
+                <div class="tool-panel-heading">
+                    <div><p class="eyebrow">FORMULĖS PRAKTIŠKAI</p><h2>Geometrijos skaičiuotuvas</h2><p>Pasirink figūrą ir apskaičiuok jos plotą bei perimetrą.</p></div>
+                    <span class="panel-symbol">△</span>
+                </div>
+                <div class="shape-picker" role="group" aria-label="Pasirink figūrą">
+                    @foreach (var shape in ShapeOptions)
+                    {
+                        <button class="shape-option @(geometryShape == shape.Id ? "selected" : "")" @onclick="() => geometryShape = shape.Id"><span>@shape.Icon</span>@shape.Name</button>
+                    }
+                </div>
+                <div class="coefficient-grid geometry-grid">
+                    @if (geometryShape == "circle")
+                    {
+                        <label class="tool-field"><span>Spindulys r</span><input type="number" min="0" step="any" @bind="geometryA" /></label>
+                    }
+                    else
+                    {
+                        <label class="tool-field"><span>@(geometryShape == "triangle" ? "Kraštinė a" : "Ilgis a")</span><input type="number" min="0" step="any" @bind="geometryA" /></label>
+                        <label class="tool-field"><span>@(geometryShape == "triangle" ? "Kraštinė b" : "Plotis b")</span><input type="number" min="0" step="any" @bind="geometryB" /></label>
+                        @if (geometryShape == "triangle")
+                        {
+                            <label class="tool-field"><span>Kraštinė c</span><input type="number" min="0" step="any" @bind="geometryC" /></label>
+                        }
+                    }
+                    <button class="button button-primary" @onclick="CalculateGeometry">Apskaičiuoti <span>→</span></button>
+                </div>
+                @if (geometryResult is not null)
+                {
+                    <div class="geometry-result" role="status"><div><small>PLOTAS</small><strong>@geometryResult.Area</strong></div><div><small>PERIMETRAS</small><strong>@geometryResult.Perimeter</strong></div><p>@geometryResult.Formula</p></div>
+                }
+            }
+            else
+            {
+                <div class="tool-panel-heading">
+                    <div><p class="eyebrow">DUOMENŲ SANTRAUKA</p><h2>Statistikos skaičiuotuvas</h2><p>Įrašyk skaičius, atskirdamas juos tarpais arba kabliataškiais.</p></div>
+                    <span class="panel-symbol">σ</span>
+                </div>
+                <label class="tool-field statistics-input"><span>Duomenys</span><textarea @bind="statisticsInput" rows="3" placeholder="pvz., 12; 15; 10,5; 18; 15" aria-label="Duomenų skaičiai"></textarea></label>
+                <button class="button button-primary" @onclick="CalculateStatistics">Apskaičiuoti statistiką <span>→</span></button>
+                @if (statisticsResult is not null)
+                {
+                    <div class="statistics-grid" role="status">
+                        <div><small>KIEKIS</small><strong>@statisticsResult.Count</strong></div>
+                        <div><small>VIDURKIS</small><strong>@statisticsResult.Mean</strong></div>
+                        <div><small>MEDIANA</small><strong>@statisticsResult.Median</strong></div>
+                        <div><small>MODA</small><strong>@statisticsResult.Mode</strong></div>
+                        <div><small>STANDARTINIS NUOKRYPIS</small><strong>@statisticsResult.StandardDeviation</strong></div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(statisticsError))
+                {
+                    <p class="tool-feedback error" role="status">@statisticsError</p>
+                }
+            }
+        </main>
+    </div>
+</section>
+
+@code {
+    private static readonly ToolInfo[] Tools =
+    [
+        new("graph", "Grafikų braižyklė", "Funkcijų vizualizacija", "⌁"),
+        new("equation", "Lygčių sprendiklis", "Sprendimas žingsniais", "x²"),
+        new("scientific", "Mokslinis skaičiuotuvas", "Išraiškos ir funkcijos", "∑"),
+        new("fraction", "Trupmenos", "Veiksmai ir sutrumpinimas", "½"),
+        new("percentage", "Procentai", "Dalys ir pokyčiai", "%"),
+        new("geometry", "Geometrija", "Plotai ir perimetrai", "△"),
+        new("statistics", "Statistika", "Duomenų analizė", "σ")
+    ];
+
+    private static readonly string[] CalculatorKeys = ["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "−", "0", ".", "(", ")", "+", "^", "sin(", "cos(", "tan(", "sqrt(", "pi", "log("];
+    private static readonly (string Id, string Name, string Icon)[] ShapeOptions = [("circle", "Apskritimas", "◯"), ("rectangle", "Stačiakampis", "▱"), ("triangle", "Trikampis", "△")];
+    private static readonly string[] GraphColors = ["#7658e8", "#f07846", "#22a68a", "#e44e80", "#3b82d4"];
+    private string activeTool = "graph";
+    private string graphDraft = "x^2";
+    private readonly List<GraphFunction> graphFunctions = [new("x^2", GraphColors[0])];
+    private double GraphMin { get; set; } = -10;
+    private double GraphMax { get; set; } = 10;
+    private string graphError = string.Empty;
+    private double equationA = 1;
+    private double equationB = -5;
+    private double equationC = 6;
+    private EquationSolution? equationResult;
+    private string scientificExpression = string.Empty;
+    private string? scientificResult;
+    private int fractionA = 1;
+    private int fractionADenominator = 2;
+    private int fractionB = 1;
+    private int fractionBDenominator = 3;
+    private string fractionOperation = "+";
+    private string? fractionResult;
+    private string fractionExplanation = string.Empty;
+    private string percentageMode = "part";
+    private double percentageValue = 15;
+    private double percentageBase = 200;
+    private double percentageStart = 100;
+    private double percentageEnd = 125;
+    private string? percentageResult;
+    private string percentageFormula = string.Empty;
+    private string geometryShape = "circle";
+    private double geometryA = 5;
+    private double geometryB = 4;
+    private double geometryC = 3;
+    private GeometryResult? geometryResult;
+    private string statisticsInput = string.Empty;
+    private StatisticsResult? statisticsResult;
+    private string statisticsError = string.Empty;
+
+    private void AddGraphFunction()
+    {
+        var expression = graphDraft.Trim();
+        if (expression.Length == 0) return;
+        if (graphFunctions.Any(item => item.Expression.Equals(expression, StringComparison.OrdinalIgnoreCase)))
+        {
+            graphError = "Toks grafikas jau pridėtas.";
+            return;
+        }
+        graphFunctions.Add(new GraphFunction(expression, GraphColors[graphFunctions.Count % GraphColors.Length]));
+        graphDraft = string.Empty;
+        graphError = string.Empty;
+    }
+
+    private void RemoveGraphFunction(GraphFunction function)
+    {
+        graphFunctions.Remove(function);
+        graphError = string.Empty;
+    }
+
+    private void HandleGraphKey(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter") AddGraphFunction();
+    }
+
+    private void ChangeGraphRange(int direction)
+    {
+        var width = Math.Max(0.5, (GraphMax - GraphMin) * (direction > 0 ? 0.75 : 1.33));
+        GraphMin = -width / 2;
+        GraphMax = width / 2;
+    }
+
+    private void ResetGraphRange()
+    {
+        GraphMin = -10;
+        GraphMax = 10;
+    }
+
+    private double CoordinateX(double value) => 40 + (value - GraphMin) / (GraphMax - GraphMin) * 640;
+    private double CoordinateY(double value) => 20 + (GraphMax - value) / (GraphMax - GraphMin) * 300;
+
+    private string CreateGraphPath(string expression)
+    {
+        var points = new System.Text.StringBuilder();
+        var drawing = false;
+        for (var index = 0; index <= 400; index++)
+        {
+            var x = GraphMin + (GraphMax - GraphMin) * index / 400;
+            double y;
+            try { y = MathExpression.Evaluate(expression, x, allowDomainGaps: true); }
+            catch (FormatException) { graphError = $"Nepavyko perskaityti funkcijos „{expression}“."; return string.Empty; }
+            catch (DivideByZeroException) { y = double.NaN; }
+
+            if (!double.IsFinite(y) || y < GraphMin || y > GraphMax)
+            {
+                drawing = false;
+                continue;
+            }
+            points.Append(drawing ? 'L' : 'M')
+                .Append(CoordinateX(x).ToString("0.##", CultureInfo.InvariantCulture)).Append(' ')
+                .Append(CoordinateY(y).ToString("0.##", CultureInfo.InvariantCulture)).Append(' ');
+            drawing = true;
+        }
+        graphError = string.Empty;
+        return points.ToString();
+    }
+
+    private void SolveEquation()
+    {
+        equationResult = null;
+        if (Math.Abs(equationA) < 1e-12)
+        {
+            if (Math.Abs(equationB) < 1e-12)
+            {
+                equationResult = new EquationSolution(Math.Abs(equationC) < 1e-12 ? "Lygtis turi be galo daug sprendinių." : "Lygtis sprendinių neturi.", [$"Lygtis supaprastėja iki {FormatNumber(equationC)} = 0."]);
+                return;
+            }
+            var root = -equationC / equationB;
+            equationResult = new EquationSolution($"x = {FormatNumber(root)}", [$"Kadangi a = 0, lygtis yra tiesinė: {FormatNumber(equationB)}x + ({FormatNumber(equationC)}) = 0.", $"x = −c / b = {FormatNumber(root)}."]);
+            return;
+        }
+
+        var discriminant = equationB * equationB - 4 * equationA * equationC;
+        if (discriminant < -1e-12)
+        {
+            equationResult = new EquationSolution("Realiųjų sprendinių nėra.", [$"D = b² − 4ac = {FormatNumber(discriminant)}.", "Kadangi D < 0, lygtis neturi realiųjų šaknų."]);
+        }
+        else if (Math.Abs(discriminant) <= 1e-12)
+        {
+            var root = -equationB / (2 * equationA);
+            equationResult = new EquationSolution($"x = {FormatNumber(root)}", [$"D = b² − 4ac = 0.", $"x = −b / 2a = {FormatNumber(root)}."]);
+        }
+        else
+        {
+            var rootA = (-equationB - Math.Sqrt(discriminant)) / (2 * equationA);
+            var rootB = (-equationB + Math.Sqrt(discriminant)) / (2 * equationA);
+            equationResult = new EquationSolution($"x₁ = {FormatNumber(rootA)},  x₂ = {FormatNumber(rootB)}", [$"D = b² − 4ac = {FormatNumber(discriminant)}.", "Kadangi D > 0, yra du realieji sprendiniai.", $"x = (−b ± √D) / 2a, todėl x₁ = {FormatNumber(rootA)}, x₂ = {FormatNumber(rootB)}."]);
+        }
+    }
+
+    private void PressCalculatorKey(string key)
+    {
+        if (key == "=") { CalculateScientific(); return; }
+        scientificExpression += key switch { "÷" => "/", "×" => "*", "−" => "-", _ => key };
+        scientificResult = null;
+    }
+
+    private void ClearCalculator()
+    {
+        scientificExpression = string.Empty;
+        scientificResult = null;
+    }
+
+    private void HandleCalculatorKey(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter") CalculateScientific();
+    }
+
+    private void CalculateScientific()
+    {
+        try { scientificResult = FormatNumber(MathExpression.Evaluate(scientificExpression)); }
+        catch (Exception exception) when (exception is FormatException or DivideByZeroException or OverflowException)
+        {
+            scientificResult = "Patikrink išraišką";
+        }
+    }
+
+    private void CalculateFraction()
+    {
+        fractionResult = null;
+        if (fractionADenominator == 0 || fractionBDenominator == 0)
+        {
+            fractionResult = "Vardiklis negali būti 0.";
+            return;
+        }
+        BigInteger numerator;
+        BigInteger denominator;
+        switch (fractionOperation)
+        {
+            case "+": numerator = (BigInteger)fractionA * fractionBDenominator + (BigInteger)fractionB * fractionADenominator; denominator = (BigInteger)fractionADenominator * fractionBDenominator; break;
+            case "-": numerator = (BigInteger)fractionA * fractionBDenominator - (BigInteger)fractionB * fractionADenominator; denominator = (BigInteger)fractionADenominator * fractionBDenominator; break;
+            case "×": numerator = (BigInteger)fractionA * fractionB; denominator = (BigInteger)fractionADenominator * fractionBDenominator; break;
+            default:
+                if (fractionB == 0) { fractionResult = "Dalyba iš nulio negalima."; return; }
+                numerator = (BigInteger)fractionA * fractionBDenominator;
+                denominator = (BigInteger)fractionADenominator * fractionB;
+                break;
+        }
+        if (denominator < 0) { numerator = -numerator; denominator = -denominator; }
+        var divisor = BigInteger.GreatestCommonDivisor(BigInteger.Abs(numerator), denominator);
+        var reducedNumerator = numerator / divisor;
+        var reducedDenominator = denominator / divisor;
+        fractionResult = reducedDenominator == 1 ? reducedNumerator.ToString(CultureInfo.InvariantCulture) : $"{reducedNumerator}/{reducedDenominator}";
+        fractionExplanation = $"Dešimtainė išraiška: {FormatNumber((double)reducedNumerator / (double)reducedDenominator)}";
+    }
+
+    private void CalculatePercentage()
+    {
+        if (percentageMode == "part")
+        {
+            percentageResult = FormatNumber(percentageValue / 100 * percentageBase);
+            percentageFormula = $"{FormatNumber(percentageValue)} % nuo {FormatNumber(percentageBase)}";
+        }
+        else if (Math.Abs(percentageStart) < 1e-12)
+        {
+            percentageResult = "Pradinė reikšmė negali būti 0.";
+            percentageFormula = "Pokyčio apskaičiuoti negalima";
+        }
+        else
+        {
+            var change = (percentageEnd - percentageStart) / Math.Abs(percentageStart) * 100;
+            percentageResult = $"{(change > 0 ? "+" : string.Empty)}{FormatNumber(change)} %";
+            percentageFormula = "Procentinis pokytis";
+        }
+    }
+
+    private void CalculateGeometry()
+    {
+        if (geometryA <= 0 || (geometryShape != "circle" && geometryB <= 0) || (geometryShape == "triangle" && geometryC <= 0))
+        {
+            geometryResult = new GeometryResult("Įvesk teigiamus kraštinių matmenis.", "Matmenys turi būti didesni už 0.", string.Empty);
+            return;
+        }
+        if (geometryShape == "circle")
+        {
+            geometryResult = new GeometryResult(FormatNumber(Math.PI * geometryA * geometryA), FormatNumber(2 * Math.PI * geometryA), "A = πr², P = 2πr.");
+        }
+        else if (geometryShape == "rectangle")
+        {
+            geometryResult = new GeometryResult(FormatNumber(geometryA * geometryB), FormatNumber(2 * (geometryA + geometryB)), "A = a · b, P = 2(a + b).");
+        }
+        else if (geometryA + geometryB <= geometryC || geometryA + geometryC <= geometryB || geometryB + geometryC <= geometryA)
+        {
+            geometryResult = new GeometryResult("Tokio trikampio nėra.", "Dviejų kraštinių suma turi būti didesnė už trečiąją.", string.Empty);
+        }
+        else
+        {
+            var perimeter = geometryA + geometryB + geometryC;
+            var half = perimeter / 2;
+            geometryResult = new GeometryResult(FormatNumber(Math.Sqrt(half * (half - geometryA) * (half - geometryB) * (half - geometryC))), FormatNumber(perimeter), "A = √(s(s − a)(s − b)(s − c)), P = a + b + c.");
+        }
+    }
+
+    private void CalculateStatistics()
+    {
+        statisticsError = string.Empty;
+        statisticsResult = null;
+        var culture = CultureInfo.GetCultureInfo("lt-LT");
+        var tokens = statisticsInput.Split([' ', '\t', '\r', '\n', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length == 0 || tokens.Any(token => !double.TryParse(token, NumberStyles.Float, culture, out _)))
+        {
+            statisticsError = "Įvesk bent vieną skaičių. Skaičius atskirk tarpu arba kabliataškiu.";
+            return;
+        }
+        var values = tokens.Select(token => double.Parse(token, NumberStyles.Float, culture)).Order().ToArray();
+        var mean = values.Average();
+        var median = values.Length % 2 == 0 ? (values[values.Length / 2 - 1] + values[values.Length / 2]) / 2 : values[values.Length / 2];
+        var mode = values.GroupBy(value => value).Select(group => new { Value = group.Key, Count = group.Count() }).OrderByDescending(group => group.Count).ThenBy(group => group.Value).First();
+        var standardDeviation = Math.Sqrt(values.Average(value => Math.Pow(value - mean, 2)));
+        statisticsResult = new StatisticsResult(values.Length, FormatNumber(mean), FormatNumber(median), mode.Count > 1 ? FormatNumber(mode.Value) : "Nėra", FormatNumber(standardDeviation));
+    }
+
+    private static string FormatNumber(double value) => value.ToString("0.##########", CultureInfo.GetCultureInfo("lt-LT"));
+    private sealed record ToolInfo(string Id, string Name, string Description, string Icon);
+    private sealed record EquationSolution(string Title, string[] Steps);
+    private sealed record GeometryResult(string Area, string Perimeter, string Formula);
+    private sealed record StatisticsResult(int Count, string Mean, string Median, string Mode, string StandardDeviation);
+    private sealed class GraphFunction(string expression, string color)
+    {
+        public string Expression { get; } = expression;
+        public string Color { get; } = color;
+    }
+
+    private static class MathExpression
+    {
+        public static double Evaluate(string expression, double x = 0, bool allowDomainGaps = false)
+        {
+            if (string.IsNullOrWhiteSpace(expression)) throw new FormatException();
+            var parser = new Parser(expression, x);
+            var value = parser.ParseExpression();
+            parser.SkipWhitespace();
+            if (!parser.AtEnd || (!allowDomainGaps && !double.IsFinite(value))) throw new FormatException();
+            return value;
+        }
+
+        private sealed class Parser(string source, double x)
+        {
+            private int position;
+            public bool AtEnd => position >= source.Length;
+            public void SkipWhitespace() { while (!AtEnd && char.IsWhiteSpace(source[position])) position++; }
+
+            public double ParseExpression()
+            {
+                var value = ParseTerm();
+                while (true)
+                {
+                    SkipWhitespace();
+                    if (Consume('+')) value += ParseTerm();
+                    else if (Consume('-')) value -= ParseTerm();
+                    else return value;
+                }
+            }
+
+            private double ParseTerm()
+            {
+                var value = ParseUnary();
+                while (true)
+                {
+                    SkipWhitespace();
+                    if (Consume('*')) value *= ParseUnary();
+                    else if (Consume('/'))
+                    {
+                        var divisor = ParseUnary();
+                        if (Math.Abs(divisor) < 1e-15) throw new DivideByZeroException();
+                        value /= divisor;
+                    }
+                    else if (StartsPrimary()) value *= ParseUnary();
+                    else return value;
+                }
+            }
+
+            private double ParseUnary()
+            {
+                SkipWhitespace();
+                if (Consume('+')) return ParseUnary();
+                if (Consume('-')) return -ParseUnary();
+                return ParsePower();
+            }
+
+            private double ParsePower()
+            {
+                var value = ParsePrimary();
+                SkipWhitespace();
+                return Consume('^') ? Math.Pow(value, ParseUnary()) : value;
+            }
+
+            private double ParsePrimary()
+            {
+                SkipWhitespace();
+                if (Consume('('))
+                {
+                    var value = ParseExpression();
+                    SkipWhitespace();
+                    if (!Consume(')')) throw new FormatException();
+                    return value;
+                }
+                if (AtEnd) throw new FormatException();
+                if (char.IsDigit(source[position]) || source[position] == '.') return ParseNumber();
+                if (char.IsLetter(source[position])) return ParseIdentifier();
+                throw new FormatException();
+            }
+
+            private double ParseNumber()
+            {
+                var start = position;
+                while (!AtEnd && (char.IsDigit(source[position]) || source[position] == '.')) position++;
+                if (!double.TryParse(source[start..position], NumberStyles.Float, CultureInfo.InvariantCulture, out var value)) throw new FormatException();
+                return value;
+            }
+
+            private double ParseIdentifier()
+            {
+                var start = position;
+                while (!AtEnd && char.IsLetter(source[position])) position++;
+                var identifier = source[start..position].ToLowerInvariant();
+                if (identifier == "x") return x;
+                if (identifier == "pi") return Math.PI;
+                if (identifier == "e") return Math.E;
+                SkipWhitespace();
+                if (!Consume('(')) throw new FormatException();
+                var argument = ParseExpression();
+                SkipWhitespace();
+                if (!Consume(')')) throw new FormatException();
+                return identifier switch
+                {
+                    "sin" => Math.Sin(argument),
+                    "cos" => Math.Cos(argument),
+                    "tan" => Math.Tan(argument),
+                    "sqrt" => argument >= 0 ? Math.Sqrt(argument) : double.NaN,
+                    "abs" => Math.Abs(argument),
+                    "ln" => argument > 0 ? Math.Log(argument) : double.NaN,
+                    "log" => argument > 0 ? Math.Log10(argument) : double.NaN,
+                    "exp" => Math.Exp(argument),
+                    _ => throw new FormatException()
+                };
+            }
+
+            private bool StartsPrimary()
+            {
+                SkipWhitespace();
+                return !AtEnd && (char.IsDigit(source[position]) || source[position] == '.' || source[position] == '(' || char.IsLetter(source[position]));
+            }
+
+            private bool Consume(char value)
+            {
+                if (AtEnd || source[position] != value) return false;
+                position++;
+                return true;
+            }
+        }
+    }
+}

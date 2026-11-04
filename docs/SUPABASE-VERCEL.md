@@ -2,7 +2,7 @@
 
 ## Produkcinė aplinka
 
-1. Supabase projekto **SQL Editor** paleisk visą `database/supabase-schema.sql`. Esamos paskyros ir pažanga paliekamos vietoje; schema prideda tik serverio autentifikacijos, 2FA, sesijų ir ribojimo laukus.
+1. Supabase projekto **SQL Editor** paleisk visą `database/supabase-schema.sql`. Esamos paskyros ir pažanga paliekamos vietoje; schema prideda serverio autentifikacijos, 2FA, sesijų, ribojimo ir turnyrinės lentelės laikotarpių sumavimo objektus.
 2. Vercel projekte pridėk aplinkos kintamuosius iš `.env.example`: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SESSION_SECRET`, `TOTP_ENC_KEY`, `ALLOWED_ORIGINS`, `TOTP_ISSUER`. `SUPABASE_SERVICE_ROLE_KEY` gali būti senasis `service_role` JWT arba naujasis Supabase `sb_secret_` raktas. Naujojo rakto nesiųsk kaip `Authorization: Bearer` — API jį naudoja tik `apikey` antraštėje. Raktą laikyk tik Vercel serveryje, niekada nedėk į naršyklės nustatymus ar `appsettings.json`.
 3. `SESSION_SECRET` ir `TOTP_ENC_KEY` sugeneruok atskirai:
 
