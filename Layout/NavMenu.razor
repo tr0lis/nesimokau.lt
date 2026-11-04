@@ -60,7 +60,7 @@
                     <span class="sidebar-avatar-symbol">@AvatarSymbol</span>
                 }
                 <span class="sidebar-account-copy"><strong>Mokinio paskyra</strong><small>@CurrentLevel.Number lygis · @progress.Xp XP</small></span>
-                <span class="sidebar-account-coins"><CoinIcon /> @progress.Coins <small>mon.</small></span>
+                <span class="sidebar-account-coins"><CoinIcon /> @progress.Coins <small>monetos</small></span>
             </NavLink>
             <button class="sidebar-tool-button" type="button" disabled="@themeBusy" @onclick="ToggleTheme" aria-label="Pakeisti temos išvaizdą">
                 <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -255,7 +255,7 @@
         progress.Theme = theme;
         await JS.InvokeVoidAsync("nesimokau.setTheme", theme);
         _ = Progress.SaveThemeAsync(theme);
-        await Task.Delay(180);
+        await Task.Delay(1000);
         } finally { themeBusy = false; }
     }
 

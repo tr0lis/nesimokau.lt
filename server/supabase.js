@@ -49,7 +49,9 @@ function decodeFilter(filter) {
   if (!filter) return [];
   const match = filter.match(/^([a-z_]+) = '((?:\\.|[^'])*)'$/);
   if (!match) throw new Error('Unsupported database filter.');
-  return [[match[1], decodeQuoted(match[2])]];
+  const value = decodeQuoted(match[2]);
+  if (value.length > 200 || /[\u0000-\u001f]/.test(value)) throw new Error('Invalid database filter value.');
+  return [[match[1], value]];
 }
 
 function databaseField(collection, field) {

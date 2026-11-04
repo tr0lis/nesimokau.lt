@@ -136,8 +136,9 @@ export const authRoutes = {
       throw generic;
     }
 
-    const [, player] = await Promise.all([
+    const [, , player] = await Promise.all([
       rateLimit(`login-ip:${clientIp(req)}`, 30, 600),
+      rateLimit(`login-user:${username.toLowerCase()}`, 20, 900),
       db.first('players', `username_lower = ${q(username.toLowerCase())}`),
     ]);
     if (!player) {
