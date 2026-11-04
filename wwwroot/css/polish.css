@@ -287,3 +287,49 @@ select {
 :root[data-theme="dark"] .main-nav .nav-guest .button-secondary:hover { color: #f6f0ff; background: #3b3152; }
 
 :root[data-theme="dark"] .nav-guest p { color: #beb4d0; }
+
+/* Dark theme: gameplay surfaces */
+:root[data-theme="dark"] .game-header,
+:root[data-theme="dark"] .game-panel,
+:root[data-theme="dark"] .game-progress,
+:root[data-theme="dark"] .accent-word-wrap {
+  background: linear-gradient(180deg, rgba(34, 28, 58, .94), rgba(22, 18, 40, .94)) !important;
+  border: 1px solid rgba(160, 140, 255, .22) !important;
+  color: #f3f0ff !important;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .38) !important;
+}
+:root[data-theme="dark"] .game-header h1,
+:root[data-theme="dark"] .game-title h1,
+:root[data-theme="dark"] .game-title .eyebrow { color: #f6f3ff !important; -webkit-text-fill-color: currentColor !important; }
+:root[data-theme="dark"] .game-title .eyebrow { color: #b8a6ff !important; }
+:root[data-theme="dark"] .math-problem,
+:root[data-theme="dark"] .prompt-word,
+:root[data-theme="dark"] .word-card,
+:root[data-theme="dark"] .pattern-sequence,
+:root[data-theme="dark"] .geometry-stage {
+  background: linear-gradient(135deg, rgba(124, 92, 255, .28), rgba(70, 50, 150, .22)) !important;
+  border: 1px solid rgba(160, 140, 255, .28);
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+:root[data-theme="dark"] .back-button {
+  background: rgba(255, 255, 255, .08) !important;
+  color: #f3f0ff !important;
+  border: 1px solid rgba(255, 255, 255, .14);
+}
+:root[data-theme="dark"] .answer-area input {
+  background: rgba(10, 8, 24, .6) !important;
+  color: #fff !important;
+  border-color: rgba(160, 140, 255, .35) !important;
+}
+:root[data-theme="dark"] .answer-area input::placeholder { color: #a79ccf; }
+:root[data-theme="dark"] .hint-inline-button,
+:root[data-theme="dark"] .speak-button {
+  background: rgba(255, 255, 255, .08) !important;
+  border: 1px solid rgba(255, 255, 255, .14) !important;
+}
+:root[data-theme="dark"] kbd { background: rgba(255, 255, 255, .1); color: #f3f0ff; border-color: rgba(255, 255, 255, .2); }
+:root[data-theme="dark"] .prompt-hint,
+:root[data-theme="dark"] .keyboard-hint { color: #b9b0dc; }
+:root[data-theme="dark"] .tip-card { background: rgba(255, 190, 90, .1); border-color: rgba(255, 190, 90, .25); color: #ffd9a0; }
+:root[data-theme="dark"] .tip-card p { color: #e7c496; }

@@ -1,10 +1,65 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using nesimokau.lt.Services
 
 <div class="app-shell">
     <NavMenu />
     <main class="app-main">
         <div class="page-container">
-            @Body
+            @if (allowed)
+            {
+                @Body
+            }
         </div>
     </main>
 </div>
+
+@code {
+    private static readonly string[] PublicPaths = { "", "prisijungimas", "registracija", "nerasta" };
+
+    [Inject] private AuthService Auth { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private bool allowed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += HandleLocationChanged;
+        Auth.SessionChanged += HandleSessionChanged;
+        await EvaluateAsync();
+    }
+
+    private async void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        await EvaluateAsync();
+        StateHasChanged();
+    }
+
+    private async void HandleSessionChanged()
+    {
+        await EvaluateAsync();
+        StateHasChanged();
+    }
+
+    private async Task EvaluateAsync()
+    {
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/').ToLowerInvariant();
+        if (PublicPaths.Contains(path))
+        {
+            allowed = true;
+            return;
+        }
+
+        allowed = await Auth.IsAuthenticatedAsync();
+        if (!allowed)
+        {
+            Navigation.NavigateTo("/prisijungimas", replace: true);
+        }
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= HandleLocationChanged;
+        Auth.SessionChanged -= HandleSessionChanged;
+    }
+}
