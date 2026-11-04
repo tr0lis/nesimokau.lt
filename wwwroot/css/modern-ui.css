@@ -44,9 +44,8 @@ body::before {
     padding: 0 20px;
     border: 1px solid rgba(226, 219, 240, .9);
     border-radius: 22px;
-    background: rgba(255, 255, 255, .88);
+    background: rgba(255, 255, 255, .96);
     box-shadow: 0 8px 30px rgba(45, 32, 81, .07);
-    backdrop-filter: blur(18px);
 }
 
 .brand {
@@ -951,9 +950,8 @@ textarea:focus {
     padding: 7px;
     border: 1px solid rgba(226, 219, 240, .9);
     border-radius: 22px;
-    background: rgba(255, 255, 255, .84);
+    background: rgba(255, 255, 255, .96);
     box-shadow: 0 8px 26px rgba(45, 32, 81, .07);
-    backdrop-filter: blur(18px);
 }
 
 .header-energy,
