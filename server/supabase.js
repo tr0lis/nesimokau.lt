@@ -54,13 +54,18 @@ function databaseField(collection, field) {
   return mapping(collection).fields[field] ?? field;
 }
 
+function supabaseAuthHeaders(key) {
+  const headers = { apikey: key };
+  if (!key.startsWith('sb_secret_')) headers.authorization = `Bearer ${key}`;
+  return headers;
+}
+
 async function request(path, { method = 'GET', body, headers = {} } = {}) {
   const cfg = getConfig();
   const response = await fetch(`${cfg.supabaseUrl}/rest/v1/${path}`, {
     method,
     headers: {
-      apikey: cfg.supabaseServiceRoleKey,
-      authorization: `Bearer ${cfg.supabaseServiceRoleKey}`,
+      ...supabaseAuthHeaders(cfg.supabaseServiceRoleKey),
       ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       ...headers,
     },
@@ -141,8 +146,7 @@ export const db = {
     const response = await fetch(`${cfg.supabaseUrl}/rest/v1/rpc/${name}`, {
       method: 'POST',
       headers: {
-        apikey: cfg.supabaseServiceRoleKey,
-        authorization: `Bearer ${cfg.supabaseServiceRoleKey}`,
+        ...supabaseAuthHeaders(cfg.supabaseServiceRoleKey),
         'content-type': 'application/json',
       },
       body: JSON.stringify(args),
