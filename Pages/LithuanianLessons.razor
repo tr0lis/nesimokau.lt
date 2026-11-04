@@ -1,4 +1,4 @@
-@page "/lietuviu-kalba/1-2-klases/pamokos"
+﻿@page "/lietuviu-kalba/1-2-klases/pamokos"
 @page "/lietuviu-kalba/1-2-klases/pamokos/{GradeSlug}"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
@@ -16,7 +16,7 @@
 
     @if (loading)
     {
-        <div class="loading-state"><span class="loader"></span><p>Kraunamos pamokos...</p></div>
+        <div class="loading-state loading-skeleton" role="status" aria-label="Kraunama"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span><div class="sk-grid"><span class="sk sk-card"></span><span class="sk sk-card"></span><span class="sk sk-card"></span></div><p>Kraunamos pamokos...</p></div>
     }
     else
     {

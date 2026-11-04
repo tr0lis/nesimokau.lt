@@ -11,7 +11,7 @@
 
 @if (progress is null)
 {
-    <div class="loading-state"><span class="loader"></span></div>
+    <div class="loading-state loading-skeleton" role="status" aria-label="Kraunama"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span><div class="sk-grid"><span class="sk sk-card"></span><span class="sk sk-card"></span><span class="sk sk-card"></span></div></div>
 }
 else
 {
@@ -52,7 +52,7 @@ else
                 </div>
                 <div class="stats-grid profile-stats">
                     <div class="stat-card stat-purple"><span class="stat-icon"><EnergyIcon /></span><div><strong>@progress.Xp</strong><small>Surinkta energija</small></div></div>
-                    <div class="stat-card stat-gold"><span class="stat-icon">🪙</span><div><strong>@progress.Coins</strong><small>Monetos</small></div></div>
+                    <div class="stat-card stat-gold"><span class="stat-icon"><CoinIcon /></span><div><strong>@progress.Coins</strong><small>Monetos</small></div></div>
                     <div class="stat-card stat-blue"><span class="stat-icon">◷</span><div><strong>@progress.BestScore</strong><small>Taškai</small></div></div>
                 </div>
 
@@ -110,7 +110,7 @@ else
                                 <td><span class="profile-table-count is-correct">@correctAnswers</span></td>
                                 <td><span class="profile-table-count is-incorrect">@incorrectAnswers</span></td>
                                 <td><strong>@result.Accuracy%</strong><small class="profile-table-subvalue">@result.Score tašk.</small></td>
-                                <td><span class="profile-table-reward"><EnergyIcon /> +@result.Energy</span><span class="profile-table-reward">🪙 +@result.Coins</span></td>
+                                <td><span class="profile-table-reward"><EnergyIcon /> +@result.Energy</span><span class="profile-table-reward"><CoinIcon /> +@result.Coins</span></td>
                             </tr>
                         }
                     </tbody>
@@ -189,12 +189,12 @@ else
                         <span>@avatar.Symbol</span>
                         @if (!unlocked)
                         {
-                            <small>🪙 @avatar.Cost</small>
+                            <small><CoinIcon /> @avatar.Cost</small>
                         }
                     </button>
                 }
                 <label class="avatar-choice custom-avatar-tile @(!HasCustomAvatar && progress!.Coins < 500 ? "locked" : "")">
-                    <span>+</span><small>🪙 @(HasCustomAvatar ? "Keisti" : "500")</small>
+                    <span>+</span><small><CoinIcon /> @(HasCustomAvatar ? "Keisti" : "500")</small>
                     <InputFile OnChange="UploadCustomAvatar" accept="image/png,image/jpeg" disabled="@(!HasCustomAvatar && progress!.Coins < 500)" />
                 </label>
             </div>

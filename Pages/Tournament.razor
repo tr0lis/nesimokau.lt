@@ -1,4 +1,4 @@
-@page "/turnyrine-lentele"
+﻿@page "/turnyrine-lentele"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject LeaderboardService Leaderboard
@@ -15,7 +15,7 @@
 
     @if (isLoading)
     {
-        <div class="loading-state"><span class="loader"></span></div>
+        <div class="loading-state loading-skeleton" role="status" aria-label="Kraunama"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span><div class="sk-grid"><span class="sk sk-card"></span><span class="sk sk-card"></span><span class="sk sk-card"></span></div></div>
     }
     else if (!entries.Any())
     {

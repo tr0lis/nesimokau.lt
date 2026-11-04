@@ -13,7 +13,7 @@
 
 @if (loading)
 {
-    <div class="loading-state"><span class="loader"></span><p>Ruošiame dėsningumų užduotis...</p></div>
+    <div class="loading-state loading-skeleton" role="status" aria-label="Kraunama"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span><div class="sk-grid"><span class="sk sk-card"></span><span class="sk sk-card"></span><span class="sk sk-card"></span></div><p>Ruošiame dėsningumų užduotis...</p></div>
 }
 else if (!started)
 {
@@ -37,7 +37,7 @@ else if (finished)
         <div class="result-burst">∞</div><p class="eyebrow">Dėsningumai atrakti!</p><h1>Logika sėkminga<span class="gradient-text">!</span></h1>
         <p class="subtitle">Dėsningumų radimas lavina loginį mąstymą ir pastabumą.</p>
         <div class="result-score"><strong>@score</strong><span>taškai</span></div>
-        <div class="result-stats"><div><strong>@Accuracy%</strong><span>Tikslumas</span></div><div><strong><EnergyIcon /> +@earnedXp</strong><span>Uždirbta energija</span></div><div><strong>🪙 +@earnedCoins</strong><span>Uždirbtos monetos</span></div></div>
+        <div class="result-stats"><div><strong>@Accuracy%</strong><span>Tikslumas</span></div><div><strong><EnergyIcon /> +@earnedXp</strong><span>Uždirbta energija</span></div><div><strong><CoinIcon /> +@earnedCoins</strong><span>Uždirbtos monetos</span></div></div>
         <div class="result-actions"><button class="button button-primary" @onclick="Restart">Žaisti dar kartą <span>↗</span></button><button class="button button-ghost" @onclick="GoHome">Grįžti į pradžią</button></div>
     </section>
     @if (levelUp is not null)

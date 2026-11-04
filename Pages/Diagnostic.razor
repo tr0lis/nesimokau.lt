@@ -1,4 +1,4 @@
-@page "/diagnostika/{Subject?}"
+﻿@page "/diagnostika/{Subject?}"
 @using nesimokau.lt.Models
 @inject HttpClient Http
 @inject IJSRuntime JS
@@ -13,7 +13,7 @@
 }
 else if (questions.Count == 0)
 {
-    <div class="loading-state"><span class="loader"></span></div>
+    <div class="loading-state loading-skeleton" role="status" aria-label="Kraunama"><span class="sk sk-title"></span><span class="sk sk-line"></span><span class="sk sk-line short"></span><div class="sk-grid"><span class="sk sk-card"></span><span class="sk sk-card"></span><span class="sk sk-card"></span></div></div>
 }
 else if (finished)
 {

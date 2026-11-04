@@ -6,7 +6,7 @@
 @inject AuthService AuthSvc
 @implements IDisposable
 
-<SeoHead Title="@(signedIn ? "Pradžia | nesimokau.lt" : "nesimokau.lt – Mokykis žaisdamas!")"
+<SeoHead Title="@(signedIn ? "Pradžia" : "nesimokau.lt – Mokykis žaisdamas!")"
          Description="Mokomieji žaidimai 1–12 klasių mokiniams. Edukaciniai žaidimai vaikams pagal mokomuosius dalykus. Tobulėk lengviau!"
          CanonicalPath="/" />
 
@@ -160,6 +160,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        signedIn = await AuthSvc.IsAuthenticatedAsync();
         progress = await Progress.GetAsync();
         Progress.Changed += HandleProgressChanged;
     }
