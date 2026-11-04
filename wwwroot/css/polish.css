@@ -461,3 +461,57 @@ select {
 /* Level missing XP */
 .level-missing { display: block; margin-top: 2px; color: #7c5ce6; font-size: 12px; font-style: normal; font-weight: 800; }
 :root[data-theme="dark"] .level-missing { color: #c4b0ff; }
+
+/* ===== Round 4: icons, level cards, media search ===== */
+.fx-icon { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -.2em; overflow: visible; }
+.stat-icon .fx-icon, .achievement-overview-icon .fx-icon { width: 24px; height: 24px; vertical-align: middle; }
+.fx-energy { filter: drop-shadow(0 0 4px rgba(255, 190, 40, .65)); animation: fxZap 2.6s ease-in-out infinite; transform-origin: center; }
+@keyframes fxZap {
+    0%, 55%, 100% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(255, 190, 40, .5)); }
+    60% { transform: scale(1.18) rotate(-6deg); filter: drop-shadow(0 0 10px rgba(255, 220, 80, 1)) brightness(1.25); }
+    66% { transform: scale(.96); }
+    72% { transform: scale(1.1) rotate(4deg); filter: drop-shadow(0 0 8px rgba(255, 220, 80, .9)); }
+}
+.fx-flame { filter: drop-shadow(0 0 4px rgba(255, 110, 30, .6)); }
+.fx-flame-body { transform-origin: 50% 100%; animation: fxFlicker 1.1s ease-in-out infinite alternate; }
+.fx-flame-core { transform-origin: 50% 100%; animation: fxFlicker 0.8s ease-in-out infinite alternate-reverse; }
+@keyframes fxFlicker {
+    0% { transform: scale(1, 1) skewX(0); }
+    35% { transform: scale(.95, 1.07) skewX(-2deg); }
+    70% { transform: scale(1.04, .96) skewX(2deg); }
+    100% { transform: scale(.97, 1.05) skewX(-1deg); }
+}
+@media (prefers-reduced-motion: reduce) { .fx-energy, .fx-flame-body, .fx-flame-core { animation: none; } }
+
+/* Level cards */
+.levels-list { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.level-color-mint { --lv: #34d399; } .level-color-blue { --lv: #3b82f6; } .level-color-violet { --lv: #8b5cf6; }
+.level-color-gold { --lv: #f5b82e; } .level-color-orange { --lv: #fb923c; } .level-color-plum { --lv: #c026d3; }
+.level-color-pink { --lv: #ec4899; } .level-color-cyan { --lv: #22d3ee; } .level-color-rainbow { --lv: #a855f7; }
+.levels-list .level-row {
+    position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 14px; min-width: 0;
+    border: 1px solid color-mix(in srgb, var(--lv, #8b5cf6) 35%, transparent); border-radius: 18px;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--lv, #8b5cf6) 16%, #fff), color-mix(in srgb, var(--lv, #8b5cf6) 6%, #fff));
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--lv, #8b5cf6) 18%, transparent);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.levels-list .level-row::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, .45) 50%, transparent 60%); transform: translateX(-120%); }
+.levels-list .level-row:hover { transform: translateY(-2px); }
+.levels-list .level-row:hover::after { transform: translateX(120%); transition: transform .7s ease; }
+.levels-list .level-row.current { border-width: 2px; border-color: var(--lv, #8b5cf6); animation: lvPulse 2.4s ease-in-out infinite; }
+@keyframes lvPulse { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--lv, #8b5cf6) 22%, transparent), 0 10px 28px color-mix(in srgb, var(--lv, #8b5cf6) 45%, transparent); } }
+.levels-list .level-row .level-badge { flex: 0 0 auto; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; font-size: 24px; background: linear-gradient(145deg, color-mix(in srgb, var(--lv, #8b5cf6) 70%, #fff), var(--lv, #8b5cf6)); box-shadow: 0 6px 14px color-mix(in srgb, var(--lv, #8b5cf6) 45%, transparent); }
+.levels-list .level-row.level-color-rainbow .level-badge { background: linear-gradient(135deg, #f43f5e, #f59e0b, #22c55e, #3b82f6, #a855f7); }
+.levels-list .level-row strong { display: block; font-size: 13px; }
+.levels-list .level-row small { display: flex; align-items: center; gap: 4px; }
+.levels-list .level-current { padding: 3px 8px; border-radius: 999px; background: var(--lv, #8b5cf6); color: #fff; font-size: 10px; font-weight: 900; }
+:root[data-theme="dark"] .levels-list .level-row { background: linear-gradient(145deg, color-mix(in srgb, var(--lv, #8b5cf6) 28%, #1e1830), #1e1830); border-color: color-mix(in srgb, var(--lv, #8b5cf6) 55%, transparent); }
+:root[data-theme="dark"] .levels-list .level-row.current { background: linear-gradient(145deg, color-mix(in srgb, var(--lv, #8b5cf6) 38%, #1e1830), #231b3a); }
+:root[data-theme="dark"] .levels-list .level-row::after { background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, .12) 50%, transparent 60%); }
+@media (max-width: 560px) { .levels-list { grid-template-columns: 1fr; } }
+
+/* Media search dark */
+:root[data-theme="dark"] .media-search { background: #241d38; border-color: #3f3560; }
+:root[data-theme="dark"] .media-search input { background: transparent !important; box-shadow: none !important; border: 0 !important; color: #f1ecfb; }
+.media-search input, .media-search input:focus { background: transparent !important; box-shadow: none !important; border: 0 !important; outline: 0; }
+.media-search:focus-within { border-color: #7a5ceb; box-shadow: 0 0 0 3px rgba(122, 92, 235, .2); }

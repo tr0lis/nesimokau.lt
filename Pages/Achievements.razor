@@ -1,4 +1,4 @@
-@page "/pasiekimai"
+﻿@page "/pasiekimai"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject ProgressService Progress
@@ -24,12 +24,12 @@
             </div>
         </article>
         <article class="achievement-overview-card">
-            <span class="achievement-overview-icon streak-icon">🔥</span>
+            <span class="achievement-overview-icon streak-icon"><FlameIcon /></span>
             <div><small>DABARTINĖ SERIJA</small><strong>@progress.Streak <span>dienų</span></strong></div>
             <small class="achievement-overview-note">Nuoseklumas kuria įprotį</small>
         </article>
         <article class="achievement-overview-card">
-            <span class="achievement-overview-icon xp-icon">⚡</span>
+            <span class="achievement-overview-icon xp-icon"><EnergyIcon /></span>
             <div><small>ATLIKTI ŽAIDIMAI</small><strong>@progress.GamesCompleted</strong></div>
             <small class="achievement-overview-note">Tavo mokymosi žingsniai</small>
         </article>

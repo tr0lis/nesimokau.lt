@@ -37,7 +37,7 @@ else if (finished)
         <div class="result-burst">◈</div><p class="eyebrow">Geometrija įveikta!</p><h1>Erdvė pažinta<span class="gradient-text">!</span></h1>
         <p class="subtitle">Matavimai ir geometrija padeda suprasti pasaulį aplink mus.</p>
         <div class="result-score"><strong>@score</strong><span>taškai</span></div>
-        <div class="result-stats"><div><strong>@Accuracy%</strong><span>Tikslumas</span></div><div><strong>⚡ +@earnedXp</strong><span>Uždirbta energija</span></div><div><strong>🪙 +@earnedCoins</strong><span>Uždirbtos monetos</span></div></div>
+        <div class="result-stats"><div><strong>@Accuracy%</strong><span>Tikslumas</span></div><div><strong><EnergyIcon /> +@earnedXp</strong><span>Uždirbta energija</span></div><div><strong>🪙 +@earnedCoins</strong><span>Uždirbtos monetos</span></div></div>
         <div class="result-actions"><button class="button button-primary" @onclick="Restart">Žaisti dar kartą <span>↗</span></button><button class="button button-ghost" @onclick="GoHome">Grįžti į pradžią</button></div>
     </section>
     @if (levelUp is not null)

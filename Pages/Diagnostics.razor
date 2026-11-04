@@ -1,10 +1,10 @@
-@page "/rezultatai"
+﻿@page "/rezultatai"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @inject ProgressService Progress
 @inject IJSRuntime JS
 
-<SeoHead Title="Diagnostikos istorija | nesimokau.lt" Description="Asmeninė diagnostinių testų istorija." Indexable="false" />
+<SeoHead Title="Mano rezultatai | nesimokau.lt" Description="Asmeninė diagnostinių testų istorija." Indexable="false" />
 <section class="tool-page"><p class="eyebrow">TAVO DIAGNOSTIKOS</p><h1>Testų istorija</h1>
 @if (progress.DiagnosticAttempts.Count == 0) { <div class="practice-empty"><span>🧭</span><strong>Dar nėra diagnostinių testų</strong><small>Baik testą ir jo rezultatai atsiras čia.</small></div> }
 else

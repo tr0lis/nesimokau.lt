@@ -1,4 +1,4 @@
-@page "/profilis"
+﻿@page "/profilis"
 @using nesimokau.lt.Models
 @using nesimokau.lt.Services
 @using nesimokau.lt.Components
@@ -7,7 +7,7 @@
 @inject GameCatalogService Catalog
 @inject LeaderboardService Leaderboard
 
-<SeoHead Title="Mano profilis | nesimokau.lt" Description="Asmeninis mokymosi profilis." Indexable="false" />
+<SeoHead Title="Profilis ir nustatymai | nesimokau.lt" Description="Asmeninis mokymosi profilis." Indexable="false" />
 
 @if (progress is null)
 {
@@ -51,7 +51,7 @@ else
                     <h2>Tavo rezultatai</h2>
                 </div>
                 <div class="stats-grid profile-stats">
-                    <div class="stat-card stat-purple"><span class="stat-icon">⚡</span><div><strong>@progress.Xp</strong><small>Surinkta energija</small></div></div>
+                    <div class="stat-card stat-purple"><span class="stat-icon"><EnergyIcon /></span><div><strong>@progress.Xp</strong><small>Surinkta energija</small></div></div>
                     <div class="stat-card stat-gold"><span class="stat-icon">🪙</span><div><strong>@progress.Coins</strong><small>Monetos</small></div></div>
                     <div class="stat-card stat-blue"><span class="stat-icon">◷</span><div><strong>@progress.BestScore</strong><small>Taškai</small></div></div>
                 </div>
@@ -110,7 +110,7 @@ else
                                 <td><span class="profile-table-count is-correct">@correctAnswers</span></td>
                                 <td><span class="profile-table-count is-incorrect">@incorrectAnswers</span></td>
                                 <td><strong>@result.Accuracy%</strong><small class="profile-table-subvalue">@result.Score tašk.</small></td>
-                                <td><span class="profile-table-reward">⚡ +@result.Energy</span><span class="profile-table-reward">🪙 +@result.Coins</span></td>
+                                <td><span class="profile-table-reward"><EnergyIcon /> +@result.Energy</span><span class="profile-table-reward">🪙 +@result.Coins</span></td>
                             </tr>
                         }
                     </tbody>
@@ -162,9 +162,9 @@ else
             <div class="levels-list">
                 @foreach (var level in LevelCatalog.All)
                 {
-                    <div class="level-row @(level.Number == CurrentLevel.Number ? "current" : "")">
+                    <div class="level-row level-color-@level.Color @(level.Number == CurrentLevel.Number ? "current" : "")">
                         <span class="level-badge badge-@level.Color">@level.Badge</span>
-                        <div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp energija</small>@if (NextLevel is not null && level.Number == NextLevel.Number) { <em class="level-missing">Trūksta @(Math.Max(0, level.RequiredXp - progress.Xp)) XP</em> }</div>
+                        <div><strong>@level.Number. @level.Title</strong><small><EnergyIcon /> @level.RequiredXp energija</small>@if (NextLevel is not null && level.Number == NextLevel.Number) { <em class="level-missing">Trūksta @(Math.Max(0, level.RequiredXp - progress.Xp)) XP</em> }</div>
                         @if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }
                     </div>
                 }

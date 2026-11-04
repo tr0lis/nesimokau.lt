@@ -3,9 +3,10 @@
 @using nesimokau.lt.Services
 @inject ProgressService Progress
 @inject GameCatalogService Catalog
+@inject AuthService AuthSvc
 @implements IDisposable
 
-<SeoHead Title="nesimokau.lt – Mokykis žaisdamas!"
+<SeoHead Title="@(signedIn ? "Pradžia | nesimokau.lt" : "nesimokau.lt – Mokykis žaisdamas!")"
          Description="Mokomieji žaidimai 1–12 klasių mokiniams. Edukaciniai žaidimai vaikams pagal mokomuosius dalykus. Tobulėk lengviau!"
          CanonicalPath="/" />
 
@@ -30,7 +31,7 @@
             <span class="home-level-arrow" aria-hidden="true">↗</span>
             <span class="home-level-progress"><i style="width:@LevelProgress%"></i></span>
             <strong class="home-level-xp">@progress.Xp XP</strong>
-            <span class="home-level-streak"><span>🔥</span> @progress.Streak dienų iš eilės <span aria-hidden="true">▦</span></span>
+            <span class="home-level-streak"><FlameIcon /> @progress.Streak dienų iš eilės <span aria-hidden="true">▦</span></span>
         </button>
     </section>
 
@@ -43,7 +44,7 @@
                 <div class="levels-list">
                     @foreach (var level in LevelCatalog.All)
                     {
-                        <div class="level-row level-color-@level.Color @(level.Number == CurrentLevel.Number ? "current" : "")"><span class="level-badge badge-@level.Color">@level.Badge</span><div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp XP</small>@if (NextLevel is not null && level.Number == NextLevel.Number) { <em class="level-missing">Trūksta @(Math.Max(0, level.RequiredXp - progress.Xp)) XP</em> }</div>@if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }</div>
+                        <div class="level-row level-color-@level.Color @(level.Number == CurrentLevel.Number ? "current" : "")"><span class="level-badge badge-@level.Color">@level.Badge</span><div><strong>@level.Number. @level.Title</strong><small><EnergyIcon /> @level.RequiredXp XP</small>@if (NextLevel is not null && level.Number == NextLevel.Number) { <em class="level-missing">Trūksta @(Math.Max(0, level.RequiredXp - progress.Xp)) XP</em> }</div>@if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }</div>
                     }
                 </div>
             </section>
@@ -108,7 +109,7 @@
                         <i>@(active ? "✓" : "")</i>
                     </div>
                 }
-                <div class="home-week-streak"><span>🔥</span><strong>@progress.Streak</strong><small>dienų iš eilės!</small></div>
+                <div class="home-week-streak"><FlameIcon /><strong>@progress.Streak</strong><small>dienų iš eilės!</small></div>
             </div>
         </article>
         <article class="home-latest-card">
@@ -130,6 +131,7 @@
 @code {
     private StudentProgress progress = new();
     private bool showLevels;
+    private bool signedIn;
     private LevelDefinition CurrentLevel => LevelCatalog.All.Last(level => level.RequiredXp <= progress.Xp);
     private LevelDefinition? NextLevel => LevelCatalog.All.FirstOrDefault(level => level.RequiredXp > progress.Xp);
     private int LevelProgress => NextLevel is null ? 100 : Math.Clamp((progress.Xp - CurrentLevel.RequiredXp) * 100 / (NextLevel.RequiredXp - CurrentLevel.RequiredXp), 5, 100);

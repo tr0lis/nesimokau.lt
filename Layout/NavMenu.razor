@@ -30,9 +30,7 @@
         <NavLink class="nav-action" href="/" Match="NavLinkMatch.All" @onclick="CloseMobileNavigation">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3.5 10 8.5-7 8.5 7v10a1 1 0 0 1-1 1h-5.3v-6.5h-4.4V21H4.5a1 1 0 0 1-1-1z" /></svg><span>Pradžia</span>
         </NavLink>
-        <a class="nav-action nav-subjects" href="/#subjects" @onclick="CloseMobileNavigation">
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5h6a3 3 0 0 1 3 3v12a3 3 0 0 0-3-3H4zM20 4.5h-4a3 3 0 0 0-3 3v12a3 3 0 0 1 3-3h4z" /></svg><span>Dalykai ir žaidimai</span>
-        </a>
+
         <NavLink class="nav-action nav-achievements" href="/pasiekimai" @onclick="CloseMobileNavigation">
             <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v4a4 4 0 0 1-8 0zM8 6H5v2a4 4 0 0 0 4 4m7-6h3v2a4 4 0 0 1-4 4m-3 0v5m-4 4h8m-7-4h6v4H9z" /></svg><span>Pasiekimai</span>
         </NavLink>
@@ -64,7 +62,7 @@
                 <span class="sidebar-account-copy"><strong>Mokinio paskyra</strong><small>@CurrentLevel.Number lygis · @progress.Xp XP</small></span>
                 <span class="sidebar-account-coins">@progress.Coins <small>mon.</small></span>
             </NavLink>
-            <button class="sidebar-tool-button" type="button" @onclick="ToggleTheme" aria-label="Pakeisti temos išvaizdą">
+            <button class="sidebar-tool-button" type="button" disabled="@themeBusy" @onclick="ToggleTheme" aria-label="Pakeisti temos išvaizdą">
                 <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                     @if (progress.Theme == "dark")
                     {
@@ -246,12 +244,19 @@
         Navigation.NavigateTo("/prisijungimas", replace: true);
     }
 
+    private bool themeBusy;
+
     private async Task ToggleTheme()
     {
+        if (themeBusy) return;
+        themeBusy = true;
+        try {
         var theme = progress.Theme == "dark" ? "light" : "dark";
         progress.Theme = theme;
         await JS.InvokeVoidAsync("nesimokau.setTheme", theme);
         await Progress.SaveThemeAsync(theme);
+        await Task.Delay(350);
+        } finally { themeBusy = false; }
     }
 
     private void HandleProgressChanged() => _ = InvokeAsync(async () =>
