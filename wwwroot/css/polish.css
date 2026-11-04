@@ -427,3 +427,37 @@ select {
 :root[data-theme="dark"] .keyboard-hint { color: #b9b0dc; }
 :root[data-theme="dark"] .tip-card { background: rgba(255, 190, 90, .1); border-color: rgba(255, 190, 90, .25); color: #ffd9a0; }
 :root[data-theme="dark"] .tip-card p { color: #e7c496; }
+
+/* ===== Round 3 polish ===== */
+/* Light sidebar */
+:root:not([data-theme="dark"]) .site-header { background: linear-gradient(180deg, #ffffff, #f7f3ff 70%, #f1ebff); border-color: #e6def8; box-shadow: 0 16px 40px rgba(94, 63, 190, .10); }
+:root:not([data-theme="dark"]) .main-nav .nav-action { color: #5a5274; }
+:root:not([data-theme="dark"]) .main-nav .nav-icon { color: #7c5ce6; stroke: currentColor; fill: none; }
+:root:not([data-theme="dark"]) .main-nav .nav-action:hover { background: rgba(124, 92, 230, .10); color: #5b3cc4; }
+:root:not([data-theme="dark"]) .main-nav .nav-action.active { background: linear-gradient(135deg, #ede6ff, #e1d6ff); color: #5b3cc4; box-shadow: inset 0 0 0 1px rgba(124, 92, 230, .25); }
+
+/* Profile settings: full-width children */
+.profile-controls-card .profile-settings > * { grid-column: 1 / -1; }
+.profile-controls-card .profile-settings .profile-class-block { grid-column: 1 / -1; }
+.profile-controls-card .twofa-panel { width: 100%; box-sizing: border-box; margin-top: 8px; }
+.profile-danger-zone { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 8px; padding: 14px 16px; border: 1px dashed rgba(220, 38, 38, .35); border-radius: 16px; }
+.profile-danger-zone div { display: grid; gap: 2px; min-width: 0; }
+.profile-danger-zone small { opacity: .7; font-size: 12px; }
+.profile-controls-card .profile-danger-zone .profile-reset-main { width: auto; flex: 0 0 auto; margin: 0; }
+@media (max-width: 560px) { .profile-danger-zone { flex-direction: column; align-items: stretch; } .profile-controls-card .profile-danger-zone .profile-reset-main { width: 100%; } }
+
+/* QR: no double frame */
+.twofa-qr { width: fit-content; padding: 0; background: none; box-shadow: none; }
+.twofa-qr .qr-frame { margin: 0; }
+
+/* Podium glow per medal */
+.podium-avatar, .podium-1 .podium-avatar { animation: medalGlow 2.6s ease-in-out infinite; }
+@keyframes medalGlow {
+    0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--medal) 30%, transparent), 0 0 14px 2px color-mix(in srgb, var(--medal) 45%, transparent); }
+    50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--medal) 20%, transparent), 0 0 30px 8px color-mix(in srgb, var(--medal) 70%, transparent); }
+}
+.podium-card .podium-avatar[class*="avatar-bg-"] { border-color: var(--medal); }
+
+/* Level missing XP */
+.level-missing { display: block; margin-top: 2px; color: #7c5ce6; font-size: 12px; font-style: normal; font-weight: 800; }
+:root[data-theme="dark"] .level-missing { color: #c4b0ff; }

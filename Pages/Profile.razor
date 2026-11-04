@@ -62,8 +62,11 @@ else
                         <label>Rodomi pratimai pagal klasę</label>
                         <div class="profile-class-fixed" aria-label="Priskirta klasė">@SelectedClassLabel</div>
                     </div>
-                    <button class="button button-ghost reset-progress-btn profile-reset-main" @onclick="() => confirmResetOpen = true">Atkurti pažangą</button>
                     <TwoFactorPanel />
+                    <div class="profile-danger-zone">
+                        <div><strong>Pradėti iš naujo</strong><small>Ištrina tavo pažangą, monetas ir energiją.</small></div>
+                        <button class="button button-ghost reset-progress-btn profile-reset-main" @onclick="() => confirmResetOpen = true">Atkurti pažangą</button>
+                    </div>
                 </section>
             </aside>
         </div>
@@ -161,7 +164,7 @@ else
                 {
                     <div class="level-row @(level.Number == CurrentLevel.Number ? "current" : "")">
                         <span class="level-badge badge-@level.Color">@level.Badge</span>
-                        <div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp energija</small></div>
+                        <div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp energija</small>@if (NextLevel is not null && level.Number == NextLevel.Number) { <em class="level-missing">Trūksta @(Math.Max(0, level.RequiredXp - progress.Xp)) XP</em> }</div>
                         @if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }
                     </div>
                 }

@@ -2,6 +2,7 @@
 @using nesimokau.lt.Components
 @using nesimokau.lt.Services
 @inject AuthService Auth
+@inject Microsoft.JSInterop.IJSRuntime JS
 
 <section class="twofa-panel" aria-labelledby="twofa-title">
     <div class="twofa-head">
@@ -23,7 +24,10 @@
                     <li>@c</li>
                 }
             </ul>
-            <div class="twofa-actions"><button type="button" class="button button-primary compact-btn" @onclick="() => backupCodes = new()">Išsaugojau</button></div>
+            <div class="twofa-actions">
+                <button type="button" class="button button-secondary compact-btn" @onclick="DownloadCodesAsync">⬇ Atsisiųsti .txt</button>
+                <button type="button" class="button button-primary compact-btn" @onclick="() => backupCodes = new()">Išsaugojau</button>
+            </div>
         </div>
     }
     else if (setup is not null)
@@ -91,6 +95,12 @@
         busy = false;
         if (!r.Ok) { error = r.Error; return; }
         enabled = true; setup = null; code = string.Empty; backupCodes = r.BackupCodes;
+    }
+
+    private async Task DownloadCodesAsync()
+    {
+        var text = "nesimokau.lt – 2FA atsarginiai kodai\nKiekvienas kodas veikia tik vieną kartą. Saugok juos saugioje vietoje.\n\n" + string.Join("\n", backupCodes) + "\n";
+        await JS.InvokeVoidAsync("nesimokau.downloadText", "nesimokau-2fa-atsarginiai-kodai.txt", text);
     }
 
     private void Cancel() { setup = null; code = string.Empty; error = string.Empty; }

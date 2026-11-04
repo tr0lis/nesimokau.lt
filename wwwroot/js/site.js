@@ -18,6 +18,14 @@ try {
     }
 } catch { }
 
+window.nesimokau.downloadText = function (fileName, text) {
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
 window.nesimokau.downloadDiagnosticReport = function (reportTitle, accuracy, questions, durationSeconds, wrongAnswers) {
     const canvas = document.createElement("canvas"); canvas.width = 1190; canvas.height = 1684;
     const ctx = canvas.getContext("2d"); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);

@@ -92,7 +92,11 @@ export const authRoutes = {
     const weak = validatePassword(password, username);
     if (weak) throw new HttpError(400, weak);
 
-    if (await db.first('players', `username_lower = ${q(username.toLowerCase())}`)) {
+    const [existing, passwordHash] = await Promise.all([
+      db.first('players', `username_lower = ${q(username.toLowerCase())}`),
+      hashPassword(password),
+    ]);
+    if (existing) {
       throw new HttpError(409, 'Toks slapyvardis jau užimtas.');
     }
 
@@ -102,7 +106,7 @@ export const authRoutes = {
         uid,
         username,
         username_lower: username.toLowerCase(),
-        password_hash: await hashPassword(password),
+        password_hash: passwordHash,
         avatar_id: avatarId,
         class_group: classGroup,
         totp_enabled: false,
@@ -116,8 +120,7 @@ export const authRoutes = {
       throw error;
     }
 
-    await createSession(req, res, uid);
-    await audit(req, uid, 'register');
+    await Promise.all([createSession(req, res, uid), audit(req, uid, 'register')]);
     sendJson(res, 201, { user: { id: uid, username, avatarId, classGroup, totpEnabled: false } });
   },
 
@@ -126,15 +129,17 @@ export const authRoutes = {
     const username = str(body.username, 40).trim();
     const password = str(body.password, 200);
 
-    await rateLimit(`login-ip:${clientIp(req)}`, 30, 600);
-
     const generic = new HttpError(401, 'Neteisingas slapyvardis arba slaptažodis.');
     if (!USERNAME.test(username) || !password) {
+      await rateLimit(`login-ip:${clientIp(req)}`, 30, 600);
       await burnPasswordCheck(password);
       throw generic;
     }
 
-    const player = await db.first('players', `username_lower = ${q(username.toLowerCase())}`);
+    const [, player] = await Promise.all([
+      rateLimit(`login-ip:${clientIp(req)}`, 30, 600),
+      db.first('players', `username_lower = ${q(username.toLowerCase())}`),
+    ]);
     if (!player) {
       await burnPasswordCheck(password);
       throw generic;
@@ -165,9 +170,11 @@ export const authRoutes = {
       return sendJson(res, 200, { mfaRequired: true, ticket: signTicket({ uid: player.uid }, 5 * 60 * 1000) });
     }
 
-    await db.update('players', player.id, { failed_logins: 0, locked_until_ms: 0, last_login_ms: Date.now() });
-    await createSession(req, res, player.uid);
-    await audit(req, player.uid, 'login');
+    await Promise.all([
+      db.update('players', player.id, { failed_logins: 0, locked_until_ms: 0, last_login_ms: Date.now() }),
+      createSession(req, res, player.uid),
+      audit(req, player.uid, 'login'),
+    ]);
     sendJson(res, 200, { user: publicUser(player) });
   },
 
@@ -187,9 +194,11 @@ export const authRoutes = {
       throw new HttpError(401, 'Neteisingas kodas.');
     }
 
-    await db.update('players', player.id, { failed_logins: 0, locked_until_ms: 0, last_login_ms: Date.now() });
-    await createSession(req, res, player.uid);
-    await audit(req, player.uid, 'login_mfa');
+    await Promise.all([
+      db.update('players', player.id, { failed_logins: 0, locked_until_ms: 0, last_login_ms: Date.now() }),
+      createSession(req, res, player.uid),
+      audit(req, player.uid, 'login_mfa'),
+    ]);
     sendJson(res, 200, { user: publicUser(player) });
   },
 

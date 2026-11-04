@@ -43,7 +43,7 @@
                 <div class="levels-list">
                     @foreach (var level in LevelCatalog.All)
                     {
-                        <div class="level-row level-color-@level.Color @(level.Number == CurrentLevel.Number ? "current" : "")"><span class="level-badge badge-@level.Color">@level.Badge</span><div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp XP</small></div>@if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }</div>
+                        <div class="level-row level-color-@level.Color @(level.Number == CurrentLevel.Number ? "current" : "")"><span class="level-badge badge-@level.Color">@level.Badge</span><div><strong>@level.Number. @level.Title</strong><small>⚡ @level.RequiredXp XP</small>@if (NextLevel is not null && level.Number == NextLevel.Number) { <em class="level-missing">Trūksta @(Math.Max(0, level.RequiredXp - progress.Xp)) XP</em> }</div>@if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }</div>
                     }
                 </div>
             </section>
