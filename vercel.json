@@ -24,7 +24,7 @@
     }
     ,
     {
-      "source": "/(profilis|pasiekimai|rezultatai|turnyrine-lentele|mediateka|pasitaisyti|diagnostika|skaiciuokle|prisijungimas|registracija)(.*)",
+      "source": "/(profilis|pasiekimai|rezultatai|mediateka|pasitaisyti|diagnostika|skaiciuokle|prisijungimas|registracija)(.*)",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]

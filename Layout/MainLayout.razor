@@ -18,9 +18,16 @@
 </div>
 
 @code {
-    private static readonly string[] PublicPaths = { "", "prisijungimas", "registracija", "nerasta" };
+    private static readonly string[] PublicPaths = { "", "prisijungimas", "registracija", "nerasta", "irankiai", "turnyrine-lentele", "lietuviu-kalba", "matematika" };
 
-    private static bool IsPublic(string path) => PublicPaths.Contains(path);
+    // Everything except games (and personal pages) is public so search engines can index it.
+    private static bool IsPublic(string path)
+    {
+        if (PublicPaths.Contains(path)) return true;
+        if (!path.StartsWith("lietuviu-kalba/", StringComparison.Ordinal)) return false;
+        var segments = path.Split('/');
+        return segments.Length == 2 || (segments.Length >= 3 && segments[2] == "pamokos");
+    }
 
     [Inject] private AuthService Auth { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;

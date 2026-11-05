@@ -22,7 +22,6 @@ Disallow: /api/
 Disallow: /profilis
 Disallow: /pasiekimai
 Disallow: /rezultatai
-Disallow: /turnyrine-lentele
 Disallow: /mediateka
 Disallow: /pasitaisyti
 Disallow: /diagnostika

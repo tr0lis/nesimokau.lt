@@ -62,6 +62,17 @@ const pages = [
     links: [['Matematikos užduotys', '/matematika'], ['Lietuvių kalbos žaidimai', '/lietuviu-kalba']],
   },
   {
+    path: '/turnyrine-lentele',
+    title: 'Turnyrinė lentelė – geriausi žaidėjai | nesimokau.lt',
+    description: 'Geriausių nesimokau.lt žaidėjų turnyrinė lentelė: visų laikų, šio mėnesio ir šios savaitės rezultatai.',
+    sitemap: true,
+    h1: 'Turnyrinė lentelė',
+    sections: [
+      ['Geriausi žaidėjai', 'Stebėk, kas surinko daugiausia taškų per visus laikus, šį mėnesį ar šią savaitę.'],
+    ],
+    links: [['Matematikos užduotys', '/matematika'], ['Lietuvių kalbos žaidimai', '/lietuviu-kalba']],
+  },
+  {
     path: '/lietuviu-kalba/1-2-klases/pamokos',
     title: 'Lietuvių kalbos pamokos ir užduotys 1–2 klasei | nesimokau.lt',
     description: 'Mokomoji medžiaga pirmokams ir antrokams: lietuvių kalbos žodynas, gramatika, A1–A2 pamokos ir interaktyvios užduotys.',
@@ -125,7 +136,7 @@ for (const game of games) {
     path: game.base,
     title: `${game.title} | nesimokau.lt`,
     description: game.description,
-    sitemap: true,
+    noindex: true,
     h1: game.name,
     category: game.category,
     sections: [[game.keywords, game.description], ['Mokykis žaisdamas', 'Užduotis suskirstyta į trumpus žingsnius, todėl gali iškart pasitikrinti atsakymą, pastebėti klaidą ir bandyti dar kartą.']],
@@ -138,6 +149,7 @@ for (const game of games) {
         path: `/lietuviu-kalba/${grade.slug}/${game.slug}`,
         title: `${game.name} – mokomieji žaidimai ${grade.label} | nesimokau.lt`,
         description: `${grade.phrase}: ${game.description}`,
+        noindex: true,
         h1: `${game.name}: užduotys ${grade.label}`,
         category: 'Lietuvių kalba',
         sections: [
@@ -203,7 +215,7 @@ function renderDocument(indexHtml, page) {
   const canonical = `${origin}${page.path}`;
   let html = indexHtml.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(page.title)}</title>`);
   html = injectMeta(html, 'description', page.description);
-  html = injectMeta(html, 'robots', 'index,follow,max-image-preview:none');
+  html = injectMeta(html, 'robots', page.noindex ? 'noindex,follow' : 'index,follow,max-image-preview:none');
   html = injectMeta(html, 'og:title', page.title, true);
   html = injectMeta(html, 'og:description', page.description, true);
   html = injectMeta(html, 'og:url', canonical, true);
@@ -240,8 +252,7 @@ for (const entry of sourcePages) {
   }
 }
 
-// Only the home page is public; every other route requires login, so it must not be in the sitemap.
-const sitemapPages = pages.filter((page) => page.sitemap && page.path === '/');
+const sitemapPages = pages.filter((page) => page.sitemap);
 const sitemapPaths = new Set();
 for (const page of sitemapPages) {
   if (sitemapPaths.has(page.path)) throw new Error(`Duplicate sitemap route: ${page.path}`);
@@ -253,7 +264,7 @@ const urls = sitemapPages.map((page) => `  <url><loc>${origin}${page.path}</loc>
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 const aiBots = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-Web', 'anthropic-ai', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'CCBot', 'Bingbot'];
 const aiRules = aiBots.map((bot) => `User-agent: ${bot}\n`).join('') + `Allow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /prisijungimas\nDisallow: /registracija\n\n`;
-const robots = aiRules + `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /pasiekimai\nDisallow: /rezultatai\nDisallow: /turnyrine-lentele\nDisallow: /mediateka\nDisallow: /pasitaisyti\nDisallow: /diagnostika\nDisallow: /skaiciuokle\nDisallow: /prisijungimas\nDisallow: /registracija\n\nSitemap: ${origin}/sitemap.xml\n`;
+const robots = aiRules + `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /pasiekimai\nDisallow: /rezultatai\nDisallow: /mediateka\nDisallow: /pasitaisyti\nDisallow: /diagnostika\nDisallow: /skaiciuokle\nDisallow: /prisijungimas\nDisallow: /registracija\n\nSitemap: ${origin}/sitemap.xml\n`;
 await fs.writeFile(path.join(outputRoot, 'sitemap.xml'), sitemap);
 await fs.writeFile(path.join(outputRoot, 'robots.txt'), robots);
 await fs.writeFile(path.join(sourceRoot, 'sitemap.xml'), sitemap);
