@@ -211,14 +211,22 @@ as $$
     group by activity.user_id
   )
   select
-    scores.user_id,
-    coalesce(nullif(progress.name, ''), scores.activity_username, 'Svečias'),
-    scores.total_score,
-    progress.avatar_id,
-    coalesce(progress.avatar_background, 'bg-violet')
-  from player_scores scores
-  left join public.user_progress progress on progress.user_id::text = scores.user_id
-  order by scores.total_score desc, nickname asc
+    ranked.user_id,
+    ranked.nickname,
+    ranked.score,
+    ranked.avatar_id,
+    ranked.avatar_background
+  from (
+    select
+      scores.user_id::text as user_id,
+      coalesce(nullif(progress.name, ''), scores.activity_username, 'Svečias')::text as nickname,
+      scores.total_score::bigint as score,
+      progress.avatar_id::text as avatar_id,
+      coalesce(progress.avatar_background, 'bg-violet')::text as avatar_background
+    from player_scores scores
+    left join public.user_progress progress on progress.user_id::text = scores.user_id
+  ) ranked
+  order by ranked.score desc, ranked.nickname asc
   limit 50;
 $$;
 
