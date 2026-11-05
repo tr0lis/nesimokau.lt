@@ -240,7 +240,8 @@ for (const entry of sourcePages) {
   }
 }
 
-const sitemapPages = pages.filter((page) => page.sitemap);
+// Only the home page is public; every other route requires login, so it must not be in the sitemap.
+const sitemapPages = pages.filter((page) => page.sitemap && page.path === '/');
 const sitemapPaths = new Set();
 for (const page of sitemapPages) {
   if (sitemapPaths.has(page.path)) throw new Error(`Duplicate sitemap route: ${page.path}`);
