@@ -263,7 +263,7 @@
     overflow: hidden;
     border: 1px solid var(--line);
     border-radius: 15px;
-    background: #fdfcff;
+    background: var(--graph-bg, #fdfcff);
 }
 
 .graph-svg {
@@ -274,17 +274,17 @@
 }
 
 .graph-grid-line {
-    stroke: #ece8f4;
+    stroke: var(--graph-grid, #ece8f4);
     stroke-width: 1;
 }
 
 .graph-axis {
-    stroke: #827a91;
+    stroke: var(--graph-axis, #827a91);
     stroke-width: 1.5;
 }
 
 .graph-axis-label {
-    fill: #716b83;
+    fill: var(--graph-label, #716b83);
     font-size: 12px;
     font-weight: 700;
 }
@@ -295,6 +295,13 @@
     stroke-width: 3;
     stroke-linejoin: round;
     stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1.01;
+    animation: graph-draw 0.9s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .graph-curve { animation: none; stroke-dashoffset: 0; }
 }
 
 .graph-footer {
@@ -636,7 +643,74 @@
 }
 
 :root[data-theme="dark"] .graph-board {
-    background: #fff;
+    --graph-bg: #1b1628;
+    --graph-grid: #2d2742;
+    --graph-axis: #8f86a6;
+    --graph-label: #b7aed0;
+}
+
+.exp-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 4px;
+}
+
+.exp-bar small {
+    color: var(--muted, #716b83);
+}
+
+.exp-toggle {
+    min-width: 46px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.exp-toggle.on, .calculator-buttons .key-active {
+    background: #7c3aed;
+    border-color: #7c3aed;
+    color: #fff;
+}
+
+input.exp-on {
+    box-shadow: 0 0 0 2px #7c3aed55;
+}
+
+.equation-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.equation-examples button {
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.equation-examples button:hover {
+    border-color: #7c3aed;
+}
+
+.tool-feedback.error {
+    color: #e5484d;
+}
+
+.solution-card li {
+    margin: 6px 0;
+}
+
+@keyframes graph-draw {
+    to { stroke-dashoffset: 0; }
 }
 
 @media (max-width: 850px) {

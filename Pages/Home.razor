@@ -44,7 +44,7 @@
                 <div class="levels-list">
                     @foreach (var level in LevelCatalog.All)
                     {
-                        <div class="level-row level-color-@level.Color @(level.Number == CurrentLevel.Number ? "current" : "")"><span class="level-badge badge-@level.Color">@level.Badge</span><div><strong>@level.Number. @level.Title</strong><small><EnergyIcon /> @level.RequiredXp XP</small>@if (NextLevel is not null && level.Number == NextLevel.Number) { <em class="level-missing">Trūksta @(Math.Max(0, level.RequiredXp - progress.Xp)) XP</em> }</div>@if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }</div>
+                        <div class="level-row lvl-@level.Number level-color-@level.Color @(level.Number == CurrentLevel.Number ? "current" : "")"><span class="level-badge badge-@level.Color">@level.Badge</span><div><strong>@level.Number. @level.Title</strong><small><EnergyIcon /> @level.RequiredXp XP</small>@if (NextLevel is not null && level.Number == NextLevel.Number) { <em class="level-missing">Trūksta @(Math.Max(0, level.RequiredXp - progress.Xp)) XP</em> }</div>@if (level.Number == CurrentLevel.Number) { <span class="level-current">DABAR</span> }</div>
                     }
                 </div>
             </section>
@@ -66,7 +66,7 @@
                     <span class="subject-card-copy">
                         <strong>@subject.Title</strong>
                         <small>@subject.Description</small>
-                        <span class="home-subject-count">▮ @subject.ActivityCount @ActivityLabel(subject.ActivityCount)</span>
+                        <span class="home-subject-count">@subject.ActivityCount @ActivityLabel(subject.ActivityCount)</span>
                     </span>
                     <span class="subject-card-corner" aria-hidden="true">→</span>
                 </NavLink>

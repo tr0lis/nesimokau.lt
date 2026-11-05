@@ -43,6 +43,42 @@ function computeScore(recent, bestScore) {
   return Math.max(sum, bestScore);
 }
 
+async function computePeriodFallback(period) {
+  const vilnius = (date) => new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Vilnius' }));
+  const now = vilnius(new Date());
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  if (period === 'month') start.setDate(1);
+  else start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+
+  const logs = await db.list('activity_log', {
+    filter: "event_type = 'game_result_saved'",
+    sort: '-created_at',
+    perPage: 1000,
+  });
+  const totals = new Map();
+  for (const log of logs) {
+    if (!log.created_at || vilnius(new Date(log.created_at)) < start) continue;
+    totals.set(log.uid, (totals.get(log.uid) ?? 0) + int(log.score, 0, 1_000_000));
+  }
+
+  const rows = await db.list('user_progress', {
+    perPage: 1000,
+    fields: 'uid,name,avatar_id,avatar_background',
+  });
+  return rows
+    .filter((r) => totals.get(r.uid) > 0)
+    .map((r) => ({
+      player_id: `user-${r.uid}`,
+      nickname: r.name || 'Svečias',
+      score: int(totals.get(r.uid), 0, 10_000_000),
+      avatar_id: r.avatar_id,
+      avatar_background: r.avatar_background || 'bg-violet',
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 50);
+}
+
 function toClient(row) {
   return {
     user_id: row.uid,
@@ -127,14 +163,20 @@ export const dataRoutes = {
     const period = new URL(req.url, 'http://localhost').searchParams.get('period') ?? 'all';
     if (!['all', 'month', 'week'].includes(period)) throw new HttpError(400, 'Neteisingas laikotarpis.');
 
-    const periodRows = await db.rpc('leaderboard_period_scores', { p_period: period });
-    const periodEntries = (periodRows ?? []).map((row) => ({
+    let periodEntries = [];
+    try {
+      const periodRows = await db.rpc('leaderboard_period_scores', { p_period: period });
+      periodEntries = (periodRows ?? []).map((row) => ({
         player_id: `user-${row.user_id}`,
         nickname: row.nickname || 'Svečias',
         score: int(row.score, 0, 10_000_000),
         avatar_id: row.avatar_id,
         avatar_background: row.avatar_background || 'bg-violet',
       }));
+    } catch (error) {
+      console.error('leaderboard_period_scores unavailable:', error instanceof Error ? error.message : 'unknown');
+      if (period !== 'all') periodEntries = await computePeriodFallback(period);
+    }
     if (period !== 'all') return sendJson(res, 200, periodEntries);
 
     const merged = new Map();
@@ -186,11 +228,17 @@ export const dataRoutes = {
   async 'POST /leaderboard/reset'(req, res) {
     const { player } = await requirePlayer(req, res);
     const row = await db.first('user_progress', `uid = ${q(player.uid)}`);
-    if (row) await db.update('user_progress', row.id, {
-      best_score: 0,
-      recent_results: [],
-      leaderboard_reset_at: new Date().toISOString(),
-    });
+    if (row) {
+      try {
+        await db.update('user_progress', row.id, {
+          best_score: 0,
+          recent_results: [],
+          leaderboard_reset_at: new Date().toISOString(),
+        });
+      } catch {
+        await db.update('user_progress', row.id, { best_score: 0, recent_results: [] });
+      }
+    }
     sendJson(res, 200, { ok: true });
   },
 

@@ -50,6 +50,18 @@ const pages = [
     links: [['Skaičių arena', '/matematika/zaidimai/skaiciu-arena'], ['Tekstiniai uždaviniai', '/matematika/zaidimai/tekstiniai-uzdaviniai'], ['Geometrija', '/matematika/zaidimai/geometrija'], ['Dėsningumai', '/matematika/zaidimai/desningumai']],
   },
   {
+    path: '/irankiai',
+    title: 'Matematikos įrankiai: grafikų braižyklė, lygčių sprendimas | nesimokau.lt',
+    description: 'Nemokami matematikos įrankiai: funkcijų grafikų braižyklė, lygčių sprendimas žingsnis po žingsnio, trupmenų, procentų ir mokslinis skaičiuotuvas.',
+    sitemap: true,
+    h1: 'Matematikos įrankiai',
+    sections: [
+      ['Grafikai ir lygtys', 'Braižyk funkcijų grafikus, spręsk lygtis žingsnis po žingsnio ir tikrink atsakymus.'],
+      ['Skaičiuotuvai', 'Mokslinis skaičiuotuvas, trupmenos, procentai, geometrija ir statistika vienoje vietoje.'],
+    ],
+    links: [['Matematikos užduotys', '/matematika'], ['Lietuvių kalbos žaidimai', '/lietuviu-kalba']],
+  },
+  {
     path: '/lietuviu-kalba/1-2-klases/pamokos',
     title: 'Lietuvių kalbos pamokos ir užduotys 1–2 klasei | nesimokau.lt',
     description: 'Mokomoji medžiaga pirmokams ir antrokams: lietuvių kalbos žodynas, gramatika, A1–A2 pamokos ir interaktyvios užduotys.',
@@ -235,7 +247,8 @@ for (const page of sitemapPages) {
   if (!declaredRoutes.has(page.path)) throw new Error(`Sitemap route is not declared by a Razor page: ${page.path}`);
   sitemapPaths.add(page.path);
 }
-const urls = sitemapPages.map((page) => `  <url><loc>${origin}${page.path}</loc></url>`).join('\n');
+const today = new Date().toISOString().slice(0, 10);
+const urls = sitemapPages.map((page) => `  <url><loc>${origin}${page.path}</loc><lastmod>${today}</lastmod></url>`).join('\n');
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 const aiBots = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-Web', 'anthropic-ai', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'CCBot', 'Bingbot'];
 const aiRules = aiBots.map((bot) => `User-agent: ${bot}\n`).join('') + `Allow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /prisijungimas\nDisallow: /registracija\n\n`;

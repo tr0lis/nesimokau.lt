@@ -8,7 +8,9 @@
 <SeoHead Title="Prisijungimas | nesimokau.lt" Description="Prisijunk prie savo nesimokau.lt paskyros." Indexable="false" />
 
 <section class="auth-shell">
-    <article class="auth-card auth-card-login @(isRedirecting ? "is-hiding" : string.Empty)">
+    @if (!isRedirecting)
+    {
+    <article class="auth-card auth-card-login">
         <img class="auth-logo" src="images/nesimokau-logo.png" alt="nesimokau.lt" width="84" height="84" />
         @if (mfaTicket is null)
         {
@@ -59,14 +61,18 @@
             </EditForm>
         }
     </article>
+    }
 
     @if (isRedirecting)
     {
-        <div class="auth-success-transition is-login-success @((fastRedirect ? "is-fast" : string.Empty))" role="status" aria-live="polite">
-            <div class="auth-success-transition-inner">
-                <span class="auth-success-spinner"></span>
+        <div class="auth-welcome" role="status" aria-live="polite">
+            <div class="auth-welcome-card">
+                <div class="auth-welcome-check" aria-hidden="true">
+                    <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" pathLength="1" /><path d="M15 27l8 8 15-17" pathLength="1" /></svg>
+                </div>
                 <strong>Sėkmingai prisijungei!</strong>
-                <small>Sėkmingai prisijungei. Atidarome tavo pagrindinį puslapį…</small>
+                <small>Atidarome tavo pagrindinį puslapį…</small>
+                <div class="auth-welcome-bar"><i></i></div>
             </div>
         </div>
     }
@@ -97,7 +103,7 @@
         fastRedirect = true;
         isRedirecting = true;
         await InvokeAsync(StateHasChanged);
-        await Task.Delay(1500);
+        await Task.Delay(900);
         Navigation.NavigateTo("/", replace: true);
     }
 
@@ -165,10 +171,11 @@
 
     private async Task CompleteAsync(AuthSession session)
     {
-        await Progress.ApplyAccountProfileAsync(session.Username, session.AvatarId, session.ClassGroup);
         isRedirecting = true;
         await InvokeAsync(StateHasChanged);
-        await Task.Delay(1500);
+        await Task.WhenAll(
+            Progress.ApplyAccountProfileAsync(session.Username, session.AvatarId, session.ClassGroup),
+            Task.Delay(1100));
         Navigation.NavigateTo("/", replace: true);
     }
 

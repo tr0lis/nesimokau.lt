@@ -8,7 +8,9 @@
 <SeoHead Title="Registracija | nesimokau.lt" Description="Sukurk nesimokau.lt paskyrą ir išsaugok mokymosi pažangą." Indexable="false" />
 
 <section class="auth-shell">
-    <article class="auth-card @(isRedirecting ? "is-hiding" : string.Empty)">
+    @if (!isRedirecting)
+    {
+    <article class="auth-card">
         <img class="auth-logo" src="images/nesimokau-logo.png" alt="nesimokau.lt" width="84" height="84" />
         <p class="eyebrow">PRADĖK MOKYTIS</p>
         <h1>Sukurti paskyrą</h1>
@@ -90,14 +92,18 @@
 
         <p class="auth-alt">Jau turi paskyrą? <a href="/prisijungimas">Prisijunk</a></p>
     </article>
+    }
 
     @if (isRedirecting)
     {
-        <div class="auth-success-transition @(fastRedirect ? "is-fast" : string.Empty)" role="status" aria-live="polite">
-            <div class="auth-success-transition-inner">
-                <span class="auth-success-spinner"></span>
-                <strong>Sveikinu atvykus 🎉</strong>
+        <div class="auth-welcome" role="status" aria-live="polite">
+            <div class="auth-welcome-card">
+                <div class="auth-welcome-check" aria-hidden="true">
+                    <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" pathLength="1" /><path d="M15 27l8 8 15-17" pathLength="1" /></svg>
+                </div>
+                <strong>Sveikinu atvykus!</strong>
                 <small>Paskyra sukurta. Krauname tavo pagrindinį puslapį…</small>
+                <div class="auth-welcome-bar"><i></i></div>
             </div>
         </div>
     }
@@ -132,7 +138,7 @@
         fastRedirect = true;
         isRedirecting = true;
         await InvokeAsync(StateHasChanged);
-        await Task.Delay(1500);
+        await Task.Delay(900);
         Navigation.NavigateTo("/", replace: true);
     }
 
@@ -188,10 +194,11 @@
             return;
         }
 
-        await Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup);
         isRedirecting = true;
         await InvokeAsync(StateHasChanged);
-        await Task.Delay(1500);
+        await Task.WhenAll(
+            Progress.ApplyAccountProfileAsync(result.Session.Username, result.Session.AvatarId, result.Session.ClassGroup),
+            Task.Delay(1100));
         Navigation.NavigateTo("/", replace: true);
     }
 
