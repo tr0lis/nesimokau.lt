@@ -65,7 +65,7 @@
 
     @if (isRedirecting)
     {
-        <div class="auth-welcome" role="status" aria-live="polite">
+        <div class="auth-welcome @(isLeaving ? "leaving" : "")" role="status" aria-live="polite">
             <div class="auth-welcome-card">
                 <div class="auth-welcome-check" aria-hidden="true">
                     <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" pathLength="1" /><path d="M15 27l8 8 15-17" pathLength="1" /></svg>
@@ -82,6 +82,7 @@
     private readonly LoginForm loginForm = new();
     private bool isSubmitting;
     private bool isRedirecting;
+    private bool isLeaving;
     private bool fastRedirect;
     private bool shouldAutoRedirect;
     private string errorMessage = string.Empty;
@@ -104,6 +105,14 @@
         isRedirecting = true;
         await InvokeAsync(StateHasChanged);
         await Task.Delay(900);
+        await LeaveAsync();
+    }
+
+    private async Task LeaveAsync()
+    {
+        isLeaving = true;
+        await InvokeAsync(StateHasChanged);
+        await Task.Delay(550);
         Navigation.NavigateTo("/", replace: true);
     }
 
@@ -176,7 +185,7 @@
         await Task.WhenAll(
             Progress.ApplyAccountProfileAsync(session.Username, session.AvatarId, session.ClassGroup),
             Task.Delay(1100));
-        Navigation.NavigateTo("/", replace: true);
+        await LeaveAsync();
     }
 
     private sealed class LoginForm

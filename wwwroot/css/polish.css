@@ -596,19 +596,24 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 :root[data-theme="dark"] .profile-danger-zone { border-color: #ff5a70; background: rgba(255, 90, 112, .08); }
 
 /* Coin icon */
-.fx-coin { filter: drop-shadow(0 0 3px rgba(139, 92, 246, .6)); transform-origin: center; cursor: pointer; transition: filter .25s; }
-.fx-coin .fx-gem-body { transform-origin: 12px 12px; animation: fxGemFloat 2.8s ease-in-out infinite; }
-.fx-coin .fx-gem-shine { animation: fxGemShine 2.8s ease-in-out infinite; }
-.fx-coin .fx-gem-spark { transform-box: fill-box; transform-origin: center; animation: fxGemTwinkle 2.2s ease-in-out infinite; }
-.fx-coin .fx-gem-spark-b { animation-delay: 1.1s; }
+.fx-coin { filter: drop-shadow(0 0 3px rgba(255, 190, 40, .55)); animation: fxCoinSpin 3.2s ease-in-out infinite; transform-origin: center; }
 .stat-icon .fx-coin { width: 24px; height: 24px; vertical-align: middle; }
-@keyframes fxGemFloat { 0%, 100% { transform: translateY(.4px) scale(1); } 50% { transform: translateY(-.8px) scale(1.04); } }
-@keyframes fxGemShine { 0%, 55%, 100% { opacity: .25; } 75% { opacity: .95; } }
-@keyframes fxGemTwinkle { 0%, 100% { transform: scale(0) rotate(0); opacity: 0; } 50% { transform: scale(1) rotate(90deg); opacity: 1; } }
-@keyframes fxGemSpin { 0% { transform: rotateY(0); } 100% { transform: rotateY(360deg); } }
-.fx-coin:hover, a:hover .fx-coin, .stat-card:hover .fx-coin, .sidebar-account-link:hover .fx-coin { filter: drop-shadow(0 0 6px rgba(167, 139, 250, .95)); }
-.fx-coin:hover .fx-gem-body, a:hover .fx-coin .fx-gem-body, .stat-card:hover .fx-coin .fx-gem-body, .sidebar-account-link:hover .fx-coin .fx-gem-body { animation: fxGemSpin .8s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .fx-coin .fx-gem-body, .fx-coin .fx-gem-shine, .fx-coin .fx-gem-spark { animation: none; } .fx-coin .fx-gem-spark { opacity: 1; } }
+@keyframes fxCoinSpin { 0%, 70%, 100% { transform: rotateY(0); } 85% { transform: rotateY(180deg) scale(1.1); } }
+a:hover .fx-coin, .stat-card:hover .fx-coin, .sidebar-account-link:hover .fx-coin { animation-duration: .9s; }
+@media (prefers-reduced-motion: reduce) { .fx-coin { animation: none; } }
+
+/* Points icon: pulsing target with orbiting star */
+.fx-score { filter: drop-shadow(0 0 3px rgba(99, 102, 241, .55)); overflow: visible; cursor: pointer; }
+.fx-score .fx-score-ring { transform-box: fill-box; transform-origin: center; animation: fxScorePulse 2.4s ease-out infinite; }
+.fx-score .fx-score-ring-b { animation-delay: 1.2s; }
+.fx-score .fx-score-core { transform-box: fill-box; transform-origin: center; animation: fxScoreBeat 1.6s ease-in-out infinite; }
+.fx-score .fx-score-orbit { transform-origin: 12px 12px; animation: fxScoreOrbit 3.6s linear infinite; }
+.stat-icon .fx-score { width: 24px; height: 24px; vertical-align: middle; }
+.fx-score:hover .fx-score-orbit, .stat-card:hover .fx-score .fx-score-orbit { animation-duration: .9s; }
+@keyframes fxScorePulse { 0% { transform: scale(.55); opacity: .9; } 100% { transform: scale(1.35); opacity: 0; } }
+@keyframes fxScoreBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes fxScoreOrbit { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .fx-score .fx-score-ring, .fx-score .fx-score-core, .fx-score .fx-score-orbit { animation: none; } }
 
 /* Locked account footer: theme + logout in one row */
 .main-nav .sidebar-account {
@@ -639,6 +644,10 @@ input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:foc
 .auth-welcome-bar { width: 100%; height: 5px; margin-top: 10px; border-radius: 999px; background: #ece7ff; overflow: hidden; }
 .auth-welcome-bar i { display: block; height: 100%; width: 100%; border-radius: inherit; background: linear-gradient(90deg, #8b5cf6, #22d3ee); transform-origin: left; animation: authBar 1.1s linear forwards; }
 @keyframes authWelcomeFade { from { opacity: 0; } }
+.auth-welcome::after { content: ""; position: absolute; inset: 0; background: var(--background); opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+.auth-welcome-card { transition: opacity .35s ease, transform .5s ease; }
+.auth-welcome.leaving::after { opacity: 1; }
+.auth-welcome.leaving .auth-welcome-card { opacity: 0; transform: translateY(-14px) scale(.96); }
 @keyframes authWelcomePop { from { opacity: 0; transform: translateY(18px) scale(.9); } }
 @keyframes authDraw { to { stroke-dashoffset: 0; } }
 @keyframes authBar { from { transform: scaleX(0); } }
