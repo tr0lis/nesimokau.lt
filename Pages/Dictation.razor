@@ -132,12 +132,13 @@ else if (current is not null)
     private bool SeoIndexable => ClassSlug is null || SupportedClassSlugs.Contains(ClassSlug);
     private string SeoPath => SeoIndexable && ClassSlug is not null ? $"lietuviu-kalba/{ClassSlug}/zodziu-diktantas" : "zaidimai/zodziu-diktantas";
     private string SeoGrade => ClassSlug is null ? string.Empty : $" {ClassSlug.Replace("-klases", string.Empty).Replace("-", "–")} klasei";
+    private string SeoAudience => SeoGrade.Trim().Replace(" klasei", " klasių mokiniams");
     private string SeoTitle => ClassSlug is null
-        ? "Interaktyvus žodžių diktantas vaikams | nesimokau.lt"
-        : $"Žodžių diktanto užduotys{SeoGrade} | nesimokau.lt";
+        ? "Žodžių diktanto žaidimas vaikams | nesimokau.lt"
+        : $"Žodžių diktantas – mokomieji žaidimai {SeoGrade.Trim()} | nesimokau.lt";
     private string SeoDescription => ClassSlug is null
-        ? "Žaisk žodžių diktantą: klausykis lietuviškų žodžių, rašyk taisyklingai ir lavink klausymo bei rašybos įgūdžius."
-        : $"Žodžių diktanto užduotys{SeoGrade}: klausykis žodžių, praktikuok rašybą ir mokykis lietuvių kalbos pagal klasės lygį.";
+        ? "Žaidimas skirtas 1–12 klasių mokiniams. Išklausyk tariamą žodį ir įrašyk jį taip, kaip girdi. Pasirink sudėtingumą ir lavink klausymą, žodyną bei taisyklingą rašybą."
+        : $"Lietuvių kalbos žaidimas pritaikytas {SeoAudience}. Išklausyk tariamą žodį ir įrašyk jį taip, kaip girdi. Pasirink sudėtingumą ir lavink klausymą, žodyną bei taisyklingą rašybą.";
     private static readonly HashSet<string> SupportedClassSlugs = ["1-2-klases", "3-4-klases", "5-6-klases", "7-8-klases", "9-10-klases", "11-12-klases"];
     [SupplyParameterFromQuery(Name = "level")] public string? LevelSlug { get; set; }
     private bool isLast => index == questions.Count - 1;

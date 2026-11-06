@@ -4,12 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 const origin = 'https://nesimokau.lt';
 const groupedClasses = [
-  { slug: '1-2-klases', label: '1–2 klasei', phrase: 'užduotys 1 klasei ir mokomieji žaidimai 2 klasei' },
-  { slug: '3-4-klases', label: '3–4 klasei', phrase: 'mokomieji žaidimai 3 klasei ir mokomieji žaidimai 4 klasei' },
-  { slug: '5-6-klases', label: '5–6 klasei', phrase: 'mokomieji žaidimai 5 klasei ir mokomieji žaidimai 6 klasei' },
-  { slug: '7-8-klases', label: '7–8 klasei', phrase: 'mokomieji žaidimai 7 klasei ir mokomieji žaidimai 8 klasei' },
-  { slug: '9-10-klases', label: '9–10 klasei', phrase: 'mokomieji žaidimai 9 klasei ir mokomieji žaidimai 10 klasei' },
-  { slug: '11-12-klases', label: '11–12 klasei', phrase: 'užduotys vyresnių klasių mokiniams' },
+  { slug: '1-2-klases', label: '1–2 klasei', audience: '1–2 klasių mokiniams', phrase: 'užduotys 1 klasei ir mokomieji žaidimai 2 klasei' },
+  { slug: '3-4-klases', label: '3–4 klasei', audience: '3–4 klasių mokiniams', phrase: 'mokomieji žaidimai 3 klasei ir mokomieji žaidimai 4 klasei' },
+  { slug: '5-6-klases', label: '5–6 klasei', audience: '5–6 klasių mokiniams', phrase: 'mokomieji žaidimai 5 klasei ir mokomieji žaidimai 6 klasei' },
+  { slug: '7-8-klases', label: '7–8 klasei', audience: '7–8 klasių mokiniams', phrase: 'mokomieji žaidimai 7 klasei ir mokomieji žaidimai 8 klasei' },
+  { slug: '9-10-klases', label: '9–10 klasei', audience: '9–10 klasių mokiniams', phrase: 'mokomieji žaidimai 9 klasei ir mokomieji žaidimai 10 klasei' },
+  { slug: '11-12-klases', label: '11–12 klasei', audience: '11–12 klasių mokiniams', phrase: 'užduotys vyresnių klasių mokiniams' },
 ];
 
 const pages = [
@@ -17,6 +17,7 @@ const pages = [
     path: '/',
     title: 'nesimokau.lt – Mokykis žaisdamas!',
     description: 'Mokomieji žaidimai 1–12 klasių mokiniams. Edukaciniai žaidimai vaikams pagal mokomuosius dalykus. Tobulėk lengviau!',
+    noindex: false,
     sitemap: true,
     h1: 'Mokykis žaisdamas!',
     sections: [
@@ -29,6 +30,7 @@ const pages = [
     path: '/lietuviu-kalba',
     title: 'Lietuvių kalbos užduotys ir žaidimai vaikams | nesimokau.lt',
     description: 'Lietuvių kalbos užduotys vaikams: žodžių diktantas, praleistos raidės, kirčiavimas ir pamokos 1–2 klasei.',
+    noindex: false,
     sitemap: true,
     h1: 'Lietuvių kalbos žaidimai ir užduotys',
     sections: [
@@ -41,6 +43,7 @@ const pages = [
     path: '/matematika',
     title: 'Matematikos užduotys ir žaidimai vaikams | nesimokau.lt',
     description: 'Matematikos žaidimai vaikams: skaičiavimas, tekstiniai uždaviniai, geometrija, matavimai ir loginiai dėsningumai.',
+    noindex: false,
     sitemap: true,
     h1: 'Matematikos žaidimai ir užduotys',
     sections: [
@@ -53,6 +56,7 @@ const pages = [
     path: '/irankiai',
     title: 'Matematikos įrankiai: grafikų braižyklė, lygčių sprendimas | nesimokau.lt',
     description: 'Nemokami matematikos įrankiai: funkcijų grafikų braižyklė, lygčių sprendimas žingsnis po žingsnio, trupmenų, procentų ir mokslinis skaičiuotuvas.',
+    noindex: false,
     sitemap: true,
     h1: 'Matematikos įrankiai',
     sections: [
@@ -65,6 +69,7 @@ const pages = [
     path: '/turnyrine-lentele',
     title: 'Turnyrinė lentelė – geriausi žaidėjai | nesimokau.lt',
     description: 'Geriausių nesimokau.lt žaidėjų turnyrinė lentelė: visų laikų, šio mėnesio ir šios savaitės rezultatai.',
+    noindex: false,
     sitemap: true,
     h1: 'Turnyrinė lentelė',
     sections: [
@@ -76,6 +81,7 @@ const pages = [
     path: '/lietuviu-kalba/1-2-klases/pamokos',
     title: 'Lietuvių kalbos pamokos ir užduotys 1–2 klasei | nesimokau.lt',
     description: 'Mokomoji medžiaga pirmokams ir antrokams: lietuvių kalbos žodynas, gramatika, A1–A2 pamokos ir interaktyvios užduotys.',
+    noindex: false,
     sitemap: true,
     h1: 'Lietuvių kalbos pamokos 1–2 klasei',
     sections: [
@@ -90,56 +96,66 @@ const games = [
   {
     slug: 'zodziu-diktantas', base: '/zaidimai/zodziu-diktantas', name: 'Žodžių diktantas',
     category: 'Lietuvių kalba', keywords: 'lietuvių kalbos žaidimai ir rašybos užduotys',
-    description: 'Klausykis tariamo žodžio ir jį užrašyk. Diktanto žaidimas padeda lavinti klausymą, žodyną ir taisyklingą lietuviškų žodžių rašybą.',
+    rule: 'Išklausyk tariamą žodį ir įrašyk jį taip, kaip girdi.',
+    benefit: 'Pasirink sudėtingumą ir lavink klausymą, žodyną bei taisyklingą rašybą.',
     title: 'Žodžių diktanto žaidimas vaikams',
   },
   {
     slug: 'praleistos-raides', base: '/zaidimai/praleistos-raides', name: 'Praleistos raidės',
     category: 'Lietuvių kalba', keywords: 'lietuvių kalbos rašybos užduotys vaikams',
-    description: 'Perskaityk žodį, pagalvok apie jo rašybą ir įrašyk trūkstamą raidę. Užduotys padeda pastebėti lietuvių kalbos rašybos dėsningumus.',
+    rule: 'Perskaityk pateiktą žodį ir jo vietoje įrašyk trūkstamą raidę.',
+    benefit: 'Pasirink sudėtingumą ir įtvirtink lietuvių kalbos rašybos dėsningumus.',
     title: 'Praleistų raidžių užduotys vaikams',
   },
   {
     slug: 'kirciavimas', base: '/zaidimai/kirciavimas', name: 'Kirčiavimas',
     category: 'Lietuvių kalba', keywords: 'lietuvių kalbos tarimo užduotys',
-    description: 'Klausykis žodžių ir pasirink, kurio skiemens kirčiuoti balsį. Interaktyvus pratimas supažindina su lietuvių kalbos kirčiavimu.',
+    rule: 'Išklausyk tariamą žodį ir pažymėk, kurio skiemens balsis kirčiuojamas.',
+    benefit: 'Pasirink sudėtingumą ir mokykis atpažinti lietuvių kalbos kirčio vietą.',
     title: 'Kirčiavimo žaidimas vaikams',
   },
   {
     slug: 'skaiciu-arena', base: '/matematika/zaidimai/skaiciu-arena', name: 'Skaičių arena',
     category: 'Matematika', keywords: 'matematikos žaidimai',
-    description: 'Treniruok sudėtį, atimtį, daugybą ir dalybą skaičių arenoje. Pasirink veiksmą ir spręsk matematines užduotis savo tempu.',
+    rule: 'Pasirink aritmetinį veiksmą ir išspręsk pateiktus skaičiavimo pavyzdžius.',
+    benefit: 'Pasirink sudėtingumą ir treniruok sudėtį, atimtį, daugybą bei dalybą.',
     title: 'Skaičiavimo žaidimas vaikams',
   },
   {
     slug: 'tekstiniai-uzdaviniai', base: '/matematika/zaidimai/tekstiniai-uzdaviniai', name: 'Tekstiniai uždaviniai',
     category: 'Matematika', keywords: 'matematikos užduotys vaikams',
-    description: 'Perskaityk sąlygą, atsirink svarbią informaciją ir pasirink tinkamą matematinį veiksmą. Lavink uždavinių sprendimo strategijas.',
+    rule: 'Perskaityk uždavinio sąlygą, atsirink duomenis ir pasirink sprendimo veiksmą.',
+    benefit: 'Pasirink sudėtingumą ir lavink matematinių uždavinių sprendimo strategijas.',
     title: 'Matematikos tekstiniai uždaviniai',
   },
   {
     slug: 'geometrija', base: '/matematika/zaidimai/geometrija', name: 'Geometrija ir matavimai',
     category: 'Matematika', keywords: 'geometrijos žaidimai vaikams',
-    description: 'Pažink geometrines figūras, matavimus ir erdvinius ryšius atlikdamas interaktyvias matematikos užduotis.',
+    rule: 'Atlik užduotis apie geometrines figūras, jų savybes ir matavimus.',
+    benefit: 'Pasirink sudėtingumą ir lavink erdvinį mąstymą bei matavimo įgūdžius.',
     title: 'Geometrijos užduotys vaikams',
   },
   {
     slug: 'desningumai', base: '/matematika/zaidimai/desningumai', name: 'Dėsningumai',
     category: 'Matematika', keywords: 'loginiai matematikos žaidimai',
-    description: 'Atrask pasikartojančias skaičių ir figūrų sekas, paaiškink jų taisyklę ir lavink loginį mąstymą.',
+    rule: 'Surask skaičių ar figūrų sekos taisyklę ir pagal ją pasirink trūkstamą elementą.',
+    benefit: 'Pasirink sudėtingumą ir lavink loginį bei matematinį mąstymą.',
     title: 'Dėsningumų žaidimas vaikams',
   },
 ];
 
 for (const game of games) {
+  const description = `Žaidimas skirtas 1–12 klasių mokiniams. ${game.rule} ${game.benefit}`;
   pages.push({
     path: game.base,
     title: `${game.title} | nesimokau.lt`,
-    description: game.description,
-    noindex: true,
+    description,
+    noindex: false,
+    sitemap: true,
+    gamePage: true,
     h1: game.name,
     category: game.category,
-    sections: [[game.keywords, game.description], ['Mokykis žaisdamas', 'Užduotis suskirstyta į trumpus žingsnius, todėl gali iškart pasitikrinti atsakymą, pastebėti klaidą ir bandyti dar kartą.']],
+    sections: [[game.keywords, description], ['Mokykis žaisdamas', 'Pasirink užduoties sudėtingumą, spręsk savo tempu ir iškart pasitikrink atsakymą.']],
     links: [['Dalykai ir kiti žaidimai', game.category === 'Matematika' ? '/matematika' : '/lietuviu-kalba']],
   });
 
@@ -148,13 +164,15 @@ for (const game of games) {
       pages.push({
         path: `/lietuviu-kalba/${grade.slug}/${game.slug}`,
         title: `${game.name} – mokomieji žaidimai ${grade.label} | nesimokau.lt`,
-        description: `${grade.phrase}: ${game.description}`,
-        noindex: true,
+        description: `Lietuvių kalbos žaidimas pritaikytas ${grade.audience}. ${game.rule} ${game.benefit}`,
+        noindex: false,
+        sitemap: true,
+        gamePage: true,
         h1: `${game.name}: užduotys ${grade.label}`,
         category: 'Lietuvių kalba',
         sections: [
-          [`${grade.phrase} lietuvių kalbai`, `Pasirink savo mokymosi etapui pritaikytą ${game.name.toLowerCase()} pratimą. ${game.description}`],
-          ['Kartok ir tobulėk', 'Atlik užduotį savo tempu, iškart matyk atsakymo rezultatą ir nuosekliai stiprink rašybos bei kalbos įgūdžius.'],
+          [`${grade.phrase} lietuvių kalbai`, `Šis pratimas pritaikytas ${grade.audience}. ${game.rule} ${game.benefit}`],
+          ['Kartok ir tobulėk', 'Spręsk užduotis savo tempu, iškart matyk atsakymo rezultatą ir nuosekliai stiprink lietuvių kalbos įgūdžius.'],
         ],
         links: [['Visi lietuvių kalbos pratimai', '/lietuviu-kalba'], ['Pamokos 1–2 klasei', '/lietuviu-kalba/1-2-klases/pamokos']],
       });
@@ -167,6 +185,8 @@ for (const grade of ['1', '2']) {
     path: `/lietuviu-kalba/1-2-klases/pamokos/${grade}`,
     title: `Lietuvių kalbos pamokos ir užduotys ${grade} klasei | nesimokau.lt`,
     description: `Lietuvių kalbos pamokos ${grade} klasei: teminis žodynas, gramatikos paaiškinimai ir praktinės užduotys mokymuisi žaidžiant.`,
+    noindex: false,
+    sitemap: true,
     h1: `Lietuvių kalbos užduotys ${grade} klasei`,
     category: 'Lietuvių kalba',
     sections: [
@@ -248,16 +268,41 @@ for (const entry of sourcePages) {
   if (!entry.isFile() || !entry.name.endsWith('.razor')) continue;
   const source = await fs.readFile(path.join(pagesRoot, entry.name), 'utf8');
   for (const match of source.matchAll(/^\s*@page\s+"([^"]+)"/gm)) {
-    if (!match[1].includes('{')) declaredRoutes.add(match[1]);
+    declaredRoutes.add(match[1]);
   }
+}
+
+function routeMatchesTemplate(route, template) {
+  const pattern = template.split('/').map((segment) => {
+    if (segment.startsWith('{') && segment.endsWith('}')) return '[^/]+';
+    return segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }).join('/');
+  return new RegExp(`^${pattern}/?$`).test(route);
 }
 
 const sitemapPages = pages.filter((page) => page.sitemap);
 const sitemapPaths = new Set();
 for (const page of sitemapPages) {
   if (sitemapPaths.has(page.path)) throw new Error(`Duplicate sitemap route: ${page.path}`);
-  if (!declaredRoutes.has(page.path)) throw new Error(`Sitemap route is not declared by a Razor page: ${page.path}`);
+  if (![...declaredRoutes].some((route) => routeMatchesTemplate(page.path, route))) {
+    throw new Error(`Sitemap route is not declared by a Razor page: ${page.path}`);
+  }
+  if (page.noindex) throw new Error(`Noindex route cannot be listed in sitemap: ${page.path}`);
   sitemapPaths.add(page.path);
+}
+for (const page of pages) {
+  if (typeof page.noindex !== 'boolean' || typeof page.sitemap !== 'boolean') {
+    throw new Error(`SEO route must explicitly define noindex and sitemap: ${page.path}`);
+  }
+  if (page.noindex === page.sitemap) {
+    throw new Error(`Public routes must be in the sitemap and noindex routes must be excluded: ${page.path}`);
+  }
+}
+const gamePages = pages.filter((page) => page.gamePage);
+for (const field of ['title', 'description', 'h1', 'path']) {
+  if (new Set(gamePages.map((page) => page[field])).size !== gamePages.length) {
+    throw new Error(`Game pages must have unique ${field} values.`);
+  }
 }
 const today = new Date().toISOString().slice(0, 10);
 const urls = sitemapPages.map((page) => `  <url><loc>${origin}${page.path}</loc><lastmod>${today}</lastmod></url>`).join('\n');

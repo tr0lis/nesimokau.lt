@@ -159,7 +159,6 @@ export const dataRoutes = {
   },
 
   async 'GET /leaderboard'(req, res) {
-    await requirePlayer(req, res);
     const period = new URL(req.url, 'http://localhost').searchParams.get('period') ?? 'all';
     if (!['all', 'month', 'week'].includes(period)) throw new HttpError(400, 'Neteisingas laikotarpis.');
 

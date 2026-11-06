@@ -32,6 +32,12 @@ const name = 'Test' + Math.floor(Math.random() * 1e6);
 const pass = 'Slaptazodis1!x';
 const log = (label, r) => console.log(label.padEnd(22), r.status, JSON.stringify(r.data).slice(0, 110));
 
+const publicLeaderboard = await call('GET', '/api/leaderboard');
+if (publicLeaderboard.status !== 200 || !Array.isArray(publicLeaderboard.data)) {
+  throw new Error(`Anonymous leaderboard request failed: ${publicLeaderboard.status}`);
+}
+log('public leaderboard', publicLeaderboard);
+
 log('register', await call('POST', '/api/auth/register', { username: name, password: pass, avatarId: 'a1', classGroup: '5-6' }));
 log('me', await call('GET', '/api/auth/me'));
 log('progress put', await call('PUT', '/api/progress', { name, level: 3, xp: 40, coins: 10, best_score: 50, recent_results: [{ score: 70 }] }));

@@ -142,12 +142,13 @@ else if (current is not null)
     private bool SeoIndexable => ClassSlug is null || SupportedClassSlugs.Contains(ClassSlug);
     private string SeoPath => SeoIndexable && ClassSlug is not null ? $"lietuviu-kalba/{ClassSlug}/kirciavimas" : "zaidimai/kirciavimas";
     private string SeoGrade => ClassSlug is null ? string.Empty : $" {ClassSlug.Replace("-klases", string.Empty).Replace("-", "–")} klasei";
+    private string SeoAudience => SeoGrade.Trim().Replace(" klasei", " klasių mokiniams");
     private string SeoTitle => ClassSlug is null
-        ? "Kirčiavimo užduotys ir žaidimas vaikams | nesimokau.lt"
-        : $"Kirčiavimo užduotys{SeoGrade} | nesimokau.lt";
+        ? "Kirčiavimo žaidimas vaikams | nesimokau.lt"
+        : $"Kirčiavimas – mokomieji žaidimai {SeoGrade.Trim()} | nesimokau.lt";
     private string SeoDescription => ClassSlug is null
-        ? "Mokykis lietuviškų žodžių kirčiavimo interaktyviame žaidime. Klausykis tarimo ir lavink kalbos pojūtį."
-        : $"Kirčiavimo užduotys{SeoGrade}: klausykis žodžių, nustatyk kirčio vietą ir stiprink lietuvių kalbos įgūdžius.";
+        ? "Žaidimas skirtas 1–12 klasių mokiniams. Išklausyk tariamą žodį ir pažymėk, kurio skiemens balsis kirčiuojamas. Pasirink sudėtingumą ir mokykis atpažinti lietuvių kalbos kirčio vietą."
+        : $"Lietuvių kalbos žaidimas pritaikytas {SeoAudience}. Išklausyk tariamą žodį ir pažymėk, kurio skiemens balsis kirčiuojamas. Pasirink sudėtingumą ir mokykis atpažinti lietuvių kalbos kirčio vietą.";
     private static readonly HashSet<string> SupportedClassSlugs = ["1-2-klases", "3-4-klases", "5-6-klases", "7-8-klases", "9-10-klases", "11-12-klases"];
     [SupplyParameterFromQuery(Name = "level")] public string? LevelSlug { get; set; }
 

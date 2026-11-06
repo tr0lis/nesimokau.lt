@@ -23,7 +23,7 @@
     [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
     [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
     [Parameter] public string CanonicalPath { get; set; } = "/";
-    [Parameter] public bool Indexable { get; set; } = true;
+    [Parameter, EditorRequired] public bool Indexable { get; set; }
 
     private string CanonicalUrl => $"https://nesimokau.lt/{CanonicalPath.TrimStart('/')}";
     private string StructuredData => JsonSerializer.Serialize(new
