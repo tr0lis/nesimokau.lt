@@ -21,8 +21,8 @@ const pages = [
     sitemap: true,
     h1: 'Mokykis žaisdamas!',
     sections: [
-      ['Edukaciniai žaidimai vaikams pagal mokomuosius dalykus', 'Rinkis lietuvių kalbos užduotis arba matematikos žaidimus. Aiškios taisyklės, trumpi iššūkiai ir draugiškas grįžtamasis ryšys padeda mokytis savo tempu.'],
-      ['Mokymasis žaidžiant', 'Interaktyvūs mokomieji žaidimai leidžia iškart pritaikyti žinias: rašyti žodžius, spręsti uždavinius ir pastebėti, kas jau pavyksta. Pagrindiniai pratimai pasiekiami nemokamai.'],
+      ['Edukaciniai žaidimai vaikams pagal mokomuosius dalykus'],
+      ['Mokymasis žaidžiant', 'Interaktyvūs mokomieji žaidimai leidžia iškart pritaikyti žinias: rašyti žodžius, spręsti uždavinius ir pastebėti, kas jau pavyksta.'],
     ],
     links: [['Lietuvių kalbos žaidimai', '/lietuviu-kalba'], ['Matematikos užduotys', '/matematika']],
   },
@@ -202,7 +202,7 @@ function escapeHtml(value) {
 }
 
 function pageContent(page) {
-  const sections = page.sections.map(([heading, text]) => `<section><h2>${escapeHtml(heading)}</h2><p>${escapeHtml(text)}</p></section>`).join('');
+  const sections = page.sections.map(([heading, text]) => `<section><h2>${escapeHtml(heading)}</h2>${text ? `<p>${escapeHtml(text)}</p>` : ''}</section>`).join('');
   const links = (page.links ?? []).map(([label, href]) => `<a href="${escapeHtml(href)}">${escapeHtml(label)} <span aria-hidden="true">→</span></a>`).join('');
   return `<main class="seo-prerender"><nav aria-label="Pagrindinis puslapis"><a class="seo-brand" href="/"><img src="/images/nesimokau-logo.png" alt="" />nesimokau<span>.lt</span></a>${page.category ? ` <span class="seo-breadcrumb" aria-hidden="true">/</span> <span>${escapeHtml(page.category)}</span>` : ''}</nav><header><p class="eyebrow">${escapeHtml(page.category ?? 'MOKYKIMĖS ŽAIDŽIANT')}</p><h1>${escapeHtml(page.h1)}</h1><p class="subtitle">${escapeHtml(page.description)}</p></header>${sections}<nav class="seo-related" aria-label="Susiję puslapiai">${links}</nav><p class="seo-cta"><span>Išsaugok savo mokymosi pažangą</span><a href="/registracija">Sukurti paskyrą <span aria-hidden="true">→</span></a><a href="/prisijungimas">Prisijungti</a></p></main>`;
 }
