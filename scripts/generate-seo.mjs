@@ -21,10 +21,14 @@ const pages = [
     sitemap: true,
     h1: 'Mokykis žaisdamas!',
     sections: [
-      ['Edukaciniai žaidimai vaikams pagal mokomuosius dalykus'],
+      ['Edukaciniai žaidimai vaikams pagal mokomuosius dalykus', 'Rinkis lietuvių kalbos užduotis arba matematikos žaidimus pagal savo klasę. Aiškios taisyklės ir trumpi iššūkiai padeda mokytis savo tempu.'],
       ['Mokymasis žaidžiant', 'Interaktyvūs mokomieji žaidimai leidžia iškart pritaikyti žinias: rašyti žodžius, spręsti uždavinius ir pastebėti, kas jau pavyksta.'],
     ],
-    links: [['Lietuvių kalbos žaidimai', '/lietuviu-kalba'], ['Matematikos užduotys', '/matematika']],
+    links: [
+      ['Lietuvių kalbos žaidimai', '/lietuviu-kalba'],
+      ['Matematikos užduotys', '/matematika'],
+      ['Turnyrinė lentelė', '/turnyrine-lentele'],
+    ],
   },
   {
     path: '/lietuviu-kalba',
@@ -50,7 +54,13 @@ const pages = [
       ['Skaičiavimas ir loginis mąstymas', 'Atlik sudėties, atimties, daugybos ar dalybos užduotis skaičių arenoje. Užduotys padeda lavinti skaičiavimo tikslumą ir pasitikėjimą.'],
       ['Uždaviniai ir geometrija', 'Spręsk tekstinius uždavinius, pažink figūras ir matavimus, atrask skaičių bei formų sekas. Pasirink temą, kurią nori pasitreniruoti.'],
     ],
-    links: [['Skaičių arena', '/matematika/zaidimai/skaiciu-arena'], ['Tekstiniai uždaviniai', '/matematika/zaidimai/tekstiniai-uzdaviniai'], ['Geometrija', '/matematika/zaidimai/geometrija'], ['Dėsningumai', '/matematika/zaidimai/desningumai']],
+    links: [
+      ['Skaičių arena', '/matematika/zaidimai/skaiciu-arena'],
+      ['Tekstiniai uždaviniai', '/matematika/zaidimai/tekstiniai-uzdaviniai'],
+      ['Geometrija', '/matematika/zaidimai/geometrija'],
+      ['Dėsningumai', '/matematika/zaidimai/desningumai'],
+      ['Matematikos įrankiai', '/irankiai'],
+    ],
   },
   {
     path: '/irankiai',
@@ -146,6 +156,13 @@ const games = [
 
 for (const game of games) {
   const description = `Žaidimas skirtas 1–12 klasių mokiniams. ${game.rule} ${game.benefit}`;
+  const links = [['Dalykai ir kiti žaidimai', game.category === 'Matematika' ? '/matematika' : '/lietuviu-kalba']];
+  if (game.category === 'Lietuvių kalba') {
+    links.push(...groupedClasses.map((grade) => [
+      `${game.name} ${grade.label}`,
+      `/lietuviu-kalba/${grade.slug}/${game.slug}`,
+    ]));
+  }
   pages.push({
     path: game.base,
     title: `${game.title} | nesimokau.lt`,
@@ -156,7 +173,7 @@ for (const game of games) {
     h1: game.name,
     category: game.category,
     sections: [[game.keywords, description], ['Mokykis žaisdamas', 'Pasirink užduoties sudėtingumą, spręsk savo tempu ir iškart pasitikrink atsakymą.']],
-    links: [['Dalykai ir kiti žaidimai', game.category === 'Matematika' ? '/matematika' : '/lietuviu-kalba']],
+    links,
   });
 
   if (game.category === 'Lietuvių kalba') {
@@ -174,7 +191,16 @@ for (const game of games) {
           [`${grade.phrase} lietuvių kalbai`, `Šis pratimas pritaikytas ${grade.audience}. ${game.rule} ${game.benefit}`],
           ['Kartok ir tobulėk', 'Spręsk užduotis savo tempu, iškart matyk atsakymo rezultatą ir nuosekliai stiprink lietuvių kalbos įgūdžius.'],
         ],
-        links: [['Visi lietuvių kalbos pratimai', '/lietuviu-kalba'], ['Pamokos 1–2 klasei', '/lietuviu-kalba/1-2-klases/pamokos']],
+        links: [
+          ['Visi lietuvių kalbos pratimai', '/lietuviu-kalba'],
+          ['Pamokos 1–2 klasei', '/lietuviu-kalba/1-2-klases/pamokos'],
+          ...games
+            .filter((relatedGame) => relatedGame.category === 'Lietuvių kalba' && relatedGame.slug !== game.slug)
+            .map((relatedGame) => [
+              `${relatedGame.name} ${grade.label}`,
+              `/lietuviu-kalba/${grade.slug}/${relatedGame.slug}`,
+            ]),
+        ],
       });
     }
   }
@@ -304,12 +330,19 @@ for (const field of ['title', 'description', 'h1', 'path']) {
     throw new Error(`Game pages must have unique ${field} values.`);
   }
 }
-const today = new Date().toISOString().slice(0, 10);
-const urls = sitemapPages.map((page) => `  <url><loc>${origin}${page.path}</loc><lastmod>${today}</lastmod></url>`).join('\n');
+const internallyLinkedPaths = new Set(
+  pages.flatMap((page) => (page.links ?? []).map(([, href]) => href.replace(/\/$/, '') || '/')),
+);
+for (const page of sitemapPages) {
+  if (page.path !== '/' && !internallyLinkedPaths.has(page.path)) {
+    throw new Error(`Sitemap route must have an internal link: ${page.path}`);
+  }
+}
+const urls = sitemapPages.map((page) => `  <url><loc>${origin}${page.path}</loc></url>`).join('\n');
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 const aiBots = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-Web', 'anthropic-ai', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'CCBot', 'Bingbot'];
-const aiRules = aiBots.map((bot) => `User-agent: ${bot}\n`).join('') + `Allow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /prisijungimas\nDisallow: /registracija\n\n`;
-const robots = aiRules + `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /profilis\nDisallow: /pasiekimai\nDisallow: /rezultatai\nDisallow: /mediateka\nDisallow: /pasitaisyti\nDisallow: /diagnostika\nDisallow: /skaiciuokle\nDisallow: /prisijungimas\nDisallow: /registracija\n\nSitemap: ${origin}/sitemap.xml\n`;
+const aiRules = aiBots.map((bot) => `User-agent: ${bot}\n`).join('') + `Allow: /\nDisallow: /api/\n\n`;
+const robots = aiRules + `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${origin}/sitemap.xml\n`;
 await fs.writeFile(path.join(outputRoot, 'sitemap.xml'), sitemap);
 await fs.writeFile(path.join(outputRoot, 'robots.txt'), robots);
 await fs.writeFile(path.join(sourceRoot, 'sitemap.xml'), sitemap);

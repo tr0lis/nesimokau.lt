@@ -12,21 +12,9 @@ User-agent: CCBot
 User-agent: Bingbot
 Allow: /
 Disallow: /api/
-Disallow: /profilis
-Disallow: /prisijungimas
-Disallow: /registracija
 
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /profilis
-Disallow: /pasiekimai
-Disallow: /rezultatai
-Disallow: /mediateka
-Disallow: /pasitaisyti
-Disallow: /diagnostika
-Disallow: /skaiciuokle
-Disallow: /prisijungimas
-Disallow: /registracija
 
 Sitemap: https://nesimokau.lt/sitemap.xml
